@@ -14,7 +14,53 @@
       <p class="subtle">Upload a document, choose outputs, and optionally add cross-reference documents.</p>
     </header>
 
+    <!-- Document Library Section -->
     <section class="card">
+      <h2 class="section-title">Document Library</h2>
+      <p class="subtle" style="margin-bottom: 1rem;">Add PDF/DOCX files to the <code>documents/</code> folder, then scan and process them for Q&A.</p>
+
+      <div class="library-actions">
+        <button id="scanBtn" type="button" class="btn-secondary">Scan Folder</button>
+        <button id="processAllBtn" type="button" class="btn-secondary">Process All</button>
+        <span id="ollamaStatus" class="ollama-status"></span>
+      </div>
+
+      <div id="libraryStatus" class="status" style="margin-top: 1rem; display: none;"></div>
+
+      <div id="documentList" class="document-list">
+        <p class="subtle">No documents found. Add files to the documents/ folder and click "Scan Folder".</p>
+      </div>
+
+      <!-- Q&A Section -->
+      <div class="qa-section">
+        <h3>Ask a Question</h3>
+        <p class="hint">Select documents above, then ask a question to search through them.</p>
+
+        <div class="field">
+          <textarea id="questionInput" rows="3" placeholder="Type your question here..."></textarea>
+        </div>
+
+        <div class="actions">
+          <button id="askBtn" type="button" disabled>Ask Question</button>
+        </div>
+
+        <div id="qaStatus" class="status" style="margin-top: 1rem; display: none;"></div>
+
+        <div id="answerSection" class="answer-section" style="display: none;">
+          <h4>Answer</h4>
+          <div id="answerContent" class="answer-content"></div>
+
+          <div id="sourcesSection" style="display: none;">
+            <h5>Sources</h5>
+            <div id="sourcesList" class="sources-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Original Analyze Section -->
+    <section class="card">
+      <h2 class="section-title">Document Analysis</h2>
       <form id="analyzeForm">
         <div class="field">
           <label for="fileInput">Main document (PDF or DOCX)</label>

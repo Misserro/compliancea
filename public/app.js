@@ -1,6 +1,25 @@
 // Use relative path - works for any deployment
 const ENDPOINT = "/api/analyze";
 
+// ============================================
+// Document Library Elements
+// ============================================
+const scanBtn = document.getElementById("scanBtn");
+const processAllBtn = document.getElementById("processAllBtn");
+const ollamaStatusEl = document.getElementById("ollamaStatus");
+const libraryStatusEl = document.getElementById("libraryStatus");
+const documentListEl = document.getElementById("documentList");
+const questionInput = document.getElementById("questionInput");
+const askBtn = document.getElementById("askBtn");
+const qaStatusEl = document.getElementById("qaStatus");
+const answerSection = document.getElementById("answerSection");
+const answerContent = document.getElementById("answerContent");
+const sourcesSection = document.getElementById("sourcesSection");
+const sourcesList = document.getElementById("sourcesList");
+
+// ============================================
+// Analyze Form Elements
+// ============================================
 const form = document.getElementById("analyzeForm");
 const fileInput = document.getElementById("fileInput");
 const crossFilesInput = document.getElementById("crossFiles");
@@ -42,14 +61,11 @@ const DEPARTMENTS = ["Finance", "Compliance", "Operations", "HR", "Board", "IT"]
 
 let lastResult = null;
 let originalTemplateText = "";
+let documents = [];
 
-function setStatus(message, kind = "info") {
-  statusEl.classList.remove("good", "bad", "warn");
-  if (kind === "good") statusEl.classList.add("good");
-  if (kind === "bad") statusEl.classList.add("bad");
-  if (kind === "warn") statusEl.classList.add("warn");
-  statusEl.textContent = message;
-}
+// ============================================
+// Utility Functions
+// ============================================
 
 function escapeHtml(str) {
   return String(str ?? "")
@@ -65,6 +81,306 @@ function normalizeArray(value) {
   if (value == null) return [];
   return [value];
 }
+
+function setStatusElement(el, message, kind = "info") {
+  el.style.display = "block";
+  el.classList.remove("good", "bad", "warn");
+  if (kind === "good") el.classList.add("good");
+  if (kind === "bad") el.classList.add("bad");
+  if (kind === "warn") el.classList.add("warn");
+  el.textContent = message;
+}
+
+function hideStatusElement(el) {
+  el.style.display = "none";
+}
+
+function setStatus(message, kind = "info") {
+  setStatusElement(statusEl, message, kind);
+}
+
+// ============================================
+// Document Library Functions
+// ============================================
+
+async function checkOllamaStatus() {
+  try {
+    const res = await fetch("/api/ollama/status");
+    const data = await res.json();
+
+    if (data.available) {
+      ollamaStatusEl.textContent = "Ollama: Ready";
+      ollamaStatusEl.className = "ollama-status ready";
+    } else {
+      ollamaStatusEl.textContent = `Ollama: ${data.error || "Not available"}`;
+      ollamaStatusEl.className = "ollama-status error";
+    }
+
+    return data.available;
+  } catch (err) {
+    ollamaStatusEl.textContent = "Ollama: Connection error";
+    ollamaStatusEl.className = "ollama-status error";
+    return false;
+  }
+}
+
+async function loadDocuments() {
+  try {
+    const res = await fetch("/api/documents");
+    const data = await res.json();
+    documents = data.documents || [];
+    renderDocumentList();
+  } catch (err) {
+    console.error("Error loading documents:", err);
+    documentListEl.innerHTML = `<p class="subtle">Error loading documents: ${escapeHtml(err.message)}</p>`;
+  }
+}
+
+function renderDocumentList() {
+  if (documents.length === 0) {
+    documentListEl.innerHTML = `<p class="subtle">No documents found. Add files to the documents/ folder and click "Scan Folder".</p>`;
+    updateAskButtonState();
+    return;
+  }
+
+  documentListEl.innerHTML = documents.map(doc => {
+    const statusClass = doc.processed ? "processed" : "unprocessed";
+    const statusText = doc.processed ? `${doc.word_count} words` : "Not processed";
+    const dateStr = new Date(doc.added_at).toLocaleDateString();
+
+    return `
+      <div class="doc-item ${statusClass}" data-id="${doc.id}">
+        <label class="doc-checkbox">
+          <input type="checkbox" class="doc-select" data-id="${doc.id}" ${doc.processed ? "" : "disabled"} />
+          <span class="doc-name">${escapeHtml(doc.name)}</span>
+        </label>
+        <div class="doc-meta">
+          <span class="doc-status ${statusClass}">${statusText}</span>
+          <span class="doc-date">${dateStr}</span>
+        </div>
+        <div class="doc-actions">
+          ${!doc.processed ? `<button class="btn-process" data-id="${doc.id}">Process</button>` : ""}
+          <button class="btn-delete" data-id="${doc.id}">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // Add event listeners
+  documentListEl.querySelectorAll(".btn-process").forEach(btn => {
+    btn.addEventListener("click", () => processDocument(parseInt(btn.dataset.id, 10)));
+  });
+
+  documentListEl.querySelectorAll(".btn-delete").forEach(btn => {
+    btn.addEventListener("click", () => deleteDocument(parseInt(btn.dataset.id, 10)));
+  });
+
+  documentListEl.querySelectorAll(".doc-select").forEach(checkbox => {
+    checkbox.addEventListener("change", updateAskButtonState);
+  });
+
+  updateAskButtonState();
+}
+
+function getSelectedDocumentIds() {
+  const checkboxes = documentListEl.querySelectorAll(".doc-select:checked");
+  return Array.from(checkboxes).map(cb => parseInt(cb.dataset.id, 10));
+}
+
+function updateAskButtonState() {
+  const selectedIds = getSelectedDocumentIds();
+  const hasQuestion = questionInput.value.trim().length > 0;
+  askBtn.disabled = selectedIds.length === 0 || !hasQuestion;
+}
+
+async function scanDocuments() {
+  scanBtn.disabled = true;
+  setStatusElement(libraryStatusEl, "Scanning folder...", "info");
+
+  try {
+    const res = await fetch("/api/documents/scan", { method: "POST" });
+    const data = await res.json();
+
+    if (res.ok) {
+      documents = data.documents || [];
+      renderDocumentList();
+      setStatusElement(libraryStatusEl, data.message, "good");
+    } else {
+      setStatusElement(libraryStatusEl, data.error || "Scan failed", "bad");
+    }
+  } catch (err) {
+    setStatusElement(libraryStatusEl, `Error: ${err.message}`, "bad");
+  } finally {
+    scanBtn.disabled = false;
+  }
+}
+
+async function processDocument(id) {
+  const btn = documentListEl.querySelector(`.btn-process[data-id="${id}"]`);
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Processing...";
+  }
+
+  setStatusElement(libraryStatusEl, `Processing document ${id}...`, "info");
+
+  try {
+    const res = await fetch(`/api/documents/${id}/process`, { method: "POST" });
+    const data = await res.json();
+
+    if (res.ok) {
+      setStatusElement(libraryStatusEl, `Processed: ${data.chunks} chunks, ${data.wordCount} words`, "good");
+      await loadDocuments();
+    } else {
+      setStatusElement(libraryStatusEl, data.error || "Processing failed", "bad");
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Process";
+      }
+    }
+  } catch (err) {
+    setStatusElement(libraryStatusEl, `Error: ${err.message}`, "bad");
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Process";
+    }
+  }
+}
+
+async function processAllDocuments() {
+  const unprocessed = documents.filter(d => !d.processed);
+
+  if (unprocessed.length === 0) {
+    setStatusElement(libraryStatusEl, "All documents are already processed.", "good");
+    return;
+  }
+
+  processAllBtn.disabled = true;
+  scanBtn.disabled = true;
+
+  for (let i = 0; i < unprocessed.length; i++) {
+    const doc = unprocessed[i];
+    setStatusElement(libraryStatusEl, `Processing ${i + 1}/${unprocessed.length}: ${doc.name}...`, "info");
+
+    try {
+      const res = await fetch(`/api/documents/${doc.id}/process`, { method: "POST" });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setStatusElement(libraryStatusEl, `Failed on ${doc.name}: ${data.error}`, "bad");
+        break;
+      }
+    } catch (err) {
+      setStatusElement(libraryStatusEl, `Error processing ${doc.name}: ${err.message}`, "bad");
+      break;
+    }
+  }
+
+  await loadDocuments();
+  setStatusElement(libraryStatusEl, `Finished processing ${unprocessed.length} document(s).`, "good");
+
+  processAllBtn.disabled = false;
+  scanBtn.disabled = false;
+}
+
+async function deleteDocument(id) {
+  if (!confirm("Are you sure you want to delete this document from the library?")) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
+    const data = await res.json();
+
+    if (res.ok) {
+      setStatusElement(libraryStatusEl, "Document deleted.", "good");
+      await loadDocuments();
+    } else {
+      setStatusElement(libraryStatusEl, data.error || "Delete failed", "bad");
+    }
+  } catch (err) {
+    setStatusElement(libraryStatusEl, `Error: ${err.message}`, "bad");
+  }
+}
+
+async function askQuestion() {
+  const question = questionInput.value.trim();
+  const selectedIds = getSelectedDocumentIds();
+
+  if (!question) {
+    setStatusElement(qaStatusEl, "Please enter a question.", "warn");
+    return;
+  }
+
+  if (selectedIds.length === 0) {
+    setStatusElement(qaStatusEl, "Please select at least one document.", "warn");
+    return;
+  }
+
+  askBtn.disabled = true;
+  setStatusElement(qaStatusEl, "Searching and generating answer...", "info");
+  answerSection.style.display = "none";
+
+  try {
+    const res = await fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, documentIds: selectedIds })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      hideStatusElement(qaStatusEl);
+      renderAnswer(data);
+    } else {
+      setStatusElement(qaStatusEl, data.error || "Failed to get answer", "bad");
+    }
+  } catch (err) {
+    setStatusElement(qaStatusEl, `Error: ${err.message}`, "bad");
+  } finally {
+    updateAskButtonState();
+  }
+}
+
+function renderAnswer(data) {
+  answerSection.style.display = "block";
+  answerContent.innerHTML = `<p>${escapeHtml(data.answer).replace(/\n/g, "<br>")}</p>`;
+
+  if (data.sources && data.sources.length > 0) {
+    sourcesSection.style.display = "block";
+    sourcesList.innerHTML = data.sources.map(s => `
+      <div class="source-item">
+        <span class="source-name">${escapeHtml(s.documentName)}</span>
+        <span class="source-relevance">${s.relevance}% relevance</span>
+      </div>
+    `).join("");
+  } else {
+    sourcesSection.style.display = "none";
+  }
+}
+
+// Event listeners for document library
+scanBtn.addEventListener("click", scanDocuments);
+processAllBtn.addEventListener("click", processAllDocuments);
+askBtn.addEventListener("click", askQuestion);
+questionInput.addEventListener("input", updateAskButtonState);
+questionInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    if (!askBtn.disabled) {
+      askQuestion();
+    }
+  }
+});
+
+// Initialize document library on page load
+checkOllamaStatus();
+loadDocuments();
+
+// ============================================
+// Analyze Form Functions
+// ============================================
 
 function getSelectedOutputs() {
   const checks = [...outputsWrap.querySelectorAll('input[type="checkbox"][name="outputs"]')];

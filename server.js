@@ -4,8 +4,29 @@ import formidable from "formidable";
 import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
 import fs from "fs/promises";
+import fsSync from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+
+// Document library imports
+import {
+  getAllDocuments,
+  getDocumentById,
+  getDocumentByPath,
+  addDocument,
+  updateDocumentProcessed,
+  deleteDocument,
+  addChunksBatch,
+  deleteChunksByDocumentId,
+  getUnprocessedDocuments,
+} from "./lib/db.js";
+import {
+  getEmbedding,
+  embeddingToBuffer,
+  checkOllamaStatus,
+} from "./lib/embeddings.js";
+import { chunkText, countWords } from "./lib/chunker.js";
+import { searchDocuments, formatSearchResults, getSourceDocuments } from "./lib/search.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,16 +35,25 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const DEPARTMENTS = ["Finance", "Compliance", "Operations", "HR", "Board", "IT"];
+const DOCUMENTS_DIR = path.join(__dirname, "documents");
+
+// Ensure documents directory exists
+if (!fsSync.existsSync(DOCUMENTS_DIR)) {
+  fsSync.mkdirSync(DOCUMENTS_DIR, { recursive: true });
+}
 
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, "public")));
+
+// Parse JSON bodies
+app.use(express.json());
 
 // CORS middleware
 app.use((req, res, next) => {
   const allowedOrigin = process.env.ALLOWED_ORIGIN || "*";
   res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
   res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS, GET");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS, GET, DELETE");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Max-Age", "86400");
 
@@ -49,7 +79,7 @@ function toArray(v) {
 }
 
 function guessType(file) {
-  const name = (file?.originalFilename || "").toLowerCase();
+  const name = (file?.originalFilename || file?.name || "").toLowerCase();
   const type = (file?.mimetype || "").toLowerCase();
 
   if (name.endsWith(".pdf")) return "pdf";
@@ -57,6 +87,13 @@ function guessType(file) {
   if (type === "application/pdf") return "pdf";
   if (type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "docx";
 
+  return null;
+}
+
+function guessTypeFromPath(filePath) {
+  const name = filePath.toLowerCase();
+  if (name.endsWith(".pdf")) return "pdf";
+  if (name.endsWith(".docx")) return "docx";
   return null;
 }
 
@@ -83,6 +120,23 @@ async function extractText(file) {
   }
 
   const buf = await fs.readFile(file.filepath);
+
+  if (kind === "pdf") {
+    const parsed = await pdfParse(buf);
+    return (parsed.text || "").trim();
+  }
+
+  const result = await mammoth.extractRawText({ buffer: buf });
+  return (result.value || "").trim();
+}
+
+async function extractTextFromPath(filePath) {
+  const kind = guessTypeFromPath(filePath);
+  if (!kind) {
+    throw new Error("Unsupported file type");
+  }
+
+  const buf = await fs.readFile(filePath);
 
   if (kind === "pdf") {
     const parsed = await pdfParse(buf);
@@ -175,6 +229,264 @@ function buildJsonSchemaDescription(outputs) {
 
   return JSON.stringify(schemaObj, null, 2);
 }
+
+// ============================================
+// Document Library API Endpoints
+// ============================================
+
+// GET /api/documents - List all documents
+app.get("/api/documents", (req, res) => {
+  try {
+    const documents = getAllDocuments();
+    res.json({ documents });
+  } catch (err) {
+    console.error("Error fetching documents:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/documents/scan - Scan documents folder for new files
+app.post("/api/documents/scan", async (req, res) => {
+  try {
+    const files = await fs.readdir(DOCUMENTS_DIR);
+    let added = 0;
+    let skipped = 0;
+
+    for (const file of files) {
+      // Skip hidden files and .gitkeep
+      if (file.startsWith(".")) continue;
+
+      const filePath = path.join(DOCUMENTS_DIR, file);
+      const stat = await fs.stat(filePath);
+
+      // Skip directories
+      if (stat.isDirectory()) continue;
+
+      // Check file type
+      const fileType = guessTypeFromPath(file);
+      if (!fileType) {
+        skipped++;
+        continue;
+      }
+
+      // Check if already in database
+      const existing = getDocumentByPath(filePath);
+      if (existing) {
+        skipped++;
+        continue;
+      }
+
+      // Add to database
+      addDocument(file, filePath, null);
+      added++;
+    }
+
+    const documents = getAllDocuments();
+    res.json({
+      message: `Scan complete. Added ${added} new document(s), skipped ${skipped}.`,
+      added,
+      skipped,
+      documents
+    });
+  } catch (err) {
+    console.error("Error scanning documents:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/documents/:id/process - Process a document (extract text, chunk, embed)
+app.post("/api/documents/:id/process", async (req, res) => {
+  const documentId = parseInt(req.params.id, 10);
+
+  try {
+    // Check Ollama status first
+    const ollamaStatus = await checkOllamaStatus();
+    if (!ollamaStatus.available) {
+      return res.status(503).json({ error: ollamaStatus.error });
+    }
+
+    const document = getDocumentById(documentId);
+    if (!document) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    // Check if file still exists
+    try {
+      await fs.access(document.path);
+    } catch {
+      return res.status(404).json({ error: "Document file not found on disk" });
+    }
+
+    // Extract text
+    const text = await extractTextFromPath(document.path);
+    if (!text) {
+      return res.status(400).json({ error: "Could not extract text from document" });
+    }
+
+    const wordCount = countWords(text);
+
+    // Delete existing chunks if reprocessing
+    deleteChunksByDocumentId(documentId);
+
+    // Chunk the text
+    const chunks = chunkText(text);
+
+    if (chunks.length === 0) {
+      return res.status(400).json({ error: "Document produced no chunks" });
+    }
+
+    // Generate embeddings and store chunks
+    const chunksToInsert = [];
+
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      const embedding = await getEmbedding(chunk.content);
+      const embeddingBuffer = embeddingToBuffer(embedding);
+
+      chunksToInsert.push({
+        documentId,
+        content: chunk.content,
+        chunkIndex: i,
+        embedding: embeddingBuffer
+      });
+    }
+
+    // Batch insert chunks
+    addChunksBatch(chunksToInsert);
+
+    // Mark document as processed
+    updateDocumentProcessed(documentId, wordCount);
+
+    const updatedDocument = getDocumentById(documentId);
+
+    res.json({
+      message: "Document processed successfully",
+      document: updatedDocument,
+      chunks: chunks.length,
+      wordCount
+    });
+  } catch (err) {
+    console.error("Error processing document:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/documents/:id - Delete a document
+app.delete("/api/documents/:id", (req, res) => {
+  const documentId = parseInt(req.params.id, 10);
+
+  try {
+    const document = getDocumentById(documentId);
+    if (!document) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    deleteDocument(documentId);
+
+    res.json({ message: "Document deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting document:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/ollama/status - Check Ollama status
+app.get("/api/ollama/status", async (req, res) => {
+  try {
+    const status = await checkOllamaStatus();
+    res.json(status);
+  } catch (err) {
+    res.status(500).json({ available: false, error: err.message });
+  }
+});
+
+// POST /api/ask - Ask a question against selected documents
+app.post("/api/ask", async (req, res) => {
+  try {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set." });
+    }
+
+    const { question, documentIds, topK = 5 } = req.body;
+
+    if (!question || typeof question !== "string") {
+      return res.status(400).json({ error: "Question is required" });
+    }
+
+    // Search for relevant chunks
+    const searchResults = await searchDocuments(question, documentIds || [], topK);
+
+    if (searchResults.length === 0) {
+      return res.json({
+        answer: "I couldn't find any relevant information in the selected documents to answer your question.",
+        sources: [],
+        context: []
+      });
+    }
+
+    // Format context for Claude
+    const contextText = formatSearchResults(searchResults);
+    const sources = getSourceDocuments(searchResults);
+
+    // Build prompt for Claude
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY
+    });
+
+    const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
+
+    const systemPrompt = `You are a helpful assistant that answers questions based on the provided document excerpts.
+Answer the question using ONLY the information from the provided context.
+If the context doesn't contain enough information to fully answer the question, say so.
+Be concise but thorough. Cite which document(s) your answer comes from when relevant.`;
+
+    const userPrompt = `Context from documents:
+
+${contextText}
+
+Question: ${question}
+
+Please answer the question based on the context above.`;
+
+    const message = await anthropic.messages.create({
+      model: modelName,
+      max_tokens: 2048,
+      system: systemPrompt,
+      messages: [
+        {
+          role: "user",
+          content: userPrompt
+        }
+      ]
+    });
+
+    const answer = message.content
+      .filter(block => block.type === "text")
+      .map(block => block.text)
+      .join("");
+
+    res.json({
+      answer,
+      sources: sources.map(s => ({
+        documentId: s.documentId,
+        documentName: s.documentName,
+        relevance: Math.round(s.maxScore * 100)
+      })),
+      context: searchResults.map(r => ({
+        content: r.content.substring(0, 200) + (r.content.length > 200 ? "..." : ""),
+        documentName: r.documentName,
+        score: Math.round(r.score * 100)
+      }))
+    });
+  } catch (err) {
+    console.error("Error answering question:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// Original Analyze Endpoint
+// ============================================
 
 // Main API endpoint
 app.post("/api/analyze", async (req, res) => {
@@ -322,4 +634,5 @@ app.get("/", (req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Health check available at /health`);
+  console.log(`Documents directory: ${DOCUMENTS_DIR}`);
 });
