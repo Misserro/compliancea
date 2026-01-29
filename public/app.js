@@ -11,6 +11,16 @@ const outputsWrap = document.getElementById("outputs");
 
 const statusEl = document.getElementById("status");
 
+// Result blocks
+const resultsCard = document.getElementById("resultsCard");
+const translationBlock = document.getElementById("translationBlock");
+const summaryBlock = document.getElementById("summaryBlock");
+const keyPointsBlock = document.getElementById("keyPointsBlock");
+const todosBlock = document.getElementById("todosBlock");
+const crossRefBlock = document.getElementById("crossRefBlock");
+const templateBlock = document.getElementById("templateBlock");
+
+// Result elements
 const translatedDisclosure = document.getElementById("translatedDisclosure");
 const translatedDocEl = document.getElementById("translatedDoc");
 const summaryEl = document.getElementById("summary");
@@ -18,8 +28,12 @@ const keyPointsEl = document.getElementById("keyPoints");
 const todosEl = document.getElementById("todos");
 const crossRefEl = document.getElementById("crossRef");
 const templateBoxEl = document.getElementById("templateBox");
+
+// Pre-fill toggle in the form
+const prefillField = document.getElementById("prefillField");
 const templateFillToggle = document.getElementById("templateFillToggle");
 
+// Export buttons
 const exportTranslationBtn = document.getElementById("exportTranslationBtn");
 const exportTodosBtn = document.getElementById("exportTodosBtn");
 const exportTemplateBtn = document.getElementById("exportTemplateBtn");
@@ -67,8 +81,35 @@ function updateAnalyzeEnabled(showStatus = true) {
   else setStatus("Ready.", "info");
 }
 
-outputsWrap.addEventListener("change", () => updateAnalyzeEnabled(true));
+// Show/hide pre-fill option based on whether "Generate response template" is selected
+function updatePrefillVisibility() {
+  const outputs = getSelectedOutputs();
+  const wantsTemplate = outputs.includes("generate_template");
+  prefillField.style.display = wantsTemplate ? "flex" : "none";
+
+  // If template is unchecked, also uncheck the prefill toggle
+  if (!wantsTemplate) {
+    templateFillToggle.checked = false;
+  }
+}
+
+outputsWrap.addEventListener("change", () => {
+  updateAnalyzeEnabled(true);
+  updatePrefillVisibility();
+});
+
 updateAnalyzeEnabled(true);
+updatePrefillVisibility();
+
+function hideAllResultBlocks() {
+  resultsCard.style.display = "none";
+  translationBlock.style.display = "none";
+  summaryBlock.style.display = "none";
+  keyPointsBlock.style.display = "none";
+  todosBlock.style.display = "none";
+  crossRefBlock.style.display = "none";
+  templateBlock.style.display = "none";
+}
 
 function resetResults() {
   lastResult = null;
@@ -88,13 +129,14 @@ function resetResults() {
   crossRefEl.classList.add("subtle");
   templateBoxEl.classList.add("subtle");
 
-  templateFillToggle.checked = false;
+  hideAllResultBlocks();
 }
 
 clearBtn.addEventListener("click", () => {
   resetResults();
   fileInput.value = "";
   crossFilesInput.value = "";
+  templateFillToggle.checked = false;
   setStatus("Cleared. Ready.", "info");
 });
 
@@ -221,19 +263,6 @@ function renderTemplate(data) {
   templateBoxEl.innerHTML = `<pre class="doc">${escapeHtml(tmpl)}</pre>`;
 }
 
-function applyTemplateFillPreference() {
-  if (!lastResult || !originalTemplateText) return;
-
-  // For now, the backend already tries to use cross-reference data when it can.
-  // The toggle is a user hint/flag; we keep the content the same.
-  // You can extend this later to modify placeholders client-side.
-  templateBoxEl.innerHTML = `<pre class="doc">${escapeHtml(originalTemplateText)}</pre>`;
-}
-
-templateFillToggle.addEventListener("change", () => {
-  applyTemplateFillPreference();
-});
-
 async function safeReadError(res) {
   const ct = res.headers.get("content-type") || "";
   if (ct.includes("application/json")) {
@@ -321,7 +350,9 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  const wantsCrossRef = outputs.includes("cross_reference") || outputs.includes("generate_template");
+  const wantsCrossRef = outputs.includes("cross_reference");
+  const wantsTemplate = outputs.includes("generate_template");
+  const wantsPrefill = wantsTemplate && templateFillToggle.checked;
 
   analyzeBtn.disabled = true;
   resetResults();
@@ -333,7 +364,13 @@ form.addEventListener("submit", async (e) => {
     fd.append("targetLanguage", translateTo.value);
     outputs.forEach(o => fd.append("outputs", o));
 
-    if (wantsCrossRef) {
+    // Send prefill preference to backend
+    if (wantsTemplate) {
+      fd.append("prefillTemplate", wantsPrefill ? "true" : "false");
+    }
+
+    // Always send cross files if cross-reference or template is requested
+    if (wantsCrossRef || wantsTemplate) {
       const crossFiles = [...(crossFilesInput?.files || [])];
       crossFiles.forEach(f => fd.append("crossFiles", f));
     }
@@ -351,23 +388,39 @@ form.addEventListener("submit", async (e) => {
 
     setStatus("Done.", "good");
 
-    if (outputs.includes("translation")) renderTranslatedDoc(data);
-    else translatedDocEl.innerHTML = `<p class="subtle">Not requested.</p>`;
+    // Show results card
+    resultsCard.style.display = "block";
 
-    if (outputs.includes("summary")) renderSummary(data);
-    else summaryEl.innerHTML = `<p class="subtle">Not requested.</p>`;
+    // Show only the blocks that were requested and render their content
+    if (outputs.includes("translation")) {
+      translationBlock.style.display = "block";
+      renderTranslatedDoc(data);
+    }
 
-    if (outputs.includes("key_points")) renderKeyPoints(data);
-    else keyPointsEl.innerHTML = `<p class="subtle">Not requested.</p>`;
+    if (outputs.includes("summary")) {
+      summaryBlock.style.display = "block";
+      renderSummary(data);
+    }
 
-    if (outputs.includes("todos")) renderTodos(data);
-    else todosEl.innerHTML = `<p class="subtle">Not requested.</p>`;
+    if (outputs.includes("key_points")) {
+      keyPointsBlock.style.display = "block";
+      renderKeyPoints(data);
+    }
 
-    if (outputs.includes("cross_reference")) renderCrossReference(data);
-    else crossRefEl.innerHTML = `<p class="subtle">Not requested.</p>`;
+    if (outputs.includes("todos")) {
+      todosBlock.style.display = "block";
+      renderTodos(data);
+    }
 
-    if (outputs.includes("generate_template")) renderTemplate(data);
-    else templateBoxEl.innerHTML = `<p class="subtle">Not requested.</p>`;
+    if (outputs.includes("cross_reference")) {
+      crossRefBlock.style.display = "block";
+      renderCrossReference(data);
+    }
+
+    if (outputs.includes("generate_template")) {
+      templateBlock.style.display = "block";
+      renderTemplate(data);
+    }
   } catch (err) {
     setStatus(`Network error: ${err?.message || String(err)}`, "bad");
   } finally {

@@ -197,6 +197,7 @@ app.post("/api/analyze", async (req, res) => {
 
     const wantsCross = outputs.includes("cross_reference");
     const wantsTemplate = outputs.includes("generate_template");
+    const prefillTemplate = String(first(fields?.prefillTemplate || "")).trim() === "true";
 
     const docText = await extractText(mainFile);
     if (!docText) return res.status(400).json({ error: "Could not extract any text from the uploaded file." });
@@ -243,8 +244,9 @@ app.post("/api/analyze", async (req, res) => {
       "Template requirement (if requested):",
       "- response_template should be a structured, reusable email/letter-style reply to the inquiry in the MAIN DOCUMENT.",
       "- Include sections like greeting, reference to the inquiry, key answers, and closing.",
-      "- If relevant information is clearly present in CROSS DOCUMENTS (for example KYC data lists), incorporate it directly into the template.",
-      "- If relevant information is not present, leave clearly marked placeholders (e.g. [INSERT KYC DATA HERE]) for the user to fill manually.",
+      prefillTemplate
+        ? "- IMPORTANT: You MUST fill the template with actual data from CROSS DOCUMENTS. Search thoroughly for any relevant information (names, dates, numbers, KYC data, addresses, etc.) and insert it directly into the template. Do NOT use placeholders if the information can be found in cross documents."
+        : "- Leave clearly marked placeholders (e.g. [INSERT NAME HERE], [INSERT DATE HERE], [INSERT KYC DATA HERE]) for the user to fill manually. Do NOT attempt to fill in specific data from cross documents.",
       "",
       `Allowed departments: ${DEPARTMENTS.join(", ")}`,
       "",

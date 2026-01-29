@@ -124,15 +124,23 @@ input[type="file"], select{
   transition: all 0.2s ease;
 }
 
-/* Ensure the language dropdown list is dark (helps "white on white" issues) */
+/* Language dropdown - solid black background with white text */
 select{
-  background: rgba(0,0,0,0.45);
-  color: var(--text);
+  background-color: #000000;
+  color: #ffffff;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
 }
 
 select option{
-  background: #0b0c14;
-  color: var(--text);
+  background-color: #000000;
+  color: #ffffff;
+  padding: 0.5rem;
 }
 
 input[type="file"]:hover, select:hover{
@@ -186,6 +194,17 @@ input[type="file"]:focus, select:focus{
   margin: 0; /* remove top offset */
   transform: scale(1.1);
   accent-color: var(--btn-primary);
+}
+
+/* Pre-fill checkbox styling */
+.prefill-check{
+  background: rgba(76, 111, 255, 0.1);
+  border-color: rgba(76, 111, 255, 0.3);
+}
+
+.prefill-check:hover{
+  background: rgba(76, 111, 255, 0.15);
+  border-color: rgba(76, 111, 255, 0.4);
 }
 
 .actions{
