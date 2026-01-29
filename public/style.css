@@ -503,6 +503,61 @@ pre.doc{
   margin: 0 0 0.5rem 0;
 }
 
+/* Upload section */
+.upload-section {
+  margin-bottom: 1.5rem;
+}
+
+.upload-section h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-alt);
+  margin: 0 0 0.75rem 0;
+}
+
+.upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.upload-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.upload-row input[type="file"] {
+  flex: 1;
+  min-width: 200px;
+}
+
+.folder-input {
+  width: 150px;
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.folder-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
+.folder-input::placeholder {
+  color: var(--muted);
+}
+
+.library-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 1.5rem 0;
+}
+
 .library-actions {
   display: flex;
   gap: 1rem;
@@ -523,21 +578,21 @@ pre.doc{
   transform: translateY(-1px);
 }
 
-/* Ollama status indicator */
-.ollama-status {
+/* Embedding status indicator */
+.embedding-status {
   font-size: 0.85rem;
   padding: 0.375rem 0.875rem;
   border-radius: 9999px;
   font-weight: 500;
 }
 
-.ollama-status.ready {
+.embedding-status.ready {
   background: rgba(16, 185, 129, 0.15);
   color: var(--good);
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
-.ollama-status.error {
+.embedding-status.error {
   background: rgba(239, 68, 68, 0.15);
   color: var(--bad);
   border: 1px solid rgba(239, 68, 68, 0.3);

@@ -17,18 +17,33 @@
     <!-- Document Library Section -->
     <section class="card">
       <h2 class="section-title">Document Library</h2>
-      <p class="subtle" style="margin-bottom: 1rem;">Add PDF/DOCX files to the <code>documents/</code> folder, then scan and process them for Q&A.</p>
+      <p class="subtle" style="margin-bottom: 1rem;">Upload documents or scan the server's documents folder, then process them for Q&A.</p>
+
+      <!-- Upload Form -->
+      <div class="upload-section">
+        <h3>Upload Document</h3>
+        <div class="upload-form">
+          <div class="upload-row">
+            <input type="file" id="uploadFileInput" accept=".pdf,.docx" />
+            <input type="text" id="uploadFolderInput" placeholder="Folder (optional)" class="folder-input" />
+            <button id="uploadBtn" type="button" class="btn-primary">Upload</button>
+          </div>
+          <p class="hint">Supported formats: PDF, DOCX (max 10MB)</p>
+        </div>
+      </div>
+
+      <div class="library-divider"></div>
 
       <div class="library-actions">
-        <button id="scanBtn" type="button" class="btn-secondary">Scan Folder</button>
+        <button id="scanBtn" type="button" class="btn-secondary">Scan Server Folder</button>
         <button id="processAllBtn" type="button" class="btn-secondary">Process All</button>
-        <span id="ollamaStatus" class="ollama-status"></span>
+        <span id="embeddingStatus" class="embedding-status"></span>
       </div>
 
       <div id="libraryStatus" class="status" style="margin-top: 1rem; display: none;"></div>
 
       <div id="documentList" class="document-list">
-        <p class="subtle">No documents found. Add files to the documents/ folder and click "Scan Folder".</p>
+        <p class="subtle">No documents found. Upload a document or scan the server folder.</p>
       </div>
 
       <!-- Q&A Section -->

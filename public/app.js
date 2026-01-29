@@ -6,7 +6,7 @@ const ENDPOINT = "/api/analyze";
 // ============================================
 const scanBtn = document.getElementById("scanBtn");
 const processAllBtn = document.getElementById("processAllBtn");
-const ollamaStatusEl = document.getElementById("ollamaStatus");
+const embeddingStatusEl = document.getElementById("embeddingStatus");
 const libraryStatusEl = document.getElementById("libraryStatus");
 const documentListEl = document.getElementById("documentList");
 const questionInput = document.getElementById("questionInput");
@@ -16,6 +16,11 @@ const answerSection = document.getElementById("answerSection");
 const answerContent = document.getElementById("answerContent");
 const sourcesSection = document.getElementById("sourcesSection");
 const sourcesList = document.getElementById("sourcesList");
+
+// Upload elements
+const uploadFileInput = document.getElementById("uploadFileInput");
+const uploadFolderInput = document.getElementById("uploadFolderInput");
+const uploadBtn = document.getElementById("uploadBtn");
 
 // ============================================
 // Analyze Form Elements
@@ -103,23 +108,23 @@ function setStatus(message, kind = "info") {
 // Document Library Functions
 // ============================================
 
-async function checkOllamaStatus() {
+async function checkEmbeddingStatus() {
   try {
-    const res = await fetch("/api/ollama/status");
+    const res = await fetch("/api/embeddings/status");
     const data = await res.json();
 
     if (data.available) {
-      ollamaStatusEl.textContent = "Ollama: Ready";
-      ollamaStatusEl.className = "ollama-status ready";
+      embeddingStatusEl.textContent = "Voyage AI: Ready";
+      embeddingStatusEl.className = "embedding-status ready";
     } else {
-      ollamaStatusEl.textContent = `Ollama: ${data.error || "Not available"}`;
-      ollamaStatusEl.className = "ollama-status error";
+      embeddingStatusEl.textContent = `Voyage AI: ${data.error || "Not available"}`;
+      embeddingStatusEl.className = "embedding-status error";
     }
 
     return data.available;
   } catch (err) {
-    ollamaStatusEl.textContent = "Ollama: Connection error";
-    ollamaStatusEl.className = "ollama-status error";
+    embeddingStatusEl.textContent = "Voyage AI: Connection error";
+    embeddingStatusEl.className = "embedding-status error";
     return false;
   }
 }
@@ -136,9 +141,58 @@ async function loadDocuments() {
   }
 }
 
+async function uploadDocument() {
+  const file = uploadFileInput.files?.[0];
+  if (!file) {
+    setStatusElement(libraryStatusEl, "Please select a file to upload.", "warn");
+    return;
+  }
+
+  // Validate file type
+  if (!/\.(pdf|docx)$/i.test(file.name)) {
+    setStatusElement(libraryStatusEl, "Only PDF and DOCX files are allowed.", "warn");
+    return;
+  }
+
+  uploadBtn.disabled = true;
+  setStatusElement(libraryStatusEl, "Uploading document...", "info");
+
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+
+    const folder = uploadFolderInput.value.trim();
+    if (folder) {
+      fd.append("folder", folder);
+    }
+
+    const res = await fetch("/api/documents/upload", {
+      method: "POST",
+      body: fd
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      setStatusElement(libraryStatusEl, `Uploaded: ${data.document.name}`, "good");
+      // Clear inputs
+      uploadFileInput.value = "";
+      uploadFolderInput.value = "";
+      // Refresh document list
+      await loadDocuments();
+    } else {
+      setStatusElement(libraryStatusEl, data.error || "Upload failed", "bad");
+    }
+  } catch (err) {
+    setStatusElement(libraryStatusEl, `Error: ${err.message}`, "bad");
+  } finally {
+    uploadBtn.disabled = false;
+  }
+}
+
 function renderDocumentList() {
   if (documents.length === 0) {
-    documentListEl.innerHTML = `<p class="subtle">No documents found. Add files to the documents/ folder and click "Scan Folder".</p>`;
+    documentListEl.innerHTML = `<p class="subtle">No documents found. Upload a document or scan the server folder.</p>`;
     updateAskButtonState();
     return;
   }
@@ -363,6 +417,7 @@ function renderAnswer(data) {
 // Event listeners for document library
 scanBtn.addEventListener("click", scanDocuments);
 processAllBtn.addEventListener("click", processAllDocuments);
+uploadBtn.addEventListener("click", uploadDocument);
 askBtn.addEventListener("click", askQuestion);
 questionInput.addEventListener("input", updateAskButtonState);
 questionInput.addEventListener("keydown", (e) => {
@@ -375,7 +430,7 @@ questionInput.addEventListener("keydown", (e) => {
 });
 
 // Initialize document library on page load
-checkOllamaStatus();
+checkEmbeddingStatus();
 loadDocuments();
 
 // ============================================

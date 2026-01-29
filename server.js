@@ -1,6 +1,7 @@
 import express from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import formidable from "formidable";
+import multer from "multer";
 import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
 import fs from "fs/promises";
@@ -10,6 +11,7 @@ import { fileURLToPath } from "url";
 
 // Document library imports
 import {
+  initDb,
   getAllDocuments,
   getDocumentById,
   getDocumentByPath,
@@ -23,10 +25,11 @@ import {
 import {
   getEmbedding,
   embeddingToBuffer,
-  checkOllamaStatus,
+  checkEmbeddingStatus,
 } from "./lib/embeddings.js";
 import { chunkText, countWords } from "./lib/chunker.js";
 import { searchDocuments, formatSearchResults, getSourceDocuments } from "./lib/search.js";
+import { DOCUMENTS_DIR, DB_PATH, isRailway } from "./lib/paths.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,12 +38,31 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const DEPARTMENTS = ["Finance", "Compliance", "Operations", "HR", "Board", "IT"];
-const DOCUMENTS_DIR = path.join(__dirname, "documents");
 
-// Ensure documents directory exists
-if (!fsSync.existsSync(DOCUMENTS_DIR)) {
-  fsSync.mkdirSync(DOCUMENTS_DIR, { recursive: true });
-}
+// Configure multer for document library uploads
+const libraryUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const folder = req.body.folder || "";
+      const destDir = folder ? path.join(DOCUMENTS_DIR, folder) : DOCUMENTS_DIR;
+      fsSync.mkdirSync(destDir, { recursive: true });
+      cb(null, destDir);
+    },
+    filename: (req, file, cb) => {
+      // Use original filename, but sanitize it
+      const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+      cb(null, safeName);
+    }
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    if (/\.(pdf|docx)$/i.test(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only PDF and DOCX files are allowed"));
+    }
+  }
+});
 
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, "public")));
@@ -294,15 +316,54 @@ app.post("/api/documents/scan", async (req, res) => {
   }
 });
 
+// POST /api/documents/upload - Upload a document to the library
+app.post("/api/documents/upload", libraryUpload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const fileName = req.file.filename;
+    const filePath = req.file.path;
+    const folder = req.body.folder || null;
+
+    // Check if already in database
+    const existing = getDocumentByPath(filePath);
+    if (existing) {
+      return res.status(409).json({ error: "Document already exists in library" });
+    }
+
+    // Add to database
+    const documentId = addDocument(fileName, filePath, folder);
+    const document = getDocumentById(documentId);
+
+    res.json({
+      message: "Document uploaded successfully",
+      document
+    });
+  } catch (err) {
+    console.error("Error uploading document:", err);
+    // Clean up uploaded file on error
+    if (req.file?.path) {
+      try {
+        await fs.unlink(req.file.path);
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/documents/:id/process - Process a document (extract text, chunk, embed)
 app.post("/api/documents/:id/process", async (req, res) => {
   const documentId = parseInt(req.params.id, 10);
 
   try {
-    // Check Ollama status first
-    const ollamaStatus = await checkOllamaStatus();
-    if (!ollamaStatus.available) {
-      return res.status(503).json({ error: ollamaStatus.error });
+    // Check Voyage AI status first
+    const embeddingStatus = await checkEmbeddingStatus();
+    if (!embeddingStatus.available) {
+      return res.status(503).json({ error: embeddingStatus.error });
     }
 
     const document = getDocumentById(documentId);
@@ -371,8 +432,8 @@ app.post("/api/documents/:id/process", async (req, res) => {
   }
 });
 
-// DELETE /api/documents/:id - Delete a document
-app.delete("/api/documents/:id", (req, res) => {
+// DELETE /api/documents/:id - Delete a document (including file)
+app.delete("/api/documents/:id", async (req, res) => {
   const documentId = parseInt(req.params.id, 10);
 
   try {
@@ -381,7 +442,16 @@ app.delete("/api/documents/:id", (req, res) => {
       return res.status(404).json({ error: "Document not found" });
     }
 
+    // Delete chunks and document record from database
     deleteDocument(documentId);
+
+    // Also delete the actual file from disk
+    try {
+      await fs.unlink(document.path);
+    } catch (fileErr) {
+      // Log but don't fail if file doesn't exist
+      console.warn(`Could not delete file ${document.path}:`, fileErr.message);
+    }
 
     res.json({ message: "Document deleted successfully" });
   } catch (err) {
@@ -390,10 +460,10 @@ app.delete("/api/documents/:id", (req, res) => {
   }
 });
 
-// GET /api/ollama/status - Check Ollama status
-app.get("/api/ollama/status", async (req, res) => {
+// GET /api/embeddings/status - Check Voyage AI status
+app.get("/api/embeddings/status", async (req, res) => {
   try {
-    const status = await checkOllamaStatus();
+    const status = await checkEmbeddingStatus();
     res.json(status);
   } catch (err) {
     res.status(500).json({ available: false, error: err.message });
@@ -630,9 +700,27 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Start server
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Health check available at /health`);
-  console.log(`Documents directory: ${DOCUMENTS_DIR}`);
-});
+// Initialize database and start server
+async function startServer() {
+  try {
+    // Initialize sql.js database
+    await initDb();
+    console.log("Database initialized successfully");
+
+    // Log environment info
+    console.log("Environment:", isRailway ? "Railway" : "Local");
+    console.log("Documents directory:", DOCUMENTS_DIR);
+    console.log("Database path:", DB_PATH);
+
+    // Start server
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Health check available at /health`);
+    });
+  } catch (err) {
+    console.error("Failed to initialize database:", err);
+    process.exit(1);
+  }
+}
+
+startServer();
