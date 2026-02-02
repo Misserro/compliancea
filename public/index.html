@@ -33,7 +33,15 @@
           <div class="upload-form">
             <div class="upload-row">
               <input type="file" id="uploadFileInput" accept=".pdf,.docx" />
-              <input type="text" id="uploadFolderInput" placeholder="Folder (optional)" class="folder-input" />
+              <select id="uploadCategoryInput" class="category-input">
+                <option value="">No Category</option>
+                <option value="Finance">Finance</option>
+                <option value="Compliance">Compliance</option>
+                <option value="Operations">Operations</option>
+                <option value="HR">HR</option>
+                <option value="Board">Board</option>
+                <option value="IT">IT</option>
+              </select>
               <button id="uploadBtn" type="button" class="btn-primary">Upload</button>
             </div>
             <p class="hint">Supported formats: PDF, DOCX (max 10MB)</p>
@@ -196,30 +204,20 @@
         <!-- Cross-Reference & Template Section -->
         <div class="desk-section">
           <h3>Cross-Reference & Response Template</h3>
-          <p class="hint">Upload external documents to cross-reference with your library and generate response templates.</p>
+          <p class="hint">Upload external documents to analyze and generate response templates. Optionally cross-reference with library documents.</p>
 
           <div class="field">
             <label for="deskExternalFile">External Document (PDF or DOCX)</label>
             <input id="deskExternalFile" type="file"
               accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-            <p class="hint">This is the document you want to cross-reference and respond to.</p>
-          </div>
-
-          <div class="field">
-            <div class="field-header">
-              <label>Cross-reference with Library Documents</label>
-              <button type="button" id="crossRefSelectAllBtn" class="btn-select-all">Select All</button>
-            </div>
-            <div id="deskCrossRefSelect" class="document-select-list">
-              <p class="subtle">Loading documents...</p>
-            </div>
+            <p class="hint">This is the document you want to respond to.</p>
           </div>
 
           <div class="field">
             <label>Outputs</label>
             <div class="checks" id="deskOutputs">
               <label class="check">
-                <input type="checkbox" name="deskOutputs" value="cross_reference" checked />
+                <input type="checkbox" name="deskOutputs" value="cross_reference" />
                 <span>Cross-reference findings</span>
               </label>
               <label class="check">
@@ -231,10 +229,20 @@
 
           <div class="field" id="deskPrefillField">
             <label class="check prefill-check">
-              <input type="checkbox" id="deskPrefillToggle" checked />
+              <input type="checkbox" id="deskPrefillToggle" />
               <span>Pre-fill response template with data from library documents</span>
             </label>
             <p class="hint">When enabled, the template will be automatically filled with data found in your library documents.</p>
+          </div>
+
+          <div class="field" id="deskCrossRefField">
+            <div class="field-header">
+              <label>Select Library Documents <span class="hint-inline">(required for cross-reference or pre-fill)</span></label>
+              <button type="button" id="crossRefSelectAllBtn" class="btn-select-all">Select All</button>
+            </div>
+            <div id="deskCrossRefSelect" class="document-select-list categorized">
+              <p class="subtle">Loading documents...</p>
+            </div>
           </div>
 
           <div class="field">

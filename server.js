@@ -17,6 +17,7 @@ import {
   getDocumentByPath,
   addDocument,
   updateDocumentProcessed,
+  updateDocumentCategory,
   deleteDocument,
   addChunksBatch,
   deleteChunksByDocumentId,
@@ -326,6 +327,12 @@ app.post("/api/documents/upload", libraryUpload.single("file"), async (req, res)
     const fileName = req.file.filename;
     const filePath = req.file.path;
     const folder = req.body.folder || null;
+    const category = req.body.category || null;
+
+    // Validate category if provided
+    if (category && !DEPARTMENTS.includes(category)) {
+      return res.status(400).json({ error: `Invalid category. Must be one of: ${DEPARTMENTS.join(", ")}` });
+    }
 
     // Check if already in database
     const existing = getDocumentByPath(filePath);
@@ -334,7 +341,7 @@ app.post("/api/documents/upload", libraryUpload.single("file"), async (req, res)
     }
 
     // Add to database
-    const documentId = addDocument(fileName, filePath, folder);
+    const documentId = addDocument(fileName, filePath, folder, category);
     const document = getDocumentById(documentId);
 
     res.json({
@@ -428,6 +435,36 @@ app.post("/api/documents/:id/process", async (req, res) => {
     });
   } catch (err) {
     console.error("Error processing document:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/documents/:id/category - Update document category
+app.patch("/api/documents/:id/category", (req, res) => {
+  const documentId = parseInt(req.params.id, 10);
+  const { category } = req.body;
+
+  try {
+    const document = getDocumentById(documentId);
+    if (!document) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    // Validate category is one of the allowed departments or null
+    const validCategories = [...DEPARTMENTS, null, ""];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ error: `Invalid category. Must be one of: ${DEPARTMENTS.join(", ")}` });
+    }
+
+    updateDocumentCategory(documentId, category || null);
+
+    const updatedDocument = getDocumentById(documentId);
+    res.json({
+      message: "Category updated successfully",
+      document: updatedDocument
+    });
+  } catch (err) {
+    console.error("Error updating document category:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -586,6 +623,7 @@ app.post("/api/desk/analyze", async (req, res) => {
   // Track token usage for statistics
   let inputTokens = 0;
   let outputTokens = 0;
+  let voyageTokens = 0;
 
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -618,11 +656,17 @@ app.post("/api/desk/analyze", async (req, res) => {
       return res.status(400).json({ error: "Invalid libraryDocumentIds format" });
     }
 
-    if (libraryDocumentIds.length === 0) {
-      return res.status(400).json({ error: "Select at least one library document for cross-reference" });
-    }
-
+    const wantsCrossRef = outputs.includes("cross_reference");
+    const wantsTemplate = outputs.includes("generate_template");
     const prefillTemplate = String(first(fields?.prefillTemplate || "")).trim() === "true";
+
+    // Library documents are ONLY required for cross-reference or pre-fill template
+    const needsLibraryDocs = wantsCrossRef || prefillTemplate;
+    if (needsLibraryDocs && libraryDocumentIds.length === 0) {
+      return res.status(400).json({
+        error: "Select at least one library document for cross-reference or pre-filled template"
+      });
+    }
 
     // Extract text from the external document
     let docText = await extractText(mainFile);
@@ -636,7 +680,7 @@ app.post("/api/desk/analyze", async (req, res) => {
 
     const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
 
-    // Step 1: Translate the external document to the target language first (for better cross-referencing)
+    // Step 1: Translate the external document to the target language first
     const translationPrompt = `Translate the following document to ${targetLanguage}.
 If the document is already in ${targetLanguage}, return it as-is.
 Return ONLY the translated text, no explanations or metadata.
@@ -658,35 +702,69 @@ ${docText}`;
       .map(block => block.text)
       .join("");
 
-    // Use translated text for cross-referencing
+    // Use translated text for analysis
     const docTextForAnalysis = translatedDocText || docText;
 
-    // Extract text from library documents for cross-reference
-    const crossDocParts = [];
-    for (const docId of libraryDocumentIds) {
-      const doc = getDocumentById(docId);
-      if (doc && doc.processed) {
-        try {
-          const text = await extractTextFromPath(doc.path);
-          if (text) {
-            crossDocParts.push(`--- Library Document: ${doc.name} ---\n${text}`);
+    // Only fetch library document content if needed (cross-reference or pre-fill)
+    let crossText = "";
+    if (needsLibraryDocs && libraryDocumentIds.length > 0) {
+      // Use Voyage AI semantic search to find only relevant chunks instead of including full documents
+      // This significantly reduces token usage while maintaining quality
+
+      // Extract questions/requests from the external document first
+      const questionExtractionPrompt = `Extract ALL questions, requests, inquiries, and information needs from this document.
+Return them as a simple numbered list, one per line.
+Document:
+${docTextForAnalysis}`;
+
+      const questionMessage = await anthropic.messages.create({
+        model: modelName,
+        max_tokens: 2048,
+        messages: [{ role: "user", content: questionExtractionPrompt }]
+      });
+
+      inputTokens += questionMessage.usage?.input_tokens || 0;
+      outputTokens += questionMessage.usage?.output_tokens || 0;
+
+      const extractedQuestions = questionMessage.content
+        .filter(block => block.type === "text")
+        .map(block => block.text)
+        .join("");
+
+      // Use semantic search to find relevant chunks for each question
+      const searchResults = await searchDocuments(extractedQuestions, libraryDocumentIds, 15);
+
+      // Estimate Voyage tokens for the search
+      voyageTokens = Math.ceil(extractedQuestions.length / 4);
+
+      if (searchResults.length > 0) {
+        // Group results by document for cleaner context
+        const docChunks = {};
+        for (const result of searchResults) {
+          const docName = result.documentName;
+          if (!docChunks[docName]) {
+            docChunks[docName] = [];
           }
-        } catch (err) {
-          console.warn(`Could not extract text from library document ${doc.name}:`, err.message);
+          docChunks[docName].push(result.content);
         }
+
+        // Build cross-reference text from relevant chunks only
+        const crossDocParts = [];
+        for (const [docName, chunks] of Object.entries(docChunks)) {
+          crossDocParts.push(`--- Library Document: ${docName} ---\n${chunks.join("\n\n---\n\n")}`);
+        }
+        crossText = crossDocParts.join("\n\n");
       }
     }
 
-    const crossText = crossDocParts.join("\n\n");
-
-    // Build JSON schema for requested outputs (only cross_reference and generate_template)
+    // Build JSON schema for requested outputs
     const schemaObj = {
       type: "object",
       properties: {},
       required: []
     };
 
-    if (outputs.includes("cross_reference")) {
+    if (wantsCrossRef) {
       schemaObj.properties.cross_reference = {
         type: "array",
         items: {
@@ -704,7 +782,7 @@ ${docText}`;
       schemaObj.required.push("cross_reference");
     }
 
-    if (outputs.includes("generate_template")) {
+    if (wantsTemplate) {
       schemaObj.properties.response_template = {
         type: "string",
         description: `Complete response template in ${targetLanguage} that addresses ALL questions/requests from the external document`
@@ -714,7 +792,8 @@ ${docText}`;
 
     const schemaDescription = JSON.stringify(schemaObj, null, 2);
 
-    const prompt = [
+    // Build prompt based on what's needed
+    const promptParts = [
       `Output language: ${targetLanguage} (ALL output must be in this language)`,
       `Requested outputs: ${outputs.join(", ")}`,
       "",
@@ -725,32 +804,66 @@ ${docText}`;
       "",
       "CRITICAL RULES:",
       "- The EXTERNAL DOCUMENT is the document the user received and needs to respond to.",
-      "- The LIBRARY DOCUMENTS contain reference data to help answer questions and fill templates.",
-      "- ALL output (cross_reference answers, response_template) MUST be in " + targetLanguage + ".",
-      "",
-      "Cross-reference requirement (if requested):",
-      "- You MUST identify ALL questions, requests, inquiries, and information needs in the EXTERNAL DOCUMENT.",
-      "- Search LIBRARY DOCUMENTS thoroughly for answers/evidence for EACH question.",
-      "- Include EVERY question found, even if the answer is not in the library documents.",
-      "- If answer not found: answer=\"\", confidence=\"low\", found_in=\"not found\".",
-      "- Do NOT skip any questions - the user needs a complete list.",
-      "",
-      "Template requirement (if requested):",
-      "- response_template MUST be a complete, professional response in " + targetLanguage + ".",
-      "- The template MUST address ALL questions/requests from the EXTERNAL DOCUMENT - do not skip any.",
-      "- Include sections: greeting, reference to the inquiry, answers to EACH question, and closing.",
-      "- For EACH question in the external document, provide a corresponding answer section in the template.",
-      prefillTemplate
-        ? "- IMPORTANT: Fill in answers with actual data from LIBRARY DOCUMENTS wherever possible. Search thoroughly for names, dates, numbers, KYC data, addresses, account numbers, etc. Only use placeholders like [INFORMATION NOT FOUND] when data truly cannot be found."
-        : "- Use clearly marked placeholders (e.g. [INSERT NAME HERE], [INSERT DATE HERE]) for information the user needs to fill. Format placeholders consistently.",
-      "- If information for a question is not found in library documents, still include the question in the template with a placeholder or note that the information needs to be provided.",
-      "",
+      "- ALL output MUST be in " + targetLanguage + ".",
+    ];
+
+    if (needsLibraryDocs) {
+      promptParts.push("- The LIBRARY DOCUMENTS contain reference data to help answer questions and fill templates.");
+    }
+
+    promptParts.push("");
+
+    if (wantsCrossRef) {
+      promptParts.push(
+        "Cross-reference requirement:",
+        "- You MUST identify ALL questions, requests, inquiries, and information needs in the EXTERNAL DOCUMENT.",
+        "- Search LIBRARY DOCUMENTS thoroughly for answers/evidence for EACH question.",
+        "- Include EVERY question found, even if the answer is not in the library documents.",
+        "- If answer not found: answer=\"\", confidence=\"low\", found_in=\"not found\".",
+        "- Do NOT skip any questions - the user needs a complete list.",
+        ""
+      );
+    }
+
+    if (wantsTemplate) {
+      promptParts.push(
+        "Template requirement:",
+        "- response_template MUST be a complete, professional response in " + targetLanguage + ".",
+        "- The template MUST address ALL questions/requests from the EXTERNAL DOCUMENT - do not skip any.",
+        "- Include sections: greeting, reference to the inquiry, answers to EACH question, and closing.",
+        "- For EACH question in the external document, provide a corresponding answer section in the template."
+      );
+
+      if (prefillTemplate && crossText) {
+        promptParts.push(
+          "- IMPORTANT: Fill in answers with actual data from LIBRARY DOCUMENTS wherever possible. Search thoroughly for names, dates, numbers, KYC data, addresses, account numbers, etc. Only use placeholders like [INFORMATION NOT FOUND] when data truly cannot be found."
+        );
+      } else {
+        promptParts.push(
+          "- Use clearly marked placeholders (e.g. [INSERT NAME HERE], [INSERT DATE HERE]) for information the user needs to fill. Format placeholders consistently."
+        );
+      }
+
+      promptParts.push(
+        "- If information for a question is not found, still include the question in the template with a placeholder or note that the information needs to be provided.",
+        ""
+      );
+    }
+
+    promptParts.push(
       "EXTERNAL DOCUMENT (translated to " + targetLanguage + "):",
-      docTextForAnalysis,
-      "",
-      "LIBRARY DOCUMENTS (reference data):",
-      crossText || "(none provided)"
-    ].filter(Boolean).join("\n");
+      docTextForAnalysis
+    );
+
+    if (needsLibraryDocs && crossText) {
+      promptParts.push(
+        "",
+        "RELEVANT LIBRARY DOCUMENT EXCERPTS (reference data):",
+        crossText
+      );
+    }
+
+    const prompt = promptParts.filter(Boolean).join("\n");
 
     const message = await anthropic.messages.create({
       model: modelName,
@@ -801,6 +914,9 @@ ${docText}`;
         input: inputTokens,
         output: outputTokens,
         total: inputTokens + outputTokens
+      },
+      voyage: {
+        tokens: voyageTokens
       }
     };
 

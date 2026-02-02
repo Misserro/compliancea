@@ -36,7 +36,7 @@ const embeddingStatusEl = document.getElementById("embeddingStatus");
 const libraryStatusEl = document.getElementById("libraryStatus");
 const documentListEl = document.getElementById("documentList");
 const uploadFileInput = document.getElementById("uploadFileInput");
-const uploadFolderInput = document.getElementById("uploadFolderInput");
+const uploadCategoryInput = document.getElementById("uploadCategoryInput");
 const uploadBtn = document.getElementById("uploadBtn");
 
 // ============================================
@@ -91,6 +91,9 @@ const deskStatusEl = document.getElementById("deskStatus");
 // Select All buttons
 const qaSelectAllBtn = document.getElementById("qaSelectAllBtn");
 const crossRefSelectAllBtn = document.getElementById("crossRefSelectAllBtn");
+
+// Cross-reference field (for showing/hiding)
+const deskCrossRefField = document.getElementById("deskCrossRefField");
 
 // Desk Results
 const deskResultsCard = document.getElementById("deskResultsCard");
@@ -353,9 +356,9 @@ async function uploadDocument() {
     const fd = new FormData();
     fd.append("file", file);
 
-    const folder = uploadFolderInput.value.trim();
-    if (folder) {
-      fd.append("folder", folder);
+    const category = uploadCategoryInput.value;
+    if (category) {
+      fd.append("category", category);
     }
 
     const res = await fetch("/api/documents/upload", {
@@ -368,7 +371,7 @@ async function uploadDocument() {
     if (res.ok) {
       setStatusElement(libraryStatusEl, `Uploaded: ${data.document.name}`, "good");
       uploadFileInput.value = "";
-      uploadFolderInput.value = "";
+      uploadCategoryInput.value = "";
       await loadDocuments();
     } else {
       setStatusElement(libraryStatusEl, data.error || "Upload failed", "bad");
@@ -386,19 +389,40 @@ function renderDocumentList() {
     return;
   }
 
-  documentListEl.innerHTML = documents.map(doc => {
+  // Group documents by category
+  const grouped = {};
+  const uncategorized = [];
+
+  for (const doc of documents) {
+    if (doc.category && DEPARTMENTS.includes(doc.category)) {
+      if (!grouped[doc.category]) {
+        grouped[doc.category] = [];
+      }
+      grouped[doc.category].push(doc);
+    } else {
+      uncategorized.push(doc);
+    }
+  }
+
+  const renderDocItem = (doc) => {
     const statusClass = doc.processed ? "processed" : "unprocessed";
     const statusText = doc.processed ? `${doc.word_count} words` : "Not processed";
     const dateStr = new Date(doc.added_at).toLocaleDateString();
 
     return `
       <div class="doc-item ${statusClass}" data-id="${doc.id}">
-        <div class="doc-checkbox">
+        <div class="doc-info">
           <span class="doc-name">${escapeHtml(doc.name)}</span>
+          <div class="doc-meta">
+            <span class="doc-status ${statusClass}">${statusText}</span>
+            <span class="doc-date">${dateStr}</span>
+          </div>
         </div>
-        <div class="doc-meta">
-          <span class="doc-status ${statusClass}">${statusText}</span>
-          <span class="doc-date">${dateStr}</span>
+        <div class="doc-category-select">
+          <select class="category-select" data-id="${doc.id}">
+            <option value="">No Category</option>
+            ${DEPARTMENTS.map(dept => `<option value="${dept}" ${doc.category === dept ? "selected" : ""}>${dept}</option>`).join("")}
+          </select>
         </div>
         <div class="doc-actions">
           ${!doc.processed ? `<button class="btn-process" data-id="${doc.id}">Process</button>` : ""}
@@ -406,8 +430,31 @@ function renderDocumentList() {
         </div>
       </div>
     `;
-  }).join("");
+  };
 
+  let html = "";
+
+  // Render by category
+  for (const dept of DEPARTMENTS) {
+    if (grouped[dept] && grouped[dept].length > 0) {
+      html += `<div class="doc-category-group">
+        <div class="doc-category-header">${escapeHtml(dept)}</div>
+        ${grouped[dept].map(renderDocItem).join("")}
+      </div>`;
+    }
+  }
+
+  // Render uncategorized
+  if (uncategorized.length > 0) {
+    html += `<div class="doc-category-group">
+      <div class="doc-category-header">Uncategorized</div>
+      ${uncategorized.map(renderDocItem).join("")}
+    </div>`;
+  }
+
+  documentListEl.innerHTML = html;
+
+  // Add event listeners
   documentListEl.querySelectorAll(".btn-process").forEach(btn => {
     btn.addEventListener("click", () => processDocument(parseInt(btn.dataset.id, 10)));
   });
@@ -415,6 +462,36 @@ function renderDocumentList() {
   documentListEl.querySelectorAll(".btn-delete").forEach(btn => {
     btn.addEventListener("click", () => deleteDocument(parseInt(btn.dataset.id, 10)));
   });
+
+  documentListEl.querySelectorAll(".category-select").forEach(select => {
+    select.addEventListener("change", () => updateDocumentCategory(parseInt(select.dataset.id, 10), select.value));
+  });
+}
+
+async function updateDocumentCategory(id, category) {
+  try {
+    const res = await fetch(`/api/documents/${id}/category`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category: category || null })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      // Update local documents array
+      const docIndex = documents.findIndex(d => d.id === id);
+      if (docIndex !== -1) {
+        documents[docIndex].category = category || null;
+      }
+      renderDocumentList();
+      renderDeskDocumentSelects();
+    } else {
+      setStatusElement(libraryStatusEl, data.error || "Failed to update category", "bad");
+    }
+  } catch (err) {
+    setStatusElement(libraryStatusEl, `Error: ${err.message}`, "bad");
+  }
 }
 
 async function scanDocuments() {
@@ -791,14 +868,55 @@ function renderDeskDocumentSelects() {
     return;
   }
 
+  // Group documents by category
+  const grouped = {};
+  const uncategorized = [];
+
+  for (const doc of processedDocs) {
+    if (doc.category && DEPARTMENTS.includes(doc.category)) {
+      if (!grouped[doc.category]) {
+        grouped[doc.category] = [];
+      }
+      grouped[doc.category].push(doc);
+    } else {
+      uncategorized.push(doc);
+    }
+  }
+
   const renderSelectList = (containerId) => {
-    return processedDocs.map(doc => `
-      <label class="document-select-item">
-        <input type="checkbox" class="${containerId}-checkbox" data-id="${doc.id}" />
-        <span class="doc-select-name">${escapeHtml(doc.name)}</span>
-        <span class="doc-select-status processed">${doc.word_count} words</span>
-      </label>
-    `).join("");
+    let html = "";
+
+    // Render by category
+    for (const dept of DEPARTMENTS) {
+      if (grouped[dept] && grouped[dept].length > 0) {
+        html += `<div class="doc-select-category">
+          <div class="doc-select-category-header">${escapeHtml(dept)}</div>
+          ${grouped[dept].map(doc => `
+            <label class="document-select-item">
+              <input type="checkbox" class="${containerId}-checkbox" data-id="${doc.id}" />
+              <span class="doc-select-name">${escapeHtml(doc.name)}</span>
+              <span class="doc-select-status processed">${doc.word_count} words</span>
+            </label>
+          `).join("")}
+        </div>`;
+      }
+    }
+
+    // Render uncategorized
+    if (uncategorized.length > 0) {
+      html += `<div class="doc-select-category">
+        <div class="doc-select-category-header">Uncategorized</div>
+        ${uncategorized.map(doc => `
+          <label class="document-select-item">
+            <input type="checkbox" class="${containerId}-checkbox" data-id="${doc.id}" />
+            <span class="doc-select-name">${escapeHtml(doc.name)}</span>
+            <span class="doc-select-status processed">${doc.word_count} words</span>
+          </label>
+        `).join("")}
+      </div>`;
+    }
+
+    return html;
   };
 
   deskDocumentSelectEl.innerHTML = renderSelectList("qa-doc");
@@ -851,6 +969,23 @@ function updateDeskPrefillVisibility() {
   if (!wantsTemplate) {
     deskPrefillToggle.checked = false;
   }
+
+  // Update cross-ref field visibility based on whether library docs are needed
+  updateDeskCrossRefFieldVisibility();
+}
+
+function updateDeskCrossRefFieldVisibility() {
+  const outputs = getDeskOutputs();
+  const wantsCrossRef = outputs.includes("cross_reference");
+  const wantsPrefill = deskPrefillToggle.checked;
+
+  // Library documents are only needed for cross-reference or pre-fill
+  const needsLibraryDocs = wantsCrossRef || wantsPrefill;
+
+  // Show/hide the cross-ref field and update its required state
+  if (deskCrossRefField) {
+    deskCrossRefField.style.display = needsLibraryDocs ? "block" : "none";
+  }
 }
 
 function updateDeskAnalyzeState() {
@@ -858,7 +993,15 @@ function updateDeskAnalyzeState() {
   const selectedCrossRefIds = getSelectedCrossRefDocumentIds();
   const outputs = getDeskOutputs();
 
-  const enabled = hasExternalFile && selectedCrossRefIds.length > 0 && outputs.length > 0;
+  const wantsCrossRef = outputs.includes("cross_reference");
+  const wantsPrefill = deskPrefillToggle.checked;
+  const needsLibraryDocs = wantsCrossRef || wantsPrefill;
+
+  // Button is enabled if:
+  // 1. External file is selected
+  // 2. At least one output is selected
+  // 3. If library docs are needed (cross-ref or pre-fill), at least one library doc is selected
+  const enabled = hasExternalFile && outputs.length > 0 && (!needsLibraryDocs || selectedCrossRefIds.length > 0);
   deskAnalyzeBtn.disabled = !enabled;
 
   // Update Select All button text
@@ -1031,20 +1174,24 @@ async function deskAnalyze() {
     return;
   }
 
-  const crossRefDocIds = getSelectedCrossRefDocumentIds();
-  if (crossRefDocIds.length === 0) {
-    setStatusElement(deskStatusEl, "Please select at least one library document for cross-reference.", "warn");
-    return;
-  }
-
   const outputs = getDeskOutputs();
   if (outputs.length === 0) {
     setStatusElement(deskStatusEl, "Please select at least one output.", "warn");
     return;
   }
 
+  const wantsCrossRef = outputs.includes("cross_reference");
   const wantsTemplate = outputs.includes("generate_template");
   const prefillTemplate = wantsTemplate && deskPrefillToggle.checked;
+
+  // Library docs are only required for cross-reference or pre-fill
+  const needsLibraryDocs = wantsCrossRef || prefillTemplate;
+  const crossRefDocIds = getSelectedCrossRefDocumentIds();
+
+  if (needsLibraryDocs && crossRefDocIds.length === 0) {
+    setStatusElement(deskStatusEl, "Please select at least one library document for cross-reference or pre-fill.", "warn");
+    return;
+  }
 
   deskAnalyzeBtn.disabled = true;
   resetDeskResults();
@@ -1072,20 +1219,28 @@ async function deskAnalyze() {
     const data = await res.json();
     deskLastResult = data;
 
-    // Update statistics
+    // Update statistics - customize action name based on what was done
     if (data.tokenUsage) {
-      updateStatistics("Desk Cross-Reference & Template", data.tokenUsage);
+      let actionName = "Desk ";
+      if (wantsCrossRef && wantsTemplate) {
+        actionName += "Cross-Reference & Template";
+      } else if (wantsCrossRef) {
+        actionName += "Cross-Reference";
+      } else {
+        actionName += "Response Template";
+      }
+      updateStatistics(actionName, data.tokenUsage);
     }
 
     setStatusElement(deskStatusEl, "Done.", "good");
     deskResultsCard.style.display = "block";
 
-    if (outputs.includes("cross_reference")) {
+    if (wantsCrossRef) {
       deskCrossRefBlock.style.display = "block";
       renderDeskCrossReference(data);
     }
 
-    if (outputs.includes("generate_template")) {
+    if (wantsTemplate) {
       deskTemplateBlock.style.display = "block";
       renderDeskTemplate(data);
     }
@@ -1113,6 +1268,10 @@ deskOutputsWrap.addEventListener("change", () => {
   updateDeskPrefillVisibility();
   updateDeskAnalyzeState();
 });
+deskPrefillToggle.addEventListener("change", () => {
+  updateDeskCrossRefFieldVisibility();
+  updateDeskAnalyzeState();
+});
 deskAnalyzeBtn.addEventListener("click", deskAnalyze);
 
 deskClearBtn.addEventListener("click", () => {
@@ -1126,8 +1285,9 @@ deskClearBtn.addEventListener("click", () => {
   updateDeskAnalyzeState();
 });
 
-// Initialize prefill visibility
+// Initialize prefill visibility and cross-ref field visibility
 updateDeskPrefillVisibility();
+updateDeskCrossRefFieldVisibility();
 
 // ============================================
 // Initialize on Page Load
