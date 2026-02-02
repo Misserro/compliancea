@@ -517,7 +517,7 @@ app.get("/api/embeddings/status", async (req, res) => {
 app.get("/api/settings", (req, res) => {
   try {
     const settings = getSettings();
-    res.json({ settings });
+    res.json(settings);
   } catch (err) {
     console.error("Error fetching settings:", err);
     res.status(500).json({ error: err.message });
@@ -529,7 +529,7 @@ app.patch("/api/settings", (req, res) => {
   try {
     const updates = req.body;
     const settings = updateSettings(updates);
-    res.json({ message: "Settings updated successfully", settings });
+    res.json(settings);
   } catch (err) {
     console.error("Error updating settings:", err);
     res.status(500).json({ error: err.message });
@@ -540,7 +540,7 @@ app.patch("/api/settings", (req, res) => {
 app.post("/api/settings/reset", (req, res) => {
   try {
     const settings = resetSettings();
-    res.json({ message: "Settings reset to defaults", settings });
+    res.json(settings);
   } catch (err) {
     console.error("Error resetting settings:", err);
     res.status(500).json({ error: err.message });
@@ -665,7 +665,8 @@ app.post("/api/ask", async (req, res) => {
         claude: {
           input: inputTokens,
           output: outputTokens,
-          total: inputTokens + outputTokens
+          total: inputTokens + outputTokens,
+          model: "sonnet"
         },
         voyage: {
           tokens: voyageTokens
@@ -997,12 +998,17 @@ app.post("/api/desk/analyze", async (req, res) => {
       });
     }
 
+    // Track which models were used
+    const usedHaiku = settings.useHaikuForExtraction && needsLibraryDocs;
+
     // Add token usage statistics to response
     out.tokenUsage = {
       claude: {
         input: inputTokens,
         output: outputTokens,
-        total: inputTokens + outputTokens
+        total: inputTokens + outputTokens,
+        model: "sonnet",
+        usedHaikuForExtraction: usedHaiku
       },
       voyage: {
         tokens: voyageTokens
@@ -1012,7 +1018,7 @@ app.post("/api/desk/analyze", async (req, res) => {
     // Add optimization info for debugging/transparency
     out.optimizations = {
       translationSkipped,
-      usedHaikuForExtraction: settings.useHaikuForExtraction && needsLibraryDocs,
+      usedHaikuForExtraction: usedHaiku,
       relevanceThresholdApplied: settings.useRelevanceThreshold
     };
 
@@ -1168,7 +1174,8 @@ app.post("/api/analyze", async (req, res) => {
       claude: {
         input: inputTokens,
         output: outputTokens,
-        total: inputTokens + outputTokens
+        total: inputTokens + outputTokens,
+        model: "sonnet"
       }
     };
 

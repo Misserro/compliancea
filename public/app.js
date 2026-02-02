@@ -100,6 +100,9 @@ const crossRefSelectAllBtn = document.getElementById("crossRefSelectAllBtn");
 // Cross-reference field (for showing/hiding)
 const deskCrossRefField = document.getElementById("deskCrossRefField");
 
+// Model indicator
+const deskModelIndicator = document.getElementById("deskModelIndicator");
+
 // Desk Results
 const deskResultsCard = document.getElementById("deskResultsCard");
 const deskCrossRefBlock = document.getElementById("deskCrossRefBlock");
@@ -139,6 +142,9 @@ let deskTemplateText = "";
 
 // Statistics tracking
 let lastStatistics = null;
+
+// Settings state (moved up for availability)
+let currentSettings = null;
 
 // ============================================
 // Utility Functions
@@ -199,8 +205,14 @@ function formatCost(cost) {
 // Pricing constants (per 1M tokens)
 const PRICING = {
   claude: {
-    input: 3.00,  // $3.00 per 1M input tokens
-    output: 15.00 // $15.00 per 1M output tokens
+    sonnet: {
+      input: 3.00,  // $3.00 per 1M input tokens
+      output: 15.00 // $15.00 per 1M output tokens
+    },
+    haiku: {
+      input: 0.25,  // $0.25 per 1M input tokens
+      output: 1.25  // $1.25 per 1M output tokens
+    }
   },
   voyage: 0.02 // $0.02 per 1M tokens
 };
@@ -213,8 +225,12 @@ function calculateCosts(tokenUsage) {
   };
 
   if (tokenUsage?.claude) {
-    costs.claude.input = (tokenUsage.claude.input / 1_000_000) * PRICING.claude.input;
-    costs.claude.output = (tokenUsage.claude.output / 1_000_000) * PRICING.claude.output;
+    // Determine which pricing to use based on model
+    const model = tokenUsage.claude.model || "sonnet";
+    const pricing = PRICING.claude[model] || PRICING.claude.sonnet;
+
+    costs.claude.input = (tokenUsage.claude.input / 1_000_000) * pricing.input;
+    costs.claude.output = (tokenUsage.claude.output / 1_000_000) * pricing.output;
     costs.claude.total = costs.claude.input + costs.claude.output;
   }
 
@@ -269,12 +285,23 @@ function renderStatistics() {
 
   // Claude stats
   if (tokenUsage?.claude) {
+    const model = tokenUsage.claude.model || "sonnet";
+    const modelDisplay = model === "haiku" ? "Haiku" : "Sonnet";
+    const usedHaiku = tokenUsage.claude.usedHaikuForExtraction;
+
     html += `
       <div class="stat-card">
         <h4>
           <span class="service-badge claude">Claude</span>
+          <span class="model-badge ${model}">${modelDisplay}</span>
           Token Usage
         </h4>
+        ${usedHaiku ? `
+          <div class="stat-note">
+            <span class="note-icon">💡</span>
+            Haiku was used for question extraction (cost optimization)
+          </div>
+        ` : ""}
         <div class="stat-row">
           <span class="stat-label">Input Tokens</span>
           <span class="stat-value">${formatNumber(tokenUsage.claude.input)}</span>
@@ -1028,6 +1055,34 @@ function updateDeskAnalyzeState() {
   const allCheckboxes = deskCrossRefSelectEl.querySelectorAll(".crossref-doc-checkbox");
   const checkedCount = deskCrossRefSelectEl.querySelectorAll(".crossref-doc-checkbox:checked").length;
   crossRefSelectAllBtn.textContent = checkedCount === allCheckboxes.length && allCheckboxes.length > 0 ? "Deselect All" : "Select All";
+
+  // Update model indicator based on current settings
+  updateDeskModelIndicator(needsLibraryDocs);
+}
+
+function updateDeskModelIndicator(needsLibraryDocs) {
+  if (!currentSettings) {
+    deskModelIndicator.innerHTML = "";
+    return;
+  }
+
+  const willUseHaiku = currentSettings.useHaikuForExtraction && needsLibraryDocs;
+
+  if (willUseHaiku) {
+    deskModelIndicator.innerHTML = `
+      <span class="model-badge-inline sonnet">Sonnet</span> for analysis +
+      <span class="model-badge-inline haiku">Haiku</span> for extraction
+      <span class="model-savings">💰 Cost optimized</span>
+    `;
+  } else if (needsLibraryDocs) {
+    deskModelIndicator.innerHTML = `
+      <span class="model-badge-inline sonnet">Sonnet</span> for all tasks
+    `;
+  } else {
+    deskModelIndicator.innerHTML = `
+      <span class="model-badge-inline sonnet">Sonnet</span> for analysis
+    `;
+  }
 }
 
 // Select All functionality
@@ -1313,14 +1368,15 @@ updateDeskCrossRefFieldVisibility();
 // Settings Functions (Tab 5)
 // ============================================
 
-let currentSettings = null;
-
 async function loadSettings() {
   try {
     const res = await fetch("/api/settings");
     const data = await res.json();
     currentSettings = data;
     renderSettings(data);
+
+    // Update desk model indicator if settings changed
+    updateDeskAnalyzeState();
   } catch (err) {
     console.error("Error loading settings:", err);
     setSettingsStatus("Error loading settings", "bad");
@@ -1372,6 +1428,9 @@ async function saveSettings() {
     if (res.ok) {
       currentSettings = data;
       setSettingsStatus("Settings saved successfully", "good");
+
+      // Update desk model indicator with new settings
+      updateDeskAnalyzeState();
     } else {
       setSettingsStatus(data.error || "Failed to save settings", "bad");
     }
@@ -1397,6 +1456,9 @@ async function resetToDefaults() {
       currentSettings = data;
       renderSettings(data);
       setSettingsStatus("Settings reset to defaults", "good");
+
+      // Update desk model indicator with new settings
+      updateDeskAnalyzeState();
     } else {
       setSettingsStatus(data.error || "Failed to reset settings", "bad");
     }
