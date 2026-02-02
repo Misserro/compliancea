@@ -472,6 +472,10 @@ app.get("/api/embeddings/status", async (req, res) => {
 
 // POST /api/ask - Ask a question against selected documents
 app.post("/api/ask", async (req, res) => {
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let voyageTokens = 0;
+
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
       return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set." });
@@ -483,6 +487,9 @@ app.post("/api/ask", async (req, res) => {
       return res.status(400).json({ error: "Question is required" });
     }
 
+    // Estimate Voyage tokens for question embedding (rough: 1 token per 4 chars)
+    voyageTokens = Math.ceil(question.length / 4);
+
     // Search for relevant chunks
     const searchResults = await searchDocuments(question, documentIds || [], topK);
 
@@ -490,7 +497,11 @@ app.post("/api/ask", async (req, res) => {
       return res.json({
         answer: "I couldn't find any relevant information in the selected documents to answer your question.",
         sources: [],
-        context: []
+        context: [],
+        tokenUsage: {
+          claude: { input: 0, output: 0, total: 0 },
+          voyage: { tokens: voyageTokens }
+        }
       });
     }
 
@@ -530,6 +541,9 @@ Please answer the question based on the context above.`;
       ]
     });
 
+    inputTokens = message.usage?.input_tokens || 0;
+    outputTokens = message.usage?.output_tokens || 0;
+
     const answer = message.content
       .filter(block => block.type === "text")
       .map(block => block.text)
@@ -546,7 +560,17 @@ Please answer the question based on the context above.`;
         content: r.content.substring(0, 200) + (r.content.length > 200 ? "..." : ""),
         documentName: r.documentName,
         score: Math.round(r.score * 100)
-      }))
+      })),
+      tokenUsage: {
+        claude: {
+          input: inputTokens,
+          output: outputTokens,
+          total: inputTokens + outputTokens
+        },
+        voyage: {
+          tokens: voyageTokens
+        }
+      }
     });
   } catch (err) {
     console.error("Error answering question:", err);
@@ -559,6 +583,10 @@ Please answer the question based on the context above.`;
 // ============================================
 
 app.post("/api/desk/analyze", async (req, res) => {
+  // Track token usage for statistics
+  let inputTokens = 0;
+  let outputTokens = 0;
+
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
       return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set." });
@@ -597,10 +625,41 @@ app.post("/api/desk/analyze", async (req, res) => {
     const prefillTemplate = String(first(fields?.prefillTemplate || "")).trim() === "true";
 
     // Extract text from the external document
-    const docText = await extractText(mainFile);
+    let docText = await extractText(mainFile);
     if (!docText) {
       return res.status(400).json({ error: "Could not extract text from the uploaded file." });
     }
+
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY
+    });
+
+    const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
+
+    // Step 1: Translate the external document to the target language first (for better cross-referencing)
+    const translationPrompt = `Translate the following document to ${targetLanguage}.
+If the document is already in ${targetLanguage}, return it as-is.
+Return ONLY the translated text, no explanations or metadata.
+
+Document:
+${docText}`;
+
+    const translationMessage = await anthropic.messages.create({
+      model: modelName,
+      max_tokens: 8192,
+      messages: [{ role: "user", content: translationPrompt }]
+    });
+
+    inputTokens += translationMessage.usage?.input_tokens || 0;
+    outputTokens += translationMessage.usage?.output_tokens || 0;
+
+    const translatedDocText = translationMessage.content
+      .filter(block => block.type === "text")
+      .map(block => block.text)
+      .join("");
+
+    // Use translated text for cross-referencing
+    const docTextForAnalysis = translatedDocText || docText;
 
     // Extract text from library documents for cross-reference
     const crossDocParts = [];
@@ -633,30 +692,30 @@ app.post("/api/desk/analyze", async (req, res) => {
         items: {
           type: "object",
           properties: {
-            question: { type: "string" },
-            answer: { type: "string" },
-            found_in: { type: "string" },
+            question: { type: "string", description: "The question or request identified in the external document" },
+            answer: { type: "string", description: "The answer found in library documents, or empty string if not found" },
+            found_in: { type: "string", description: "Name of the library document where answer was found, or 'not found'" },
             confidence: { type: "string", enum: ["low", "medium", "high"] }
           },
           required: ["question", "answer", "found_in", "confidence"]
-        }
+        },
+        description: "Array of ALL questions/requests found in the external document with their answers"
       };
       schemaObj.required.push("cross_reference");
     }
 
     if (outputs.includes("generate_template")) {
-      schemaObj.properties.response_template = { type: "string", description: "Response template for the document" };
+      schemaObj.properties.response_template = {
+        type: "string",
+        description: `Complete response template in ${targetLanguage} that addresses ALL questions/requests from the external document`
+      };
       schemaObj.required.push("response_template");
     }
 
     const schemaDescription = JSON.stringify(schemaObj, null, 2);
 
-    const anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY
-    });
-
     const prompt = [
-      `Target language: ${targetLanguage}`,
+      `Output language: ${targetLanguage} (ALL output must be in this language)`,
       `Requested outputs: ${outputs.join(", ")}`,
       "",
       "You must respond with ONLY valid JSON matching the following schema:",
@@ -664,30 +723,34 @@ app.post("/api/desk/analyze", async (req, res) => {
       schemaDescription,
       "```",
       "",
-      "Rules:",
+      "CRITICAL RULES:",
       "- The EXTERNAL DOCUMENT is the document the user received and needs to respond to.",
       "- The LIBRARY DOCUMENTS contain reference data to help answer questions and fill templates.",
+      "- ALL output (cross_reference answers, response_template) MUST be in " + targetLanguage + ".",
       "",
       "Cross-reference requirement (if requested):",
-      "- Identify questions/unknowns/requests in the EXTERNAL DOCUMENT.",
-      "- Search LIBRARY DOCUMENTS for answers/evidence.",
-      "- If not found: answer=\"\", confidence=\"low\", found_in=\"not found\".",
+      "- You MUST identify ALL questions, requests, inquiries, and information needs in the EXTERNAL DOCUMENT.",
+      "- Search LIBRARY DOCUMENTS thoroughly for answers/evidence for EACH question.",
+      "- Include EVERY question found, even if the answer is not in the library documents.",
+      "- If answer not found: answer=\"\", confidence=\"low\", found_in=\"not found\".",
+      "- Do NOT skip any questions - the user needs a complete list.",
       "",
       "Template requirement (if requested):",
-      "- response_template should be a structured, reusable email/letter-style reply to the inquiry in the EXTERNAL DOCUMENT.",
-      "- Include sections like greeting, reference to the inquiry, key answers, and closing.",
+      "- response_template MUST be a complete, professional response in " + targetLanguage + ".",
+      "- The template MUST address ALL questions/requests from the EXTERNAL DOCUMENT - do not skip any.",
+      "- Include sections: greeting, reference to the inquiry, answers to EACH question, and closing.",
+      "- For EACH question in the external document, provide a corresponding answer section in the template.",
       prefillTemplate
-        ? "- IMPORTANT: You MUST fill the template with actual data from LIBRARY DOCUMENTS. Search thoroughly for any relevant information (names, dates, numbers, KYC data, addresses, etc.) and insert it directly into the template. Do NOT use placeholders if the information can be found in library documents."
-        : "- Leave clearly marked placeholders (e.g. [INSERT NAME HERE], [INSERT DATE HERE], [INSERT KYC DATA HERE]) for the user to fill manually. Do NOT attempt to fill in specific data from library documents.",
+        ? "- IMPORTANT: Fill in answers with actual data from LIBRARY DOCUMENTS wherever possible. Search thoroughly for names, dates, numbers, KYC data, addresses, account numbers, etc. Only use placeholders like [INFORMATION NOT FOUND] when data truly cannot be found."
+        : "- Use clearly marked placeholders (e.g. [INSERT NAME HERE], [INSERT DATE HERE]) for information the user needs to fill. Format placeholders consistently.",
+      "- If information for a question is not found in library documents, still include the question in the template with a placeholder or note that the information needs to be provided.",
       "",
-      "EXTERNAL DOCUMENT (document to respond to):",
-      docText,
+      "EXTERNAL DOCUMENT (translated to " + targetLanguage + "):",
+      docTextForAnalysis,
       "",
       "LIBRARY DOCUMENTS (reference data):",
       crossText || "(none provided)"
     ].filter(Boolean).join("\n");
-
-    const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
 
     const message = await anthropic.messages.create({
       model: modelName,
@@ -699,6 +762,9 @@ app.post("/api/desk/analyze", async (req, res) => {
         }
       ]
     });
+
+    inputTokens += message.usage?.input_tokens || 0;
+    outputTokens += message.usage?.output_tokens || 0;
 
     // Extract text from response
     const responseText = message.content
@@ -729,6 +795,15 @@ app.post("/api/desk/analyze", async (req, res) => {
       });
     }
 
+    // Add token usage statistics to response
+    out.tokenUsage = {
+      claude: {
+        input: inputTokens,
+        output: outputTokens,
+        total: inputTokens + outputTokens
+      }
+    };
+
     return res.status(200).json(out);
   } catch (err) {
     console.error("Error processing desk analyze request:", err);
@@ -743,6 +818,9 @@ app.post("/api/desk/analyze", async (req, res) => {
 
 // Main API endpoint
 app.post("/api/analyze", async (req, res) => {
+  let inputTokens = 0;
+  let outputTokens = 0;
+
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
       return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set." });
@@ -840,6 +918,9 @@ app.post("/api/analyze", async (req, res) => {
       ]
     });
 
+    inputTokens = message.usage?.input_tokens || 0;
+    outputTokens = message.usage?.output_tokens || 0;
+
     // Extract text from response
     const responseText = message.content
       .filter(block => block.type === "text")
@@ -869,6 +950,15 @@ app.post("/api/analyze", async (req, res) => {
         details: responseText || null
       });
     }
+
+    // Add token usage statistics
+    out.tokenUsage = {
+      claude: {
+        input: inputTokens,
+        output: outputTokens,
+        total: inputTokens + outputTokens
+      }
+    };
 
     return res.status(200).json(out);
   } catch (err) {

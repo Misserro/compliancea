@@ -16,6 +16,11 @@ function switchTab(tabId) {
   if (tabId === "desk") {
     renderDeskDocumentSelects();
   }
+
+  // Refresh statistics when switching to Statistics tab
+  if (tabId === "statistics") {
+    renderStatistics();
+  }
 }
 
 tabBtns.forEach(btn => {
@@ -83,6 +88,10 @@ const deskAnalyzeBtn = document.getElementById("deskAnalyzeBtn");
 const deskClearBtn = document.getElementById("deskClearBtn");
 const deskStatusEl = document.getElementById("deskStatus");
 
+// Select All buttons
+const qaSelectAllBtn = document.getElementById("qaSelectAllBtn");
+const crossRefSelectAllBtn = document.getElementById("crossRefSelectAllBtn");
+
 // Desk Results
 const deskResultsCard = document.getElementById("deskResultsCard");
 const deskCrossRefBlock = document.getElementById("deskCrossRefBlock");
@@ -92,6 +101,11 @@ const deskTemplateBoxEl = document.getElementById("deskTemplateBox");
 const exportDeskTemplateBtn = document.getElementById("exportDeskTemplateBtn");
 
 // ============================================
+// Statistics Elements (Tab 4)
+// ============================================
+const statsContentEl = document.getElementById("statsContent");
+
+// ============================================
 // Shared State
 // ============================================
 const DEPARTMENTS = ["Finance", "Compliance", "Operations", "HR", "Board", "IT"];
@@ -99,6 +113,9 @@ let documents = [];
 let analyzerLastResult = null;
 let deskLastResult = null;
 let deskTemplateText = "";
+
+// Statistics tracking
+let lastStatistics = null;
 
 // ============================================
 // Utility Functions
@@ -142,6 +159,142 @@ function downloadBlob(content, filename, type) {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+function formatNumber(num) {
+  return num.toLocaleString();
+}
+
+function formatCost(cost) {
+  return `$${cost.toFixed(6)}`;
+}
+
+// ============================================
+// Statistics Functions (Tab 4)
+// ============================================
+
+// Pricing constants (per 1M tokens)
+const PRICING = {
+  claude: {
+    input: 3.00,  // $3.00 per 1M input tokens
+    output: 15.00 // $15.00 per 1M output tokens
+  },
+  voyage: 0.02 // $0.02 per 1M tokens
+};
+
+function calculateCosts(tokenUsage) {
+  const costs = {
+    claude: { input: 0, output: 0, total: 0 },
+    voyage: 0,
+    total: 0
+  };
+
+  if (tokenUsage?.claude) {
+    costs.claude.input = (tokenUsage.claude.input / 1_000_000) * PRICING.claude.input;
+    costs.claude.output = (tokenUsage.claude.output / 1_000_000) * PRICING.claude.output;
+    costs.claude.total = costs.claude.input + costs.claude.output;
+  }
+
+  if (tokenUsage?.voyage) {
+    costs.voyage = (tokenUsage.voyage.tokens / 1_000_000) * PRICING.voyage;
+  }
+
+  costs.total = costs.claude.total + costs.voyage;
+
+  return costs;
+}
+
+function updateStatistics(actionType, tokenUsage) {
+  lastStatistics = {
+    actionType,
+    timestamp: new Date(),
+    tokenUsage,
+    costs: calculateCosts(tokenUsage)
+  };
+}
+
+function renderStatistics() {
+  if (!lastStatistics) {
+    statsContentEl.innerHTML = `
+      <div class="stats-empty">
+        <p class="subtle">No statistics available yet. Perform an action (ask a question, analyze a document, or use the desk) to see token usage.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const { actionType, timestamp, tokenUsage, costs } = lastStatistics;
+
+  const timeStr = timestamp.toLocaleString();
+
+  let html = `
+    <div class="last-action-info">
+      <div class="action-type">Last Action: ${escapeHtml(actionType)}</div>
+      <div class="action-time">${escapeHtml(timeStr)}</div>
+    </div>
+
+    <div class="stats-summary">
+      <h3>Total Estimated Cost</h3>
+      <div class="summary-row">
+        <span class="label">This action cost approximately</span>
+        <span class="value">${formatCost(costs.total)}</span>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+  `;
+
+  // Claude stats
+  if (tokenUsage?.claude) {
+    html += `
+      <div class="stat-card">
+        <h4>
+          <span class="service-badge claude">Claude</span>
+          Token Usage
+        </h4>
+        <div class="stat-row">
+          <span class="stat-label">Input Tokens</span>
+          <span class="stat-value">${formatNumber(tokenUsage.claude.input)}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Output Tokens</span>
+          <span class="stat-value">${formatNumber(tokenUsage.claude.output)}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Total Tokens</span>
+          <span class="stat-value highlight">${formatNumber(tokenUsage.claude.total)}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Estimated Cost</span>
+          <span class="stat-value cost">${formatCost(costs.claude.total)}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // Voyage stats
+  if (tokenUsage?.voyage) {
+    html += `
+      <div class="stat-card">
+        <h4>
+          <span class="service-badge voyage">Voyage AI</span>
+          Token Usage
+        </h4>
+        <div class="stat-row">
+          <span class="stat-label">Embedding Tokens</span>
+          <span class="stat-value">${formatNumber(tokenUsage.voyage.tokens)}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Estimated Cost</span>
+          <span class="stat-value cost">${formatCost(costs.voyage)}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+
+  statsContentEl.innerHTML = html;
 }
 
 // ============================================
@@ -588,6 +741,11 @@ analyzeForm.addEventListener("submit", async (e) => {
     const data = await res.json();
     analyzerLastResult = data;
 
+    // Update statistics
+    if (data.tokenUsage) {
+      updateStatistics("Document Analyzer", data.tokenUsage);
+    }
+
     setStatusElement(analyzerStatusEl, "Done.", "good");
     analyzerResultsCard.style.display = "block";
 
@@ -673,6 +831,11 @@ function updateAskButtonState() {
   const selectedIds = getSelectedQADocumentIds();
   const hasQuestion = questionInput.value.trim().length > 0;
   askBtn.disabled = selectedIds.length === 0 || !hasQuestion;
+
+  // Update Select All button text
+  const allCheckboxes = deskDocumentSelectEl.querySelectorAll(".qa-doc-checkbox");
+  const checkedCount = deskDocumentSelectEl.querySelectorAll(".qa-doc-checkbox:checked").length;
+  qaSelectAllBtn.textContent = checkedCount === allCheckboxes.length && allCheckboxes.length > 0 ? "Deselect All" : "Select All";
 }
 
 function getDeskOutputs() {
@@ -697,7 +860,38 @@ function updateDeskAnalyzeState() {
 
   const enabled = hasExternalFile && selectedCrossRefIds.length > 0 && outputs.length > 0;
   deskAnalyzeBtn.disabled = !enabled;
+
+  // Update Select All button text
+  const allCheckboxes = deskCrossRefSelectEl.querySelectorAll(".crossref-doc-checkbox");
+  const checkedCount = deskCrossRefSelectEl.querySelectorAll(".crossref-doc-checkbox:checked").length;
+  crossRefSelectAllBtn.textContent = checkedCount === allCheckboxes.length && allCheckboxes.length > 0 ? "Deselect All" : "Select All";
 }
+
+// Select All functionality
+function toggleSelectAllQA() {
+  const checkboxes = deskDocumentSelectEl.querySelectorAll(".qa-doc-checkbox");
+  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+
+  checkboxes.forEach(cb => {
+    cb.checked = !allChecked;
+  });
+
+  updateAskButtonState();
+}
+
+function toggleSelectAllCrossRef() {
+  const checkboxes = deskCrossRefSelectEl.querySelectorAll(".crossref-doc-checkbox");
+  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+
+  checkboxes.forEach(cb => {
+    cb.checked = !allChecked;
+  });
+
+  updateDeskAnalyzeState();
+}
+
+qaSelectAllBtn.addEventListener("click", toggleSelectAllQA);
+crossRefSelectAllBtn.addEventListener("click", toggleSelectAllCrossRef);
 
 // Q&A functionality
 async function askQuestion() {
@@ -730,6 +924,11 @@ async function askQuestion() {
     if (res.ok) {
       hideStatusElement(qaStatusEl);
       renderAnswer(data);
+
+      // Update statistics
+      if (data.tokenUsage) {
+        updateStatistics("Q&A Question", data.tokenUsage);
+      }
     } else {
       setStatusElement(qaStatusEl, data.error || "Failed to get answer", "bad");
     }
@@ -872,6 +1071,11 @@ async function deskAnalyze() {
 
     const data = await res.json();
     deskLastResult = data;
+
+    // Update statistics
+    if (data.tokenUsage) {
+      updateStatistics("Desk Cross-Reference & Template", data.tokenUsage);
+    }
 
     setStatusElement(deskStatusEl, "Done.", "good");
     deskResultsCard.style.display = "block";

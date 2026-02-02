@@ -18,6 +18,7 @@
       <button class="tab-btn active" data-tab="library">Document Library</button>
       <button class="tab-btn" data-tab="analyzer">Document Analyzer</button>
       <button class="tab-btn" data-tab="desk">Desk</button>
+      <button class="tab-btn" data-tab="statistics">Statistics</button>
     </nav>
 
     <!-- Tab 1: Document Library -->
@@ -160,7 +161,10 @@
           <p class="hint">Select documents from your library to search through.</p>
 
           <div class="field">
-            <label>Select Library Documents</label>
+            <div class="field-header">
+              <label>Select Library Documents</label>
+              <button type="button" id="qaSelectAllBtn" class="btn-select-all">Select All</button>
+            </div>
             <div id="deskDocumentSelect" class="document-select-list">
               <p class="subtle">Loading documents...</p>
             </div>
@@ -202,7 +206,10 @@
           </div>
 
           <div class="field">
-            <label>Cross-reference with Library Documents</label>
+            <div class="field-header">
+              <label>Cross-reference with Library Documents</label>
+              <button type="button" id="crossRefSelectAllBtn" class="btn-select-all">Select All</button>
+            </div>
             <div id="deskCrossRefSelect" class="document-select-list">
               <p class="subtle">Loading documents...</p>
             </div>
@@ -265,6 +272,38 @@
           <div id="deskTemplateBox" class="result-box subtle" style="margin-top:10px;">No data yet.</div>
         </div>
       </section>
+    </section>
+
+    <!-- Tab 4: Statistics -->
+    <section class="tab-content" id="tab-statistics">
+      <div class="card">
+        <h2 class="section-title">Statistics</h2>
+        <p class="subtle" style="margin-bottom: 1rem;">View token usage from your last action.</p>
+
+        <div id="statsContent">
+          <div class="stats-empty">
+            <p class="subtle">No statistics available yet. Perform an action (ask a question, analyze a document, or use the desk) to see token usage.</p>
+          </div>
+        </div>
+
+        <div class="stats-info">
+          <h3>Token Pricing Reference</h3>
+          <div class="pricing-table">
+            <div class="pricing-row">
+              <span class="pricing-service">Claude (Sonnet)</span>
+              <span class="pricing-detail">Input: $3.00 / 1M tokens | Output: $15.00 / 1M tokens</span>
+            </div>
+            <div class="pricing-row">
+              <span class="pricing-service">Voyage AI (voyage-3-lite)</span>
+              <span class="pricing-detail">$0.02 / 1M tokens</span>
+            </div>
+          </div>
+          <p class="hint" style="margin-top: 1rem;">
+            Token counts are estimates. Claude tokens are reported directly from the API.
+            Voyage AI tokens are estimated as ~1 token per 4 characters.
+          </p>
+        </div>
+      </div>
     </section>
   </main>
 
