@@ -19,6 +19,7 @@
       <button class="tab-btn" data-tab="analyzer">Document Analyzer</button>
       <button class="tab-btn" data-tab="desk">Desk</button>
       <button class="tab-btn" data-tab="statistics">Statistics</button>
+      <button class="tab-btn" data-tab="settings">Settings</button>
     </nav>
 
     <!-- Tab 1: Document Library -->
@@ -302,6 +303,10 @@
               <span class="pricing-detail">Input: $3.00 / 1M tokens | Output: $15.00 / 1M tokens</span>
             </div>
             <div class="pricing-row">
+              <span class="pricing-service">Claude (Haiku)</span>
+              <span class="pricing-detail">Input: $0.25 / 1M tokens | Output: $1.25 / 1M tokens</span>
+            </div>
+            <div class="pricing-row">
               <span class="pricing-service">Voyage AI (voyage-3-lite)</span>
               <span class="pricing-detail">$0.02 / 1M tokens</span>
             </div>
@@ -310,6 +315,94 @@
             Token counts are estimates. Claude tokens are reported directly from the API.
             Voyage AI tokens are estimated as ~1 token per 4 characters.
           </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Settings -->
+    <section class="tab-content" id="tab-settings">
+      <div class="card">
+        <h2 class="section-title">Settings</h2>
+        <p class="subtle" style="margin-bottom: 1.5rem;">Configure token optimization settings to balance cost and quality.</p>
+
+        <div class="settings-section">
+          <h3>Token Optimization Options</h3>
+          <p class="hint" style="margin-bottom: 1rem;">These settings help reduce token usage while maintaining output quality. Disable them if you experience quality issues.</p>
+
+          <div class="settings-list">
+            <!-- Use Haiku for extraction -->
+            <div class="setting-item">
+              <div class="setting-info">
+                <label class="setting-label" for="settingHaiku">Use Haiku for extraction tasks</label>
+                <p class="setting-description">Use Claude Haiku (cheaper, faster) for extracting questions from documents instead of Sonnet. Saves ~90% on extraction costs.</p>
+              </div>
+              <div class="setting-control">
+                <label class="toggle-switch">
+                  <input type="checkbox" id="settingHaiku" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Skip translation if same language -->
+            <div class="setting-item">
+              <div class="setting-info">
+                <label class="setting-label" for="settingSkipTranslation">Skip translation if same language</label>
+                <p class="setting-description">Automatically detect if the document is already in the target language and skip translation. Uses language detection with 70%+ confidence threshold.</p>
+              </div>
+              <div class="setting-control">
+                <label class="toggle-switch">
+                  <input type="checkbox" id="settingSkipTranslation" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Relevance threshold -->
+            <div class="setting-item">
+              <div class="setting-info">
+                <label class="setting-label" for="settingRelevanceThreshold">Use relevance threshold filtering</label>
+                <p class="setting-description">Filter out low-relevance search results before sending to Claude. Reduces context size and improves response quality.</p>
+              </div>
+              <div class="setting-control">
+                <label class="toggle-switch">
+                  <input type="checkbox" id="settingRelevanceThreshold" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Relevance threshold value slider -->
+            <div class="setting-item setting-sub-item" id="relevanceThresholdValueSetting">
+              <div class="setting-info">
+                <label class="setting-label" for="settingRelevanceValue">Relevance threshold value</label>
+                <p class="setting-description">Minimum relevance score (0-100%). Results below this threshold are filtered out. Lower = more results, higher = stricter filtering.</p>
+              </div>
+              <div class="setting-control setting-control-slider">
+                <input type="range" id="settingRelevanceValue" min="0" max="100" value="25" class="slider" />
+                <span id="relevanceValueDisplay" class="slider-value">25%</span>
+              </div>
+            </div>
+
+            <!-- Minimum results guarantee -->
+            <div class="setting-item setting-sub-item" id="minResultsSetting">
+              <div class="setting-info">
+                <label class="setting-label" for="settingMinResults">Minimum results guarantee</label>
+                <p class="setting-description">Always return at least this many results, even if they fall below the relevance threshold.</p>
+              </div>
+              <div class="setting-control setting-control-number">
+                <input type="number" id="settingMinResults" min="1" max="10" value="3" class="number-input" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="library-divider"></div>
+
+        <div class="settings-actions">
+          <button id="saveSettingsBtn" type="button" class="btn-primary">Save Settings</button>
+          <button id="resetSettingsBtn" type="button" class="btn-secondary">Reset to Defaults</button>
+          <span id="settingsStatus" class="settings-status"></span>
         </div>
       </div>
     </section>

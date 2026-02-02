@@ -21,6 +21,11 @@ function switchTab(tabId) {
   if (tabId === "statistics") {
     renderStatistics();
   }
+
+  // Load settings when switching to Settings tab
+  if (tabId === "settings") {
+    loadSettings();
+  }
 }
 
 tabBtns.forEach(btn => {
@@ -107,6 +112,21 @@ const exportDeskTemplateBtn = document.getElementById("exportDeskTemplateBtn");
 // Statistics Elements (Tab 4)
 // ============================================
 const statsContentEl = document.getElementById("statsContent");
+
+// ============================================
+// Settings Elements (Tab 5)
+// ============================================
+const settingHaikuEl = document.getElementById("settingHaiku");
+const settingSkipTranslationEl = document.getElementById("settingSkipTranslation");
+const settingRelevanceThresholdEl = document.getElementById("settingRelevanceThreshold");
+const settingRelevanceValueEl = document.getElementById("settingRelevanceValue");
+const relevanceValueDisplayEl = document.getElementById("relevanceValueDisplay");
+const settingMinResultsEl = document.getElementById("settingMinResults");
+const relevanceThresholdValueSettingEl = document.getElementById("relevanceThresholdValueSetting");
+const minResultsSettingEl = document.getElementById("minResultsSetting");
+const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+const resetSettingsBtn = document.getElementById("resetSettingsBtn");
+const settingsStatusEl = document.getElementById("settingsStatus");
 
 // ============================================
 // Shared State
@@ -1290,7 +1310,129 @@ updateDeskPrefillVisibility();
 updateDeskCrossRefFieldVisibility();
 
 // ============================================
+// Settings Functions (Tab 5)
+// ============================================
+
+let currentSettings = null;
+
+async function loadSettings() {
+  try {
+    const res = await fetch("/api/settings");
+    const data = await res.json();
+    currentSettings = data;
+    renderSettings(data);
+  } catch (err) {
+    console.error("Error loading settings:", err);
+    setSettingsStatus("Error loading settings", "bad");
+  }
+}
+
+function renderSettings(settings) {
+  // Set toggle values
+  settingHaikuEl.checked = settings.useHaikuForExtraction;
+  settingSkipTranslationEl.checked = settings.skipTranslationIfSameLanguage;
+  settingRelevanceThresholdEl.checked = settings.useRelevanceThreshold;
+
+  // Set slider and number values
+  const relevancePercent = Math.round(settings.relevanceThresholdValue * 100);
+  settingRelevanceValueEl.value = relevancePercent;
+  relevanceValueDisplayEl.textContent = `${relevancePercent}%`;
+  settingMinResultsEl.value = settings.minResultsGuarantee;
+
+  // Update visibility of sub-settings based on relevance threshold toggle
+  updateRelevanceSubSettings();
+}
+
+function updateRelevanceSubSettings() {
+  const isEnabled = settingRelevanceThresholdEl.checked;
+  relevanceThresholdValueSettingEl.style.display = isEnabled ? "flex" : "none";
+  minResultsSettingEl.style.display = isEnabled ? "flex" : "none";
+}
+
+async function saveSettings() {
+  const updates = {
+    useHaikuForExtraction: settingHaikuEl.checked,
+    skipTranslationIfSameLanguage: settingSkipTranslationEl.checked,
+    useRelevanceThreshold: settingRelevanceThresholdEl.checked,
+    relevanceThresholdValue: parseInt(settingRelevanceValueEl.value, 10) / 100,
+    minResultsGuarantee: parseInt(settingMinResultsEl.value, 10)
+  };
+
+  saveSettingsBtn.disabled = true;
+
+  try {
+    const res = await fetch("/api/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates)
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      currentSettings = data;
+      setSettingsStatus("Settings saved successfully", "good");
+    } else {
+      setSettingsStatus(data.error || "Failed to save settings", "bad");
+    }
+  } catch (err) {
+    setSettingsStatus(`Error: ${err.message}`, "bad");
+  } finally {
+    saveSettingsBtn.disabled = false;
+  }
+}
+
+async function resetToDefaults() {
+  if (!confirm("Are you sure you want to reset all settings to defaults?")) {
+    return;
+  }
+
+  resetSettingsBtn.disabled = true;
+
+  try {
+    const res = await fetch("/api/settings/reset", { method: "POST" });
+    const data = await res.json();
+
+    if (res.ok) {
+      currentSettings = data;
+      renderSettings(data);
+      setSettingsStatus("Settings reset to defaults", "good");
+    } else {
+      setSettingsStatus(data.error || "Failed to reset settings", "bad");
+    }
+  } catch (err) {
+    setSettingsStatus(`Error: ${err.message}`, "bad");
+  } finally {
+    resetSettingsBtn.disabled = false;
+  }
+}
+
+function setSettingsStatus(message, kind = "info") {
+  settingsStatusEl.textContent = message;
+  settingsStatusEl.className = "settings-status";
+  if (kind === "good") settingsStatusEl.classList.add("good");
+  if (kind === "bad") settingsStatusEl.classList.add("bad");
+
+  // Auto-hide after 3 seconds
+  setTimeout(() => {
+    settingsStatusEl.textContent = "";
+    settingsStatusEl.className = "settings-status";
+  }, 3000);
+}
+
+// Settings event listeners
+settingRelevanceThresholdEl.addEventListener("change", updateRelevanceSubSettings);
+
+settingRelevanceValueEl.addEventListener("input", () => {
+  relevanceValueDisplayEl.textContent = `${settingRelevanceValueEl.value}%`;
+});
+
+saveSettingsBtn.addEventListener("click", saveSettings);
+resetSettingsBtn.addEventListener("click", resetToDefaults);
+
+// ============================================
 // Initialize on Page Load
 // ============================================
 checkEmbeddingStatus();
 loadDocuments();
+loadSettings(); // Load settings on startup

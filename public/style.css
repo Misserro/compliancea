@@ -1362,6 +1362,227 @@ code {
   color: var(--muted);
 }
 
+/* ============================================
+   Settings Tab Styles
+   ============================================ */
+
+.settings-section {
+  margin-bottom: 1.5rem;
+}
+
+.settings-section h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-alt);
+  margin: 0 0 0.5rem 0;
+}
+
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+  transition: all 0.2s ease;
+  gap: 1.5rem;
+}
+
+.setting-item:hover {
+  border-color: rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+}
+
+.setting-item.setting-sub-item {
+  margin-left: 1.5rem;
+  background: rgba(76, 111, 255, 0.05);
+  border-color: rgba(76, 111, 255, 0.2);
+}
+
+.setting-info {
+  flex: 1;
+}
+
+.setting-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+  margin: 0;
+  display: block;
+}
+
+.setting-description {
+  margin: 0.375rem 0 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.setting-control {
+  flex-shrink: 0;
+}
+
+/* Toggle switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 28px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--btn-secondary);
+  transition: 0.3s;
+  border-radius: 28px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: var(--btn-primary);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+.toggle-switch input:focus + .toggle-slider {
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+/* Slider input */
+.setting-control-slider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 180px;
+}
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 120px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--btn-secondary);
+  outline: none;
+  transition: 0.2s;
+}
+
+.slider:hover {
+  background: var(--btn-secondary-hover);
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--btn-primary);
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  background: var(--btn-primary-hover);
+  transform: scale(1.1);
+}
+
+.slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--btn-primary);
+  cursor: pointer;
+  border: none;
+}
+
+.slider-value {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Number input */
+.setting-control-number {
+  min-width: 80px;
+}
+
+.number-input {
+  width: 70px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.28);
+  color: var(--text);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.number-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+/* Settings actions */
+.settings-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.settings-status {
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.375rem 0.75rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.settings-status.good {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--good);
+}
+
+.settings-status.bad {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--bad);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .doc-item {
@@ -1388,5 +1609,41 @@ code {
 
   .upload-row input[type="file"] {
     min-width: 100%;
+  }
+
+  .setting-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .setting-control {
+    width: 100%;
+  }
+
+  .toggle-switch {
+    align-self: flex-end;
+  }
+
+  .setting-control-slider {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .slider {
+    flex: 1;
+  }
+
+  .setting-item.setting-sub-item {
+    margin-left: 0;
+  }
+
+  .settings-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .settings-status {
+    text-align: center;
   }
 }

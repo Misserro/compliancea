@@ -31,6 +31,8 @@ import {
 import { chunkText, countWords } from "./lib/chunker.js";
 import { searchDocuments, formatSearchResults, getSourceDocuments } from "./lib/search.js";
 import { DOCUMENTS_DIR, DB_PATH, isRailway } from "./lib/paths.js";
+import { getSettings, updateSettings, resetSettings, getDefaultSettings } from "./lib/settings.js";
+import { shouldSkipTranslation } from "./lib/languageDetection.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -507,6 +509,55 @@ app.get("/api/embeddings/status", async (req, res) => {
   }
 });
 
+// ============================================
+// Settings API Endpoints
+// ============================================
+
+// GET /api/settings - Get current settings
+app.get("/api/settings", (req, res) => {
+  try {
+    const settings = getSettings();
+    res.json({ settings });
+  } catch (err) {
+    console.error("Error fetching settings:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/settings - Update settings
+app.patch("/api/settings", (req, res) => {
+  try {
+    const updates = req.body;
+    const settings = updateSettings(updates);
+    res.json({ message: "Settings updated successfully", settings });
+  } catch (err) {
+    console.error("Error updating settings:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/settings/reset - Reset settings to defaults
+app.post("/api/settings/reset", (req, res) => {
+  try {
+    const settings = resetSettings();
+    res.json({ message: "Settings reset to defaults", settings });
+  } catch (err) {
+    console.error("Error resetting settings:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/settings/defaults - Get default settings
+app.get("/api/settings/defaults", (req, res) => {
+  try {
+    const defaults = getDefaultSettings();
+    res.json({ defaults });
+  } catch (err) {
+    console.error("Error fetching default settings:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/ask - Ask a question against selected documents
 app.post("/api/ask", async (req, res) => {
   let inputTokens = 0;
@@ -518,6 +569,7 @@ app.post("/api/ask", async (req, res) => {
       return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set." });
     }
 
+    const settings = getSettings();
     const { question, documentIds, topK = 5 } = req.body;
 
     if (!question || typeof question !== "string") {
@@ -528,7 +580,23 @@ app.post("/api/ask", async (req, res) => {
     voyageTokens = Math.ceil(question.length / 4);
 
     // Search for relevant chunks
-    const searchResults = await searchDocuments(question, documentIds || [], topK);
+    let searchResults = await searchDocuments(question, documentIds || [], topK);
+
+    // Apply relevance threshold if enabled
+    if (settings.useRelevanceThreshold && searchResults.length > 0) {
+      const threshold = settings.relevanceThresholdValue;
+      const minResults = settings.minResultsGuarantee;
+
+      // Filter by threshold but guarantee minimum results
+      const filteredResults = searchResults.filter(r => r.score >= threshold);
+
+      if (filteredResults.length >= minResults) {
+        searchResults = filteredResults;
+      } else {
+        // Keep at least minResults, sorted by score
+        searchResults = searchResults.slice(0, Math.max(minResults, filteredResults.length));
+      }
+    }
 
     if (searchResults.length === 0) {
       return res.json({
@@ -542,8 +610,11 @@ app.post("/api/ask", async (req, res) => {
       });
     }
 
-    // Format context for Claude
-    const contextText = formatSearchResults(searchResults);
+    // Format context for Claude (optimized formatting)
+    const contextText = settings.optimizeContextFormatting
+      ? formatContextOptimized(searchResults)
+      : formatSearchResults(searchResults);
+
     const sources = getSourceDocuments(searchResults);
 
     // Build prompt for Claude
@@ -553,18 +624,10 @@ app.post("/api/ask", async (req, res) => {
 
     const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
 
-    const systemPrompt = `You are a helpful assistant that answers questions based on the provided document excerpts.
-Answer the question using ONLY the information from the provided context.
-If the context doesn't contain enough information to fully answer the question, say so.
-Be concise but thorough. Cite which document(s) your answer comes from when relevant.`;
+    // Optimized system prompt (shorter but equally effective)
+    const systemPrompt = `Answer questions using ONLY the provided document excerpts. Be concise but thorough. Cite document names when relevant. If context is insufficient, say so.`;
 
-    const userPrompt = `Context from documents:
-
-${contextText}
-
-Question: ${question}
-
-Please answer the question based on the context above.`;
+    const userPrompt = `Context:\n${contextText}\n\nQuestion: ${question}`;
 
     const message = await anthropic.messages.create({
       model: modelName,
@@ -615,6 +678,19 @@ Please answer the question based on the context above.`;
   }
 });
 
+/**
+ * Optimized context formatting - removes metadata, keeps only essential info
+ */
+function formatContextOptimized(results) {
+  if (!results || results.length === 0) {
+    return "No relevant content found.";
+  }
+
+  return results
+    .map((r, i) => `[${r.documentName}]\n${r.content}`)
+    .join("\n\n---\n\n");
+}
+
 // ============================================
 // Desk Analyze Endpoint (Cross-reference & Template with Library Documents)
 // ============================================
@@ -624,12 +700,14 @@ app.post("/api/desk/analyze", async (req, res) => {
   let inputTokens = 0;
   let outputTokens = 0;
   let voyageTokens = 0;
+  let translationSkipped = false;
 
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
       return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set." });
     }
 
+    const settings = getSettings();
     const { fields, files } = await parseMultipart(req);
 
     // Get the external document (main document to analyze)
@@ -679,46 +757,49 @@ app.post("/api/desk/analyze", async (req, res) => {
     });
 
     const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
+    const haikuModel = "claude-3-haiku-20240307";
 
-    // Step 1: Translate the external document to the target language first
-    const translationPrompt = `Translate the following document to ${targetLanguage}.
-If the document is already in ${targetLanguage}, return it as-is.
-Return ONLY the translated text, no explanations or metadata.
+    let docTextForAnalysis = docText;
 
-Document:
-${docText}`;
+    // OPTIMIZATION: Skip translation if document is already in target language
+    if (settings.skipTranslationIfSameLanguage) {
+      const langCheck = shouldSkipTranslation(docText, targetLanguage);
+      if (langCheck.shouldSkipTranslation) {
+        // Document is already in target language, skip translation
+        translationSkipped = true;
+        console.log(`Skipping translation: document detected as ${langCheck.detectedLanguage} (confidence: ${langCheck.confidence})`);
+      }
+    }
 
-    const translationMessage = await anthropic.messages.create({
-      model: modelName,
-      max_tokens: 8192,
-      messages: [{ role: "user", content: translationPrompt }]
-    });
+    if (!translationSkipped) {
+      // Step 1: Translate the external document to the target language
+      const translationPrompt = `Translate to ${targetLanguage}. If already in ${targetLanguage}, return as-is. Return ONLY the translated text.\n\n${docText}`;
 
-    inputTokens += translationMessage.usage?.input_tokens || 0;
-    outputTokens += translationMessage.usage?.output_tokens || 0;
+      const translationMessage = await anthropic.messages.create({
+        model: modelName,
+        max_tokens: 8192,
+        messages: [{ role: "user", content: translationPrompt }]
+      });
 
-    const translatedDocText = translationMessage.content
-      .filter(block => block.type === "text")
-      .map(block => block.text)
-      .join("");
+      inputTokens += translationMessage.usage?.input_tokens || 0;
+      outputTokens += translationMessage.usage?.output_tokens || 0;
 
-    // Use translated text for analysis
-    const docTextForAnalysis = translatedDocText || docText;
+      docTextForAnalysis = translationMessage.content
+        .filter(block => block.type === "text")
+        .map(block => block.text)
+        .join("") || docText;
+    }
 
     // Only fetch library document content if needed (cross-reference or pre-fill)
     let crossText = "";
     if (needsLibraryDocs && libraryDocumentIds.length > 0) {
-      // Use Voyage AI semantic search to find only relevant chunks instead of including full documents
-      // This significantly reduces token usage while maintaining quality
-
-      // Extract questions/requests from the external document first
-      const questionExtractionPrompt = `Extract ALL questions, requests, inquiries, and information needs from this document.
-Return them as a simple numbered list, one per line.
-Document:
-${docTextForAnalysis}`;
+      // Extract questions/requests from the external document
+      // OPTIMIZATION: Use Haiku for simple extraction task if enabled
+      const extractionModel = settings.useHaikuForExtraction ? haikuModel : modelName;
+      const questionExtractionPrompt = `List ALL questions, requests, and information needs from this document. One per line, numbered.\n\n${docTextForAnalysis}`;
 
       const questionMessage = await anthropic.messages.create({
-        model: modelName,
+        model: extractionModel,
         max_tokens: 2048,
         messages: [{ role: "user", content: questionExtractionPrompt }]
       });
@@ -731,14 +812,28 @@ ${docTextForAnalysis}`;
         .map(block => block.text)
         .join("");
 
-      // Use semantic search to find relevant chunks for each question
-      const searchResults = await searchDocuments(extractedQuestions, libraryDocumentIds, 15);
+      // Use semantic search to find relevant chunks
+      let searchResults = await searchDocuments(extractedQuestions, libraryDocumentIds, 15);
 
       // Estimate Voyage tokens for the search
       voyageTokens = Math.ceil(extractedQuestions.length / 4);
 
+      // OPTIMIZATION: Apply relevance threshold if enabled
+      if (settings.useRelevanceThreshold && searchResults.length > 0) {
+        const threshold = settings.relevanceThresholdValue;
+        const minResults = settings.minResultsGuarantee;
+
+        const filteredResults = searchResults.filter(r => r.score >= threshold);
+
+        if (filteredResults.length >= minResults) {
+          searchResults = filteredResults;
+        } else {
+          searchResults = searchResults.slice(0, Math.max(minResults, filteredResults.length));
+        }
+      }
+
       if (searchResults.length > 0) {
-        // Group results by document for cleaner context
+        // Group results by document
         const docChunks = {};
         for (const result of searchResults) {
           const docName = result.documentName;
@@ -751,13 +846,13 @@ ${docTextForAnalysis}`;
         // Build cross-reference text from relevant chunks only
         const crossDocParts = [];
         for (const [docName, chunks] of Object.entries(docChunks)) {
-          crossDocParts.push(`--- Library Document: ${docName} ---\n${chunks.join("\n\n---\n\n")}`);
+          crossDocParts.push(`[${docName}]\n${chunks.join("\n---\n")}`);
         }
         crossText = crossDocParts.join("\n\n");
       }
     }
 
-    // Build JSON schema for requested outputs
+    // OPTIMIZATION: Build minimal JSON schema (remove verbose descriptions)
     const schemaObj = {
       type: "object",
       properties: {},
@@ -765,115 +860,109 @@ ${docTextForAnalysis}`;
     };
 
     if (wantsCrossRef) {
-      schemaObj.properties.cross_reference = {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            question: { type: "string", description: "The question or request identified in the external document" },
-            answer: { type: "string", description: "The answer found in library documents, or empty string if not found" },
-            found_in: { type: "string", description: "Name of the library document where answer was found, or 'not found'" },
-            confidence: { type: "string", enum: ["low", "medium", "high"] }
+      if (settings.useMinimalSchema) {
+        schemaObj.properties.cross_reference = {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              question: { type: "string" },
+              answer: { type: "string" },
+              found_in: { type: "string" },
+              confidence: { type: "string", enum: ["low", "medium", "high"] }
+            },
+            required: ["question", "answer", "found_in", "confidence"]
+          }
+        };
+      } else {
+        schemaObj.properties.cross_reference = {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              question: { type: "string", description: "The question or request identified in the external document" },
+              answer: { type: "string", description: "The answer found in library documents, or empty string if not found" },
+              found_in: { type: "string", description: "Name of the library document where answer was found, or 'not found'" },
+              confidence: { type: "string", enum: ["low", "medium", "high"] }
+            },
+            required: ["question", "answer", "found_in", "confidence"]
           },
-          required: ["question", "answer", "found_in", "confidence"]
-        },
-        description: "Array of ALL questions/requests found in the external document with their answers"
-      };
+          description: "Array of ALL questions/requests found in the external document with their answers"
+        };
+      }
       schemaObj.required.push("cross_reference");
     }
 
     if (wantsTemplate) {
-      schemaObj.properties.response_template = {
-        type: "string",
-        description: `Complete response template in ${targetLanguage} that addresses ALL questions/requests from the external document`
-      };
+      if (settings.useMinimalSchema) {
+        schemaObj.properties.response_template = { type: "string" };
+      } else {
+        schemaObj.properties.response_template = {
+          type: "string",
+          description: `Complete response template in ${targetLanguage} that addresses ALL questions/requests from the external document`
+        };
+      }
       schemaObj.required.push("response_template");
     }
 
-    const schemaDescription = JSON.stringify(schemaObj, null, 2);
+    // OPTIMIZATION: Compact JSON schema formatting
+    const schemaDescription = settings.useMinimalSchema
+      ? JSON.stringify(schemaObj)
+      : JSON.stringify(schemaObj, null, 2);
 
-    // Build prompt based on what's needed
+    // Build optimized prompt
     const promptParts = [
-      `Output language: ${targetLanguage} (ALL output must be in this language)`,
-      `Requested outputs: ${outputs.join(", ")}`,
+      `Output: ${targetLanguage}. Outputs: ${outputs.join(", ")}`,
+      `Respond with ONLY valid JSON: ${schemaDescription}`,
       "",
-      "You must respond with ONLY valid JSON matching the following schema:",
-      "```json",
-      schemaDescription,
-      "```",
-      "",
-      "CRITICAL RULES:",
-      "- The EXTERNAL DOCUMENT is the document the user received and needs to respond to.",
-      "- ALL output MUST be in " + targetLanguage + ".",
+      "RULES:"
     ];
 
     if (needsLibraryDocs) {
-      promptParts.push("- The LIBRARY DOCUMENTS contain reference data to help answer questions and fill templates.");
+      promptParts.push("- EXTERNAL DOC = document to respond to. LIBRARY DOCS = reference data.");
+    } else {
+      promptParts.push("- EXTERNAL DOC = document to respond to.");
     }
-
-    promptParts.push("");
 
     if (wantsCrossRef) {
       promptParts.push(
-        "Cross-reference requirement:",
-        "- You MUST identify ALL questions, requests, inquiries, and information needs in the EXTERNAL DOCUMENT.",
-        "- Search LIBRARY DOCUMENTS thoroughly for answers/evidence for EACH question.",
-        "- Include EVERY question found, even if the answer is not in the library documents.",
-        "- If answer not found: answer=\"\", confidence=\"low\", found_in=\"not found\".",
-        "- Do NOT skip any questions - the user needs a complete list.",
-        ""
+        "- Cross-ref: List ALL questions/requests from EXTERNAL DOC. Search LIBRARY DOCS for answers.",
+        "- If not found: answer=\"\", confidence=\"low\", found_in=\"not found\"."
       );
     }
 
     if (wantsTemplate) {
       promptParts.push(
-        "Template requirement:",
-        "- response_template MUST be a complete, professional response in " + targetLanguage + ".",
-        "- The template MUST address ALL questions/requests from the EXTERNAL DOCUMENT - do not skip any.",
-        "- Include sections: greeting, reference to the inquiry, answers to EACH question, and closing.",
-        "- For EACH question in the external document, provide a corresponding answer section in the template."
+        `- Template: Professional response in ${targetLanguage}. Address ALL questions. Include greeting and closing.`
       );
 
       if (prefillTemplate && crossText) {
-        promptParts.push(
-          "- IMPORTANT: Fill in answers with actual data from LIBRARY DOCUMENTS wherever possible. Search thoroughly for names, dates, numbers, KYC data, addresses, account numbers, etc. Only use placeholders like [INFORMATION NOT FOUND] when data truly cannot be found."
-        );
+        promptParts.push("- Fill with actual data from LIBRARY DOCS. Only use [PLACEHOLDER] if truly not found.");
       } else {
-        promptParts.push(
-          "- Use clearly marked placeholders (e.g. [INSERT NAME HERE], [INSERT DATE HERE]) for information the user needs to fill. Format placeholders consistently."
-        );
+        promptParts.push("- Use [PLACEHOLDER] format for missing info.");
       }
-
-      promptParts.push(
-        "- If information for a question is not found, still include the question in the template with a placeholder or note that the information needs to be provided.",
-        ""
-      );
     }
 
     promptParts.push(
-      "EXTERNAL DOCUMENT (translated to " + targetLanguage + "):",
+      "",
+      "EXTERNAL DOC:",
       docTextForAnalysis
     );
 
     if (needsLibraryDocs && crossText) {
       promptParts.push(
         "",
-        "RELEVANT LIBRARY DOCUMENT EXCERPTS (reference data):",
+        "LIBRARY DOCS:",
         crossText
       );
     }
 
-    const prompt = promptParts.filter(Boolean).join("\n");
+    const prompt = promptParts.join("\n");
 
     const message = await anthropic.messages.create({
       model: modelName,
       max_tokens: 8192,
-      messages: [
-        {
-          role: "user",
-          content: prompt
-        }
-      ]
+      messages: [{ role: "user", content: prompt }]
     });
 
     inputTokens += message.usage?.input_tokens || 0;
@@ -918,6 +1007,13 @@ ${docTextForAnalysis}`;
       voyage: {
         tokens: voyageTokens
       }
+    };
+
+    // Add optimization info for debugging/transparency
+    out.optimizations = {
+      translationSkipped,
+      usedHaikuForExtraction: settings.useHaikuForExtraction && needsLibraryDocs,
+      relevanceThresholdApplied: settings.useRelevanceThreshold
     };
 
     return res.status(200).json(out);
