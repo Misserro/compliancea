@@ -555,6 +555,189 @@ Please answer the question based on the context above.`;
 });
 
 // ============================================
+// Desk Analyze Endpoint (Cross-reference & Template with Library Documents)
+// ============================================
+
+app.post("/api/desk/analyze", async (req, res) => {
+  try {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set." });
+    }
+
+    const { fields, files } = await parseMultipart(req);
+
+    // Get the external document (main document to analyze)
+    const uploaded = files?.file;
+    const mainFile = Array.isArray(uploaded) ? uploaded[0] : uploaded;
+    if (!mainFile) {
+      return res.status(400).json({ error: "Missing external document" });
+    }
+
+    const targetLanguage = String(first(fields?.targetLanguage || "")).trim() || "English";
+    const outputs = toArray(fields?.outputs).map(String);
+    if (!outputs.length) {
+      return res.status(400).json({ error: "Select at least one output." });
+    }
+
+    // Get library document IDs for cross-reference
+    let libraryDocumentIds = [];
+    try {
+      const idsStr = String(first(fields?.libraryDocumentIds || "")).trim();
+      if (idsStr) {
+        libraryDocumentIds = JSON.parse(idsStr);
+      }
+    } catch {
+      return res.status(400).json({ error: "Invalid libraryDocumentIds format" });
+    }
+
+    if (libraryDocumentIds.length === 0) {
+      return res.status(400).json({ error: "Select at least one library document for cross-reference" });
+    }
+
+    const prefillTemplate = String(first(fields?.prefillTemplate || "")).trim() === "true";
+
+    // Extract text from the external document
+    const docText = await extractText(mainFile);
+    if (!docText) {
+      return res.status(400).json({ error: "Could not extract text from the uploaded file." });
+    }
+
+    // Extract text from library documents for cross-reference
+    const crossDocParts = [];
+    for (const docId of libraryDocumentIds) {
+      const doc = getDocumentById(docId);
+      if (doc && doc.processed) {
+        try {
+          const text = await extractTextFromPath(doc.path);
+          if (text) {
+            crossDocParts.push(`--- Library Document: ${doc.name} ---\n${text}`);
+          }
+        } catch (err) {
+          console.warn(`Could not extract text from library document ${doc.name}:`, err.message);
+        }
+      }
+    }
+
+    const crossText = crossDocParts.join("\n\n");
+
+    // Build JSON schema for requested outputs (only cross_reference and generate_template)
+    const schemaObj = {
+      type: "object",
+      properties: {},
+      required: []
+    };
+
+    if (outputs.includes("cross_reference")) {
+      schemaObj.properties.cross_reference = {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            question: { type: "string" },
+            answer: { type: "string" },
+            found_in: { type: "string" },
+            confidence: { type: "string", enum: ["low", "medium", "high"] }
+          },
+          required: ["question", "answer", "found_in", "confidence"]
+        }
+      };
+      schemaObj.required.push("cross_reference");
+    }
+
+    if (outputs.includes("generate_template")) {
+      schemaObj.properties.response_template = { type: "string", description: "Response template for the document" };
+      schemaObj.required.push("response_template");
+    }
+
+    const schemaDescription = JSON.stringify(schemaObj, null, 2);
+
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY
+    });
+
+    const prompt = [
+      `Target language: ${targetLanguage}`,
+      `Requested outputs: ${outputs.join(", ")}`,
+      "",
+      "You must respond with ONLY valid JSON matching the following schema:",
+      "```json",
+      schemaDescription,
+      "```",
+      "",
+      "Rules:",
+      "- The EXTERNAL DOCUMENT is the document the user received and needs to respond to.",
+      "- The LIBRARY DOCUMENTS contain reference data to help answer questions and fill templates.",
+      "",
+      "Cross-reference requirement (if requested):",
+      "- Identify questions/unknowns/requests in the EXTERNAL DOCUMENT.",
+      "- Search LIBRARY DOCUMENTS for answers/evidence.",
+      "- If not found: answer=\"\", confidence=\"low\", found_in=\"not found\".",
+      "",
+      "Template requirement (if requested):",
+      "- response_template should be a structured, reusable email/letter-style reply to the inquiry in the EXTERNAL DOCUMENT.",
+      "- Include sections like greeting, reference to the inquiry, key answers, and closing.",
+      prefillTemplate
+        ? "- IMPORTANT: You MUST fill the template with actual data from LIBRARY DOCUMENTS. Search thoroughly for any relevant information (names, dates, numbers, KYC data, addresses, etc.) and insert it directly into the template. Do NOT use placeholders if the information can be found in library documents."
+        : "- Leave clearly marked placeholders (e.g. [INSERT NAME HERE], [INSERT DATE HERE], [INSERT KYC DATA HERE]) for the user to fill manually. Do NOT attempt to fill in specific data from library documents.",
+      "",
+      "EXTERNAL DOCUMENT (document to respond to):",
+      docText,
+      "",
+      "LIBRARY DOCUMENTS (reference data):",
+      crossText || "(none provided)"
+    ].filter(Boolean).join("\n");
+
+    const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
+
+    const message = await anthropic.messages.create({
+      model: modelName,
+      max_tokens: 8192,
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ]
+    });
+
+    // Extract text from response
+    const responseText = message.content
+      .filter(block => block.type === "text")
+      .map(block => block.text)
+      .join("");
+
+    // Parse JSON from response
+    let jsonText = responseText.trim();
+
+    if (jsonText.startsWith("```json")) {
+      jsonText = jsonText.slice(7);
+    } else if (jsonText.startsWith("```")) {
+      jsonText = jsonText.slice(3);
+    }
+    if (jsonText.endsWith("```")) {
+      jsonText = jsonText.slice(0, -3);
+    }
+    jsonText = jsonText.trim();
+
+    let out;
+    try {
+      out = JSON.parse(jsonText);
+    } catch {
+      return res.status(502).json({
+        error: "Claude returned non-JSON output unexpectedly.",
+        details: responseText || null
+      });
+    }
+
+    return res.status(200).json(out);
+  } catch (err) {
+    console.error("Error processing desk analyze request:", err);
+    const status = err?.statusCode || 500;
+    return res.status(status).json({ error: err?.message || "Server error" });
+  }
+});
+
+// ============================================
 // Original Analyze Endpoint
 // ============================================
 

@@ -62,7 +62,59 @@ body{
 
 .header{
   text-align: center;
-  padding: 1rem 0 2rem;
+  padding: 1rem 0 1rem;
+}
+
+/* Tab Navigation */
+.tab-nav {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--card);
+  padding: 0.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 0.875rem 1.5rem;
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+}
+
+.tab-btn.active {
+  background: var(--btn-primary);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .tab-nav {
+    flex-direction: column;
+  }
+
+  .tab-btn {
+    text-align: center;
+  }
 }
 
 h1{
@@ -856,4 +908,149 @@ code {
     flex-direction: column;
     align-items: stretch;
   }
+}
+
+/* ============================================
+   Desk Tab Styles
+   ============================================ */
+
+.desk-section {
+  margin-bottom: 1rem;
+}
+
+.desk-section h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-alt);
+  margin: 0 0 0.5rem 0;
+}
+
+/* Document select list (checkboxes for selecting library documents) */
+.document-select-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(0,0,0,0.2);
+  padding: 0.5rem;
+}
+
+.document-select-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.document-select-item:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.document-select-item input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  transform: scale(1.15);
+  accent-color: var(--btn-primary);
+  cursor: pointer;
+}
+
+.document-select-item input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.document-select-item .doc-select-name {
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.document-select-item .doc-select-status {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.document-select-item .doc-select-status.processed {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--good);
+}
+
+.document-select-item .doc-select-status.unprocessed {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warn);
+}
+
+.document-select-list .subtle {
+  padding: 1rem;
+  text-align: center;
+}
+
+/* Textarea styling for Desk */
+.desk-section textarea {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.28);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  transition: all 0.2s ease;
+}
+
+.desk-section textarea:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.desk-section textarea::placeholder {
+  color: var(--muted);
+}
+
+/* Primary button styling for desk */
+.btn-primary {
+  background: var(--btn-primary);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--btn-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Desk analyze button */
+#deskAnalyzeBtn {
+  background: var(--btn-primary);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+#deskAnalyzeBtn:hover:not(:disabled) {
+  background: var(--btn-primary-hover);
+  transform: translateY(-1px);
+}
+
+/* Desk clear button */
+#deskClearBtn, #analyzerClearBtn {
+  background: transparent;
+  color: var(--text-alt);
+  border: 1px solid var(--border);
+  padding: 0.625rem 1.1rem;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+#deskClearBtn:hover:not(:disabled), #analyzerClearBtn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.06);
+  border-color: var(--border-focus);
+  opacity: 1;
 }

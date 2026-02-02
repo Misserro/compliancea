@@ -1,14 +1,71 @@
-// Use relative path - works for any deployment
-const ENDPOINT = "/api/analyze";
+// ============================================
+// Tab Navigation
+// ============================================
+const tabBtns = document.querySelectorAll(".tab-btn");
+const tabContents = document.querySelectorAll(".tab-content");
+
+function switchTab(tabId) {
+  tabBtns.forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tab === tabId);
+  });
+  tabContents.forEach(content => {
+    content.classList.toggle("active", content.id === `tab-${tabId}`);
+  });
+
+  // Refresh document selects when switching to Desk tab
+  if (tabId === "desk") {
+    renderDeskDocumentSelects();
+  }
+}
+
+tabBtns.forEach(btn => {
+  btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+});
 
 // ============================================
-// Document Library Elements
+// Document Library Elements (Tab 1)
 // ============================================
 const scanBtn = document.getElementById("scanBtn");
 const processAllBtn = document.getElementById("processAllBtn");
 const embeddingStatusEl = document.getElementById("embeddingStatus");
 const libraryStatusEl = document.getElementById("libraryStatus");
 const documentListEl = document.getElementById("documentList");
+const uploadFileInput = document.getElementById("uploadFileInput");
+const uploadFolderInput = document.getElementById("uploadFolderInput");
+const uploadBtn = document.getElementById("uploadBtn");
+
+// ============================================
+// Document Analyzer Elements (Tab 2)
+// ============================================
+const analyzeForm = document.getElementById("analyzeForm");
+const analyzerFileInput = document.getElementById("analyzerFileInput");
+const analyzerOutputsWrap = document.getElementById("analyzerOutputs");
+const analyzerTranslateTo = document.getElementById("analyzerTranslateTo");
+const analyzeBtn = document.getElementById("analyzeBtn");
+const analyzerClearBtn = document.getElementById("analyzerClearBtn");
+const analyzerStatusEl = document.getElementById("analyzerStatus");
+
+// Analyzer Results
+const analyzerResultsCard = document.getElementById("analyzerResultsCard");
+const analyzerTranslationBlock = document.getElementById("analyzerTranslationBlock");
+const analyzerSummaryBlock = document.getElementById("analyzerSummaryBlock");
+const analyzerKeyPointsBlock = document.getElementById("analyzerKeyPointsBlock");
+const analyzerTodosBlock = document.getElementById("analyzerTodosBlock");
+
+const analyzerTranslatedDisclosure = document.getElementById("analyzerTranslatedDisclosure");
+const analyzerTranslatedDocEl = document.getElementById("analyzerTranslatedDoc");
+const analyzerSummaryEl = document.getElementById("analyzerSummary");
+const analyzerKeyPointsEl = document.getElementById("analyzerKeyPoints");
+const analyzerTodosEl = document.getElementById("analyzerTodos");
+
+const exportAnalyzerTranslationBtn = document.getElementById("exportAnalyzerTranslationBtn");
+const exportAnalyzerTodosBtn = document.getElementById("exportAnalyzerTodosBtn");
+
+// ============================================
+// Desk Elements (Tab 3)
+// ============================================
+const deskDocumentSelectEl = document.getElementById("deskDocumentSelect");
+const deskCrossRefSelectEl = document.getElementById("deskCrossRefSelect");
 const questionInput = document.getElementById("questionInput");
 const askBtn = document.getElementById("askBtn");
 const qaStatusEl = document.getElementById("qaStatus");
@@ -17,56 +74,31 @@ const answerContent = document.getElementById("answerContent");
 const sourcesSection = document.getElementById("sourcesSection");
 const sourcesList = document.getElementById("sourcesList");
 
-// Upload elements
-const uploadFileInput = document.getElementById("uploadFileInput");
-const uploadFolderInput = document.getElementById("uploadFolderInput");
-const uploadBtn = document.getElementById("uploadBtn");
+const deskExternalFile = document.getElementById("deskExternalFile");
+const deskOutputsWrap = document.getElementById("deskOutputs");
+const deskPrefillField = document.getElementById("deskPrefillField");
+const deskPrefillToggle = document.getElementById("deskPrefillToggle");
+const deskTranslateTo = document.getElementById("deskTranslateTo");
+const deskAnalyzeBtn = document.getElementById("deskAnalyzeBtn");
+const deskClearBtn = document.getElementById("deskClearBtn");
+const deskStatusEl = document.getElementById("deskStatus");
+
+// Desk Results
+const deskResultsCard = document.getElementById("deskResultsCard");
+const deskCrossRefBlock = document.getElementById("deskCrossRefBlock");
+const deskTemplateBlock = document.getElementById("deskTemplateBlock");
+const deskCrossRefEl = document.getElementById("deskCrossRef");
+const deskTemplateBoxEl = document.getElementById("deskTemplateBox");
+const exportDeskTemplateBtn = document.getElementById("exportDeskTemplateBtn");
 
 // ============================================
-// Analyze Form Elements
+// Shared State
 // ============================================
-const form = document.getElementById("analyzeForm");
-const fileInput = document.getElementById("fileInput");
-const crossFilesInput = document.getElementById("crossFiles");
-const translateTo = document.getElementById("translateTo");
-const analyzeBtn = document.getElementById("analyzeBtn");
-const clearBtn = document.getElementById("clearBtn");
-const outputsWrap = document.getElementById("outputs");
-
-const statusEl = document.getElementById("status");
-
-// Result blocks
-const resultsCard = document.getElementById("resultsCard");
-const translationBlock = document.getElementById("translationBlock");
-const summaryBlock = document.getElementById("summaryBlock");
-const keyPointsBlock = document.getElementById("keyPointsBlock");
-const todosBlock = document.getElementById("todosBlock");
-const crossRefBlock = document.getElementById("crossRefBlock");
-const templateBlock = document.getElementById("templateBlock");
-
-// Result elements
-const translatedDisclosure = document.getElementById("translatedDisclosure");
-const translatedDocEl = document.getElementById("translatedDoc");
-const summaryEl = document.getElementById("summary");
-const keyPointsEl = document.getElementById("keyPoints");
-const todosEl = document.getElementById("todos");
-const crossRefEl = document.getElementById("crossRef");
-const templateBoxEl = document.getElementById("templateBox");
-
-// Pre-fill toggle in the form
-const prefillField = document.getElementById("prefillField");
-const templateFillToggle = document.getElementById("templateFillToggle");
-
-// Export buttons
-const exportTranslationBtn = document.getElementById("exportTranslationBtn");
-const exportTodosBtn = document.getElementById("exportTodosBtn");
-const exportTemplateBtn = document.getElementById("exportTemplateBtn");
-
 const DEPARTMENTS = ["Finance", "Compliance", "Operations", "HR", "Board", "IT"];
-
-let lastResult = null;
-let originalTemplateText = "";
 let documents = [];
+let analyzerLastResult = null;
+let deskLastResult = null;
+let deskTemplateText = "";
 
 // ============================================
 // Utility Functions
@@ -100,12 +132,20 @@ function hideStatusElement(el) {
   el.style.display = "none";
 }
 
-function setStatus(message, kind = "info") {
-  setStatusElement(statusEl, message, kind);
+function downloadBlob(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 // ============================================
-// Document Library Functions
+// Document Library Functions (Tab 1)
 // ============================================
 
 async function checkEmbeddingStatus() {
@@ -148,7 +188,6 @@ async function uploadDocument() {
     return;
   }
 
-  // Validate file type
   if (!/\.(pdf|docx)$/i.test(file.name)) {
     setStatusElement(libraryStatusEl, "Only PDF and DOCX files are allowed.", "warn");
     return;
@@ -175,10 +214,8 @@ async function uploadDocument() {
 
     if (res.ok) {
       setStatusElement(libraryStatusEl, `Uploaded: ${data.document.name}`, "good");
-      // Clear inputs
       uploadFileInput.value = "";
       uploadFolderInput.value = "";
-      // Refresh document list
       await loadDocuments();
     } else {
       setStatusElement(libraryStatusEl, data.error || "Upload failed", "bad");
@@ -193,7 +230,6 @@ async function uploadDocument() {
 function renderDocumentList() {
   if (documents.length === 0) {
     documentListEl.innerHTML = `<p class="subtle">No documents found. Upload a document or scan the server folder.</p>`;
-    updateAskButtonState();
     return;
   }
 
@@ -204,10 +240,9 @@ function renderDocumentList() {
 
     return `
       <div class="doc-item ${statusClass}" data-id="${doc.id}">
-        <label class="doc-checkbox">
-          <input type="checkbox" class="doc-select" data-id="${doc.id}" ${doc.processed ? "" : "disabled"} />
+        <div class="doc-checkbox">
           <span class="doc-name">${escapeHtml(doc.name)}</span>
-        </label>
+        </div>
         <div class="doc-meta">
           <span class="doc-status ${statusClass}">${statusText}</span>
           <span class="doc-date">${dateStr}</span>
@@ -220,7 +255,6 @@ function renderDocumentList() {
     `;
   }).join("");
 
-  // Add event listeners
   documentListEl.querySelectorAll(".btn-process").forEach(btn => {
     btn.addEventListener("click", () => processDocument(parseInt(btn.dataset.id, 10)));
   });
@@ -228,23 +262,6 @@ function renderDocumentList() {
   documentListEl.querySelectorAll(".btn-delete").forEach(btn => {
     btn.addEventListener("click", () => deleteDocument(parseInt(btn.dataset.id, 10)));
   });
-
-  documentListEl.querySelectorAll(".doc-select").forEach(checkbox => {
-    checkbox.addEventListener("change", updateAskButtonState);
-  });
-
-  updateAskButtonState();
-}
-
-function getSelectedDocumentIds() {
-  const checkboxes = documentListEl.querySelectorAll(".doc-select:checked");
-  return Array.from(checkboxes).map(cb => parseInt(cb.dataset.id, 10));
-}
-
-function updateAskButtonState() {
-  const selectedIds = getSelectedDocumentIds();
-  const hasQuestion = questionInput.value.trim().length > 0;
-  askBtn.disabled = selectedIds.length === 0 || !hasQuestion;
 }
 
 async function scanDocuments() {
@@ -357,9 +374,335 @@ async function deleteDocument(id) {
   }
 }
 
+// Library event listeners
+scanBtn.addEventListener("click", scanDocuments);
+processAllBtn.addEventListener("click", processAllDocuments);
+uploadBtn.addEventListener("click", uploadDocument);
+
+// ============================================
+// Document Analyzer Functions (Tab 2)
+// ============================================
+
+function getAnalyzerOutputs() {
+  const checks = [...analyzerOutputsWrap.querySelectorAll('input[type="checkbox"]')];
+  return checks.filter(c => c.checked).map(c => c.value);
+}
+
+function updateAnalyzeEnabled() {
+  const outputs = getAnalyzerOutputs();
+  const enabled = outputs.length >= 1;
+  analyzeBtn.disabled = !enabled;
+
+  if (!enabled) {
+    setStatusElement(analyzerStatusEl, "Choose at least one output to enable Analyze.", "warn");
+  } else {
+    setStatusElement(analyzerStatusEl, "Ready.", "info");
+  }
+}
+
+function hideAnalyzerResultBlocks() {
+  analyzerResultsCard.style.display = "none";
+  analyzerTranslationBlock.style.display = "none";
+  analyzerSummaryBlock.style.display = "none";
+  analyzerKeyPointsBlock.style.display = "none";
+  analyzerTodosBlock.style.display = "none";
+}
+
+function resetAnalyzerResults() {
+  analyzerLastResult = null;
+  analyzerTranslatedDocEl.textContent = "No data yet.";
+  analyzerSummaryEl.textContent = "No data yet.";
+  analyzerKeyPointsEl.textContent = "No data yet.";
+  analyzerTodosEl.textContent = "No data yet.";
+  hideAnalyzerResultBlocks();
+}
+
+function renderAnalyzerTranslatedDoc(data) {
+  const t = data?.translated_text ?? "";
+  analyzerTranslatedDocEl.classList.remove("subtle");
+  analyzerTranslatedDocEl.innerHTML = t
+    ? `<pre class="doc">${escapeHtml(t)}</pre>`
+    : `<p class="subtle">No translated text in response.</p>`;
+  if (t) analyzerTranslatedDisclosure.open = true;
+}
+
+function renderAnalyzerSummary(data) {
+  const summary = data?.summary ?? "";
+  analyzerSummaryEl.classList.remove("subtle");
+  analyzerSummaryEl.innerHTML = summary
+    ? `<p>${escapeHtml(summary)}</p>`
+    : `<p class="subtle">No summary in response.</p>`;
+}
+
+function renderAnalyzerKeyPoints(data) {
+  const items = normalizeArray(data?.key_points ?? []);
+  analyzerKeyPointsEl.classList.remove("subtle");
+
+  if (!items.length) {
+    analyzerKeyPointsEl.innerHTML = `<p class="subtle">No key points in response.</p>`;
+    return;
+  }
+
+  analyzerKeyPointsEl.innerHTML = items.map((kp) => {
+    const text = kp?.point ?? "";
+    const dept = kp?.department ?? "";
+    const tags = normalizeArray(kp?.tags).filter(Boolean);
+    const deptLabel = DEPARTMENTS.includes(dept) ? dept : "Unassigned";
+
+    return `
+      <div class="kp">
+        <div class="kp-top">
+          <span class="badge">${escapeHtml(deptLabel)}</span>
+          ${tags.length
+            ? `<div class="tags">${tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>`
+            : `<span class="subtle">No tags</span>`
+          }
+        </div>
+        <div>${text ? escapeHtml(text) : "<span class='subtle'>No text</span>"}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderAnalyzerTodos(data) {
+  const byDeptObj = data?.todos_by_department ?? null;
+  analyzerTodosEl.classList.remove("subtle");
+
+  if (!byDeptObj || typeof byDeptObj !== "object" || Array.isArray(byDeptObj)) {
+    analyzerTodosEl.innerHTML = `<p class="subtle">No to-dos in response.</p>`;
+    return;
+  }
+
+  analyzerTodosEl.innerHTML = DEPARTMENTS.map((dept) => {
+    const items = normalizeArray(byDeptObj[dept]);
+    return `
+      <div class="todo-dept">
+        <strong>${escapeHtml(dept)}</strong>
+        <div style="margin-top:8px;">
+          ${items.length ? items.map(renderTodoItem).join("") : `<div class="subtle">No tasks.</div>`}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderTodoItem(item) {
+  const task = item?.task ?? "";
+  const source = item?.source_point ?? "";
+  return `
+    <div class="todo-item">
+      <div>${task ? escapeHtml(task) : "<span class='subtle'>No task text</span>"}</div>
+      ${source ? `<div class="todo-meta">Source: ${escapeHtml(source)}</div>` : ""}
+    </div>
+  `;
+}
+
+async function safeReadError(res) {
+  const ct = res.headers.get("content-type") || "";
+  if (ct.includes("application/json")) {
+    const j = await res.json().catch(() => null);
+    return j?.error || j?.message || JSON.stringify(j);
+  }
+  return await res.text().catch(() => "Unknown error");
+}
+
+// Analyzer exports
+function exportAnalyzerTranslationDocx() {
+  if (!analyzerLastResult || !analyzerLastResult.translated_text) {
+    setStatusElement(analyzerStatusEl, "No translated text to export.", "warn");
+    return;
+  }
+  const html = `<html><body><pre>${escapeHtml(analyzerLastResult.translated_text)}</pre></body></html>`;
+  downloadBlob(html, "translation.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+}
+
+function exportAnalyzerTodosCsv() {
+  if (!analyzerLastResult || !analyzerLastResult.todos_by_department) {
+    setStatusElement(analyzerStatusEl, "No to-dos to export.", "warn");
+    return;
+  }
+
+  const rows = [["department", "task", "source_point"]];
+  for (const dept of DEPARTMENTS) {
+    const items = normalizeArray(analyzerLastResult.todos_by_department[dept]);
+    for (const item of items) {
+      const task = item?.task ?? "";
+      const source = item?.source_point ?? "";
+      rows.push([
+        dept,
+        task.replaceAll('"', '""'),
+        source.replaceAll('"', '""')
+      ]);
+    }
+  }
+
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
+  downloadBlob(csv, "todos.csv", "text/csv;charset=utf-8;");
+}
+
+exportAnalyzerTranslationBtn.addEventListener("click", exportAnalyzerTranslationDocx);
+exportAnalyzerTodosBtn.addEventListener("click", exportAnalyzerTodosCsv);
+
+analyzerOutputsWrap.addEventListener("change", updateAnalyzeEnabled);
+updateAnalyzeEnabled();
+
+analyzerClearBtn.addEventListener("click", () => {
+  resetAnalyzerResults();
+  analyzerFileInput.value = "";
+  setStatusElement(analyzerStatusEl, "Cleared. Ready.", "info");
+});
+
+analyzeForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const file = analyzerFileInput.files?.[0];
+  if (!file) {
+    setStatusElement(analyzerStatusEl, "Choose a PDF or DOCX file first.", "warn");
+    return;
+  }
+
+  const outputs = getAnalyzerOutputs();
+  if (outputs.length < 1) {
+    setStatusElement(analyzerStatusEl, "Choose at least one output.", "warn");
+    return;
+  }
+
+  analyzeBtn.disabled = true;
+  resetAnalyzerResults();
+  setStatusElement(analyzerStatusEl, "Uploading and analyzing...", "info");
+
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("targetLanguage", analyzerTranslateTo.value);
+    outputs.forEach(o => fd.append("outputs", o));
+
+    const res = await fetch("/api/analyze", { method: "POST", body: fd });
+
+    if (!res.ok) {
+      const details = await safeReadError(res);
+      setStatusElement(analyzerStatusEl, `Request failed (${res.status}). ${details || ""}`.trim(), "bad");
+      return;
+    }
+
+    const data = await res.json();
+    analyzerLastResult = data;
+
+    setStatusElement(analyzerStatusEl, "Done.", "good");
+    analyzerResultsCard.style.display = "block";
+
+    if (outputs.includes("translation")) {
+      analyzerTranslationBlock.style.display = "block";
+      renderAnalyzerTranslatedDoc(data);
+    }
+
+    if (outputs.includes("summary")) {
+      analyzerSummaryBlock.style.display = "block";
+      renderAnalyzerSummary(data);
+    }
+
+    if (outputs.includes("key_points")) {
+      analyzerKeyPointsBlock.style.display = "block";
+      renderAnalyzerKeyPoints(data);
+    }
+
+    if (outputs.includes("todos")) {
+      analyzerTodosBlock.style.display = "block";
+      renderAnalyzerTodos(data);
+    }
+  } catch (err) {
+    setStatusElement(analyzerStatusEl, `Network error: ${err?.message || String(err)}`, "bad");
+  } finally {
+    updateAnalyzeEnabled();
+  }
+});
+
+// ============================================
+// Desk Functions (Tab 3)
+// ============================================
+
+function renderDeskDocumentSelects() {
+  const processedDocs = documents.filter(d => d.processed);
+
+  if (processedDocs.length === 0) {
+    const emptyHtml = `<p class="subtle">No processed documents. Go to Document Library to upload and process documents.</p>`;
+    deskDocumentSelectEl.innerHTML = emptyHtml;
+    deskCrossRefSelectEl.innerHTML = emptyHtml;
+    updateAskButtonState();
+    updateDeskAnalyzeState();
+    return;
+  }
+
+  const renderSelectList = (containerId) => {
+    return processedDocs.map(doc => `
+      <label class="document-select-item">
+        <input type="checkbox" class="${containerId}-checkbox" data-id="${doc.id}" />
+        <span class="doc-select-name">${escapeHtml(doc.name)}</span>
+        <span class="doc-select-status processed">${doc.word_count} words</span>
+      </label>
+    `).join("");
+  };
+
+  deskDocumentSelectEl.innerHTML = renderSelectList("qa-doc");
+  deskCrossRefSelectEl.innerHTML = renderSelectList("crossref-doc");
+
+  // Add event listeners
+  deskDocumentSelectEl.querySelectorAll(".qa-doc-checkbox").forEach(cb => {
+    cb.addEventListener("change", updateAskButtonState);
+  });
+
+  deskCrossRefSelectEl.querySelectorAll(".crossref-doc-checkbox").forEach(cb => {
+    cb.addEventListener("change", updateDeskAnalyzeState);
+  });
+
+  updateAskButtonState();
+  updateDeskAnalyzeState();
+}
+
+function getSelectedQADocumentIds() {
+  const checkboxes = deskDocumentSelectEl.querySelectorAll(".qa-doc-checkbox:checked");
+  return Array.from(checkboxes).map(cb => parseInt(cb.dataset.id, 10));
+}
+
+function getSelectedCrossRefDocumentIds() {
+  const checkboxes = deskCrossRefSelectEl.querySelectorAll(".crossref-doc-checkbox:checked");
+  return Array.from(checkboxes).map(cb => parseInt(cb.dataset.id, 10));
+}
+
+function updateAskButtonState() {
+  const selectedIds = getSelectedQADocumentIds();
+  const hasQuestion = questionInput.value.trim().length > 0;
+  askBtn.disabled = selectedIds.length === 0 || !hasQuestion;
+}
+
+function getDeskOutputs() {
+  const checks = [...deskOutputsWrap.querySelectorAll('input[type="checkbox"]')];
+  return checks.filter(c => c.checked).map(c => c.value);
+}
+
+function updateDeskPrefillVisibility() {
+  const outputs = getDeskOutputs();
+  const wantsTemplate = outputs.includes("generate_template");
+  deskPrefillField.style.display = wantsTemplate ? "block" : "none";
+
+  if (!wantsTemplate) {
+    deskPrefillToggle.checked = false;
+  }
+}
+
+function updateDeskAnalyzeState() {
+  const hasExternalFile = deskExternalFile.files?.length > 0;
+  const selectedCrossRefIds = getSelectedCrossRefDocumentIds();
+  const outputs = getDeskOutputs();
+
+  const enabled = hasExternalFile && selectedCrossRefIds.length > 0 && outputs.length > 0;
+  deskAnalyzeBtn.disabled = !enabled;
+}
+
+// Q&A functionality
 async function askQuestion() {
   const question = questionInput.value.trim();
-  const selectedIds = getSelectedDocumentIds();
+  const selectedIds = getSelectedQADocumentIds();
 
   if (!question) {
     setStatusElement(qaStatusEl, "Please enter a question.", "warn");
@@ -414,194 +757,31 @@ function renderAnswer(data) {
   }
 }
 
-// Event listeners for document library
-scanBtn.addEventListener("click", scanDocuments);
-processAllBtn.addEventListener("click", processAllDocuments);
-uploadBtn.addEventListener("click", uploadDocument);
-askBtn.addEventListener("click", askQuestion);
-questionInput.addEventListener("input", updateAskButtonState);
-questionInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    if (!askBtn.disabled) {
-      askQuestion();
-    }
-  }
-});
-
-// Initialize document library on page load
-checkEmbeddingStatus();
-loadDocuments();
-
-// ============================================
-// Analyze Form Functions
-// ============================================
-
-function getSelectedOutputs() {
-  const checks = [...outputsWrap.querySelectorAll('input[type="checkbox"][name="outputs"]')];
-  return checks.filter(c => c.checked).map(c => c.value);
+// Cross-reference & Template functionality
+function hideDeskResultBlocks() {
+  deskResultsCard.style.display = "none";
+  deskCrossRefBlock.style.display = "none";
+  deskTemplateBlock.style.display = "none";
 }
 
-function updateAnalyzeEnabled(showStatus = true) {
-  const outputs = getSelectedOutputs();
-  const enabled = outputs.length >= 1;
-  analyzeBtn.disabled = !enabled;
-
-  if (!showStatus) return;
-  if (!enabled) setStatus("Choose at least one output to enable Analyze.", "warn");
-  else setStatus("Ready.", "info");
+function resetDeskResults() {
+  deskLastResult = null;
+  deskTemplateText = "";
+  deskCrossRefEl.textContent = "No data yet.";
+  deskTemplateBoxEl.textContent = "No data yet.";
+  hideDeskResultBlocks();
 }
 
-// Show/hide pre-fill option based on whether "Generate response template" is selected
-function updatePrefillVisibility() {
-  const outputs = getSelectedOutputs();
-  const wantsTemplate = outputs.includes("generate_template");
-  prefillField.style.display = wantsTemplate ? "flex" : "none";
-
-  // If template is unchecked, also uncheck the prefill toggle
-  if (!wantsTemplate) {
-    templateFillToggle.checked = false;
-  }
-}
-
-outputsWrap.addEventListener("change", () => {
-  updateAnalyzeEnabled(true);
-  updatePrefillVisibility();
-});
-
-updateAnalyzeEnabled(true);
-updatePrefillVisibility();
-
-function hideAllResultBlocks() {
-  resultsCard.style.display = "none";
-  translationBlock.style.display = "none";
-  summaryBlock.style.display = "none";
-  keyPointsBlock.style.display = "none";
-  todosBlock.style.display = "none";
-  crossRefBlock.style.display = "none";
-  templateBlock.style.display = "none";
-}
-
-function resetResults() {
-  lastResult = null;
-  originalTemplateText = "";
-
-  translatedDocEl.textContent = "No data yet.";
-  summaryEl.textContent = "No data yet.";
-  keyPointsEl.textContent = "No data yet.";
-  todosEl.textContent = "No data yet.";
-  crossRefEl.textContent = "No data yet.";
-  templateBoxEl.textContent = "No data yet.";
-
-  translatedDocEl.classList.add("subtle");
-  summaryEl.classList.add("subtle");
-  keyPointsEl.classList.add("subtle");
-  todosEl.classList.add("subtle");
-  crossRefEl.classList.add("subtle");
-  templateBoxEl.classList.add("subtle");
-
-  hideAllResultBlocks();
-}
-
-clearBtn.addEventListener("click", () => {
-  resetResults();
-  fileInput.value = "";
-  crossFilesInput.value = "";
-  templateFillToggle.checked = false;
-  setStatus("Cleared. Ready.", "info");
-});
-
-function renderTranslatedDoc(data) {
-  const t = data?.translated_text ?? "";
-  translatedDocEl.classList.remove("subtle");
-  translatedDocEl.innerHTML = t
-    ? `<pre class="doc">${escapeHtml(t)}</pre>`
-    : `<p class="subtle">No translated text in response.</p>`;
-  if (t) translatedDisclosure.open = true;
-}
-
-function renderSummary(data) {
-  const summary = data?.summary ?? "";
-  summaryEl.classList.remove("subtle");
-  summaryEl.innerHTML = summary
-    ? `<p>${escapeHtml(summary)}</p>`
-    : `<p class="subtle">No summary in response.</p>`;
-}
-
-function renderKeyPoints(data) {
-  const items = normalizeArray(data?.key_points ?? []);
-  keyPointsEl.classList.remove("subtle");
-
-  if (!items.length) {
-    keyPointsEl.innerHTML = `<p class="subtle">No key points in response.</p>`;
-    return;
-  }
-
-  keyPointsEl.innerHTML = items.map((kp) => {
-    const text = kp?.point ?? "";
-    const dept = kp?.department ?? "";
-    const tags = normalizeArray(kp?.tags).filter(Boolean);
-    const deptLabel = DEPARTMENTS.includes(dept) ? dept : "Unassigned";
-
-    return `
-      <div class="kp">
-        <div class="kp-top">
-          <span class="badge">${escapeHtml(deptLabel)}</span>
-          ${
-            tags.length
-              ? `<div class="tags">${tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>`
-              : `<span class="subtle">No tags</span>`
-          }
-        </div>
-        <div>${text ? escapeHtml(text) : "<span class='subtle'>No text</span>"}</div>
-      </div>
-    `;
-  }).join("");
-}
-
-function renderTodos(data) {
-  const byDeptObj = data?.todos_by_department ?? null;
-  todosEl.classList.remove("subtle");
-
-  if (!byDeptObj || typeof byDeptObj !== "object" || Array.isArray(byDeptObj)) {
-    todosEl.innerHTML = `<p class="subtle">No to-dos in response.</p>`;
-    return;
-  }
-
-  todosEl.innerHTML = DEPARTMENTS.map((dept) => {
-    const items = normalizeArray(byDeptObj[dept]);
-    return `
-      <div class="todo-dept">
-        <strong>${escapeHtml(dept)}</strong>
-        <div style="margin-top:8px;">
-          ${items.length ? items.map(renderTodoItem).join("") : `<div class="subtle">No tasks.</div>`}
-        </div>
-      </div>
-    `;
-  }).join("");
-}
-
-function renderTodoItem(item) {
-  const task = item?.task ?? "";
-  const source = item?.source_point ?? "";
-  return `
-    <div class="todo-item">
-      <div>${task ? escapeHtml(task) : "<span class='subtle'>No task text</span>"}</div>
-      ${source ? `<div class="todo-meta">Source: ${escapeHtml(source)}</div>` : ""}
-    </div>
-  `;
-}
-
-function renderCrossReference(data) {
+function renderDeskCrossReference(data) {
   const findings = normalizeArray(data?.cross_reference ?? []);
-  crossRefEl.classList.remove("subtle");
+  deskCrossRefEl.classList.remove("subtle");
 
   if (!findings.length) {
-    crossRefEl.innerHTML = `<p class="subtle">No cross-reference output.</p>`;
+    deskCrossRefEl.innerHTML = `<p class="subtle">No cross-reference output.</p>`;
     return;
   }
 
-  crossRefEl.innerHTML = findings.map((f) => {
+  deskCrossRefEl.innerHTML = findings.map((f) => {
     const q = f?.question ?? "";
     const a = f?.answer ?? "";
     const found = f?.found_in ?? "";
@@ -621,180 +801,132 @@ function renderCrossReference(data) {
   }).join("");
 }
 
-function renderTemplate(data) {
+function renderDeskTemplate(data) {
   const tmpl = data?.response_template ?? "";
-  templateBoxEl.classList.remove("subtle");
+  deskTemplateBoxEl.classList.remove("subtle");
 
-  originalTemplateText = tmpl || "";
+  deskTemplateText = tmpl || "";
   if (!tmpl) {
-    templateBoxEl.innerHTML = `<p class="subtle">No template in response.</p>`;
+    deskTemplateBoxEl.innerHTML = `<p class="subtle">No template in response.</p>`;
     return;
   }
 
-  templateBoxEl.innerHTML = `<pre class="doc">${escapeHtml(tmpl)}</pre>`;
+  deskTemplateBoxEl.innerHTML = `<pre class="doc">${escapeHtml(tmpl)}</pre>`;
 }
 
-async function safeReadError(res) {
-  const ct = res.headers.get("content-type") || "";
-  if (ct.includes("application/json")) {
-    const j = await res.json().catch(() => null);
-    return j?.error || j?.message || JSON.stringify(j);
-  }
-  return await res.text().catch(() => "Unknown error");
-}
-
-// Export helpers
-
-function downloadBlob(content, filename, type) {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-function exportTranslationDocx() {
-  if (!lastResult || !lastResult.translated_text) {
-    setStatus("No translated text to export.", "warn");
+function exportDeskTemplateDocx() {
+  if (!deskTemplateText) {
+    setStatusElement(deskStatusEl, "No template to export.", "warn");
     return;
   }
-  const html = `<html><body><pre>${escapeHtml(lastResult.translated_text)}</pre></body></html>`;
-  downloadBlob(html, "translation.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-}
-
-function exportTodosCsv() {
-  if (!lastResult || !lastResult.todos_by_department) {
-    setStatus("No to-dos to export.", "warn");
-    return;
-  }
-
-  const rows = [["department", "task", "source_point"]];
-  for (const dept of DEPARTMENTS) {
-    const items = normalizeArray(lastResult.todos_by_department[dept]);
-    for (const item of items) {
-      const task = item?.task ?? "";
-      const source = item?.source_point ?? "";
-      rows.push([
-        dept,
-        task.replaceAll('"', '""'),
-        source.replaceAll('"', '""')
-      ]);
-    }
-  }
-
-  const csv = rows
-    .map(r => r.map(v => `"${v}"`).join(","))
-    .join("\n");
-
-  downloadBlob(csv, "todos.csv", "text/csv;charset=utf-8;");
-}
-
-function exportTemplateDocx() {
-  if (!lastResult || !originalTemplateText) {
-    setStatus("No template to export.", "warn");
-    return;
-  }
-  const html = `<html><body><pre>${escapeHtml(originalTemplateText)}</pre></body></html>`;
+  const html = `<html><body><pre>${escapeHtml(deskTemplateText)}</pre></body></html>`;
   downloadBlob(html, "response-template.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
 }
 
-exportTranslationBtn.addEventListener("click", exportTranslationDocx);
-exportTodosBtn.addEventListener("click", exportTodosCsv);
-exportTemplateBtn.addEventListener("click", exportTemplateDocx);
+exportDeskTemplateBtn.addEventListener("click", exportDeskTemplateDocx);
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const file = fileInput.files?.[0];
-  if (!file) {
-    setStatus("Choose a PDF or DOCX file first.", "warn");
+async function deskAnalyze() {
+  const externalFile = deskExternalFile.files?.[0];
+  if (!externalFile) {
+    setStatusElement(deskStatusEl, "Please select an external document.", "warn");
     return;
   }
 
-  const outputs = getSelectedOutputs();
-  if (outputs.length < 1) {
-    setStatus("Choose at least one output.", "warn");
+  const crossRefDocIds = getSelectedCrossRefDocumentIds();
+  if (crossRefDocIds.length === 0) {
+    setStatusElement(deskStatusEl, "Please select at least one library document for cross-reference.", "warn");
     return;
   }
 
-  const wantsCrossRef = outputs.includes("cross_reference");
+  const outputs = getDeskOutputs();
+  if (outputs.length === 0) {
+    setStatusElement(deskStatusEl, "Please select at least one output.", "warn");
+    return;
+  }
+
   const wantsTemplate = outputs.includes("generate_template");
-  const wantsPrefill = wantsTemplate && templateFillToggle.checked;
+  const prefillTemplate = wantsTemplate && deskPrefillToggle.checked;
 
-  analyzeBtn.disabled = true;
-  resetResults();
-  setStatus("Uploading and analyzing...", "info");
+  deskAnalyzeBtn.disabled = true;
+  resetDeskResults();
+  setStatusElement(deskStatusEl, "Analyzing and generating...", "info");
 
   try {
     const fd = new FormData();
-    fd.append("file", file);
-    fd.append("targetLanguage", translateTo.value);
+    fd.append("file", externalFile);
+    fd.append("targetLanguage", deskTranslateTo.value);
+    fd.append("libraryDocumentIds", JSON.stringify(crossRefDocIds));
     outputs.forEach(o => fd.append("outputs", o));
 
-    // Send prefill preference to backend
     if (wantsTemplate) {
-      fd.append("prefillTemplate", wantsPrefill ? "true" : "false");
+      fd.append("prefillTemplate", prefillTemplate ? "true" : "false");
     }
 
-    // Always send cross files if cross-reference or template is requested
-    if (wantsCrossRef || wantsTemplate) {
-      const crossFiles = [...(crossFilesInput?.files || [])];
-      crossFiles.forEach(f => fd.append("crossFiles", f));
-    }
-
-    const res = await fetch(ENDPOINT, { method: "POST", body: fd });
+    const res = await fetch("/api/desk/analyze", { method: "POST", body: fd });
 
     if (!res.ok) {
       const details = await safeReadError(res);
-      setStatus(`Request failed (${res.status}). ${details || ""}`.trim(), "bad");
+      setStatusElement(deskStatusEl, `Request failed (${res.status}). ${details || ""}`.trim(), "bad");
       return;
     }
 
     const data = await res.json();
-    lastResult = data;
+    deskLastResult = data;
 
-    setStatus("Done.", "good");
-
-    // Show results card
-    resultsCard.style.display = "block";
-
-    // Show only the blocks that were requested and render their content
-    if (outputs.includes("translation")) {
-      translationBlock.style.display = "block";
-      renderTranslatedDoc(data);
-    }
-
-    if (outputs.includes("summary")) {
-      summaryBlock.style.display = "block";
-      renderSummary(data);
-    }
-
-    if (outputs.includes("key_points")) {
-      keyPointsBlock.style.display = "block";
-      renderKeyPoints(data);
-    }
-
-    if (outputs.includes("todos")) {
-      todosBlock.style.display = "block";
-      renderTodos(data);
-    }
+    setStatusElement(deskStatusEl, "Done.", "good");
+    deskResultsCard.style.display = "block";
 
     if (outputs.includes("cross_reference")) {
-      crossRefBlock.style.display = "block";
-      renderCrossReference(data);
+      deskCrossRefBlock.style.display = "block";
+      renderDeskCrossReference(data);
     }
 
     if (outputs.includes("generate_template")) {
-      templateBlock.style.display = "block";
-      renderTemplate(data);
+      deskTemplateBlock.style.display = "block";
+      renderDeskTemplate(data);
     }
   } catch (err) {
-    setStatus(`Network error: ${err?.message || String(err)}`, "bad");
+    setStatusElement(deskStatusEl, `Network error: ${err?.message || String(err)}`, "bad");
   } finally {
-    updateAnalyzeEnabled(false);
+    updateDeskAnalyzeState();
+  }
+}
+
+// Desk event listeners
+questionInput.addEventListener("input", updateAskButtonState);
+questionInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    if (!askBtn.disabled) {
+      askQuestion();
+    }
   }
 });
+askBtn.addEventListener("click", askQuestion);
+
+deskExternalFile.addEventListener("change", updateDeskAnalyzeState);
+deskOutputsWrap.addEventListener("change", () => {
+  updateDeskPrefillVisibility();
+  updateDeskAnalyzeState();
+});
+deskAnalyzeBtn.addEventListener("click", deskAnalyze);
+
+deskClearBtn.addEventListener("click", () => {
+  resetDeskResults();
+  deskExternalFile.value = "";
+  // Uncheck all cross-ref document selections
+  deskCrossRefSelectEl.querySelectorAll(".crossref-doc-checkbox").forEach(cb => {
+    cb.checked = false;
+  });
+  hideStatusElement(deskStatusEl);
+  updateDeskAnalyzeState();
+});
+
+// Initialize prefill visibility
+updateDeskPrefillVisibility();
+
+// ============================================
+// Initialize on Page Load
+// ============================================
+checkEmbeddingStatus();
+loadDocuments();
