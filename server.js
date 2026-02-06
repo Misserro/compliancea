@@ -771,14 +771,19 @@ app.post("/api/gdrive/scan", async (req, res) => {
     const result = await scanGDrive();
     const documents = getAllDocuments();
 
+    let message = `Google Drive scan complete. Added: ${result.added}, Updated: ${result.updated}, Removed: ${result.deleted}, Unchanged: ${result.unchanged}`;
+    if (result.errors && result.errors.length > 0) {
+      message += ` | Errors: ${result.errors.join("; ")}`;
+    }
+
     res.json({
-      message: `Google Drive scan complete. Added: ${result.added}, Updated: ${result.updated}, Removed: ${result.deleted}, Unchanged: ${result.unchanged}`,
+      message,
       ...result,
       documents,
     });
   } catch (err) {
     console.error("Error scanning Google Drive:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: `Google Drive scan failed: ${err.message}` });
   }
 });
 
