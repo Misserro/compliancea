@@ -18,6 +18,7 @@
       <button class="tab-btn active" data-tab="library">Document Library</button>
       <button class="tab-btn" data-tab="analyzer">Document Analyzer</button>
       <button class="tab-btn" data-tab="desk">Desk</button>
+      <button class="tab-btn" data-tab="governance">Governance <span id="taskBadge" class="tab-badge" style="display:none;">0</span></button>
       <button class="tab-btn" data-tab="statistics">Statistics</button>
       <button class="tab-btn" data-tab="settings">Settings</button>
     </nav>
@@ -53,8 +54,10 @@
 
         <div class="library-actions">
           <button id="scanBtn" type="button" class="btn-secondary">Scan Server Folder</button>
+          <button id="scanGDriveBtn" type="button" class="btn-secondary">Scan Google Drive</button>
           <button id="processAllBtn" type="button" class="btn-secondary">Process All</button>
           <span id="embeddingStatus" class="embedding-status"></span>
+          <span id="gdriveStatus" class="gdrive-status" style="display:none;"></span>
         </div>
 
         <div id="libraryStatus" class="status" style="margin-top: 1rem; display: none;"></div>
@@ -284,7 +287,148 @@
       </section>
     </section>
 
-    <!-- Tab 4: Statistics -->
+    <!-- Tab 4: Governance -->
+    <section class="tab-content" id="tab-governance">
+      <div class="card">
+        <h2 class="section-title">Governance Dashboard</h2>
+        <p class="subtle" style="margin-bottom: 1rem;">Manage policies, tasks, audit trail, and legal holds.</p>
+
+        <!-- Tasks Section -->
+        <div class="desk-section">
+          <div class="field-header">
+            <h3>Tasks <span id="openTaskCount" class="task-count"></span></h3>
+            <select id="taskStatusFilter" class="category-input" style="width: auto;">
+              <option value="open">Open</option>
+              <option value="resolved">Resolved</option>
+              <option value="dismissed">Dismissed</option>
+              <option value="">All</option>
+            </select>
+          </div>
+          <div id="tasksList" class="tasks-list">
+            <p class="subtle">No tasks.</p>
+          </div>
+        </div>
+
+        <div class="library-divider"></div>
+
+        <!-- Policy Rules Section -->
+        <div class="desk-section">
+          <div class="field-header">
+            <h3>Policy Rules</h3>
+            <button id="addPolicyBtn" type="button" class="btn-secondary">Add Policy</button>
+          </div>
+          <div id="policiesList" class="policies-list">
+            <p class="subtle">No policies defined.</p>
+          </div>
+        </div>
+
+        <!-- Add/Edit Policy Form (hidden by default) -->
+        <div id="policyForm" class="card policy-form" style="display: none;">
+          <h3 id="policyFormTitle">Add Policy Rule</h3>
+          <input type="hidden" id="policyEditId" value="" />
+          <div class="field">
+            <label for="policyName">Policy Name</label>
+            <input type="text" id="policyName" placeholder="e.g. EU Contract Retention" />
+          </div>
+          <div class="field">
+            <label for="policyConditionField">Condition Field</label>
+            <select id="policyConditionField">
+              <option value="doc_type">Document Type</option>
+              <option value="jurisdiction">Jurisdiction</option>
+              <option value="category">Department</option>
+              <option value="client">Client</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="policyConditionValue">Condition Value</label>
+            <input type="text" id="policyConditionValue" placeholder="e.g. contract, EU, Finance" />
+          </div>
+          <div class="field">
+            <label for="policyActionType">Action</label>
+            <select id="policyActionType">
+              <option value="set_retention">Set Retention</option>
+              <option value="require_approval">Require Approval</option>
+              <option value="add_tag">Add Tag</option>
+              <option value="flag_review">Flag for Review</option>
+            </select>
+          </div>
+          <div class="field" id="policyRetentionField">
+            <label for="policyRetentionYears">Retention Years</label>
+            <input type="number" id="policyRetentionYears" min="1" max="99" value="5" />
+          </div>
+          <div class="field" id="policyTagField" style="display: none;">
+            <label for="policyTagValue">Tag to Add</label>
+            <input type="text" id="policyTagValue" placeholder="e.g. regulated" />
+          </div>
+          <div class="actions">
+            <button id="savePolicyBtn" type="button" class="btn-primary">Save Policy</button>
+            <button id="cancelPolicyBtn" type="button" class="btn-secondary">Cancel</button>
+          </div>
+        </div>
+
+        <div class="library-divider"></div>
+
+        <!-- Audit Log Section -->
+        <div class="desk-section">
+          <div class="field-header">
+            <h3>Audit Log</h3>
+            <button id="refreshAuditBtn" type="button" class="btn-secondary">Refresh</button>
+          </div>
+          <div id="auditLog" class="audit-log">
+            <p class="subtle">No audit entries.</p>
+          </div>
+        </div>
+
+        <div class="library-divider"></div>
+
+        <!-- Maintenance Section -->
+        <div class="desk-section">
+          <h3>Maintenance</h3>
+          <p class="hint">Run periodic checks: retention, unconfirmed tags, Google Drive sync.</p>
+          <div class="actions" style="margin-top: 0.5rem;">
+            <button id="runMaintenanceBtn" type="button" class="btn-secondary">Run Maintenance Now</button>
+            <span id="maintenanceStatus" class="settings-status"></span>
+          </div>
+          <div id="maintenanceResult" style="display: none; margin-top: 1rem;"></div>
+        </div>
+
+        <div class="library-divider"></div>
+
+        <!-- Legal Holds Section -->
+        <div class="desk-section">
+          <div class="field-header">
+            <h3>Legal Holds</h3>
+            <button id="addLegalHoldBtn" type="button" class="btn-secondary">Add Hold</button>
+          </div>
+          <div id="legalHoldsList" class="legal-holds-list">
+            <p class="subtle">No legal holds.</p>
+          </div>
+        </div>
+
+        <!-- Add Legal Hold Form (hidden by default) -->
+        <div id="legalHoldForm" class="card" style="display: none;">
+          <h3>Create Legal Hold</h3>
+          <div class="field">
+            <label for="holdMatterName">Matter Name</label>
+            <input type="text" id="holdMatterName" placeholder="e.g. Acme Corp Investigation" />
+          </div>
+          <div class="field">
+            <label for="holdScopeKeywords">Keywords (comma-separated)</label>
+            <input type="text" id="holdScopeKeywords" placeholder="e.g. merger, acquisition, acme" />
+          </div>
+          <div class="field">
+            <label for="holdScopeClients">Clients (comma-separated)</label>
+            <input type="text" id="holdScopeClients" placeholder="e.g. Acme Corp, Beta Inc" />
+          </div>
+          <div class="actions">
+            <button id="saveLegalHoldBtn" type="button" class="btn-primary">Create Hold</button>
+            <button id="cancelLegalHoldBtn" type="button" class="btn-secondary">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Statistics -->
     <section class="tab-content" id="tab-statistics">
       <div class="card">
         <h2 class="section-title">Statistics</h2>
@@ -405,9 +549,102 @@
           <button id="resetSettingsBtn" type="button" class="btn-secondary">Reset to Defaults</button>
           <span id="settingsStatus" class="settings-status"></span>
         </div>
+
+        <div class="library-divider"></div>
+
+        <div class="settings-section">
+          <h3>Google Drive Integration</h3>
+          <p class="hint" style="margin-bottom: 1rem;">Connect to publicly shared Google Drive folders. Requires a Google API Key with the Drive API enabled. Only files shared as "Anyone with the link" will be accessible.</p>
+
+          <div class="settings-list">
+            <div class="setting-item">
+              <div class="setting-info">
+                <label class="setting-label" for="settingGdriveApiKey">Google API Key</label>
+                <p class="setting-description">Your Google Cloud API Key with Drive API enabled. Create one at <em>console.cloud.google.com > APIs & Services > Credentials</em>.</p>
+              </div>
+              <div class="setting-control setting-control-text">
+                <input type="password" id="settingGdriveApiKey" placeholder="AIza..." class="text-input" />
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <label class="setting-label" for="settingGdriveFolderId">Google Drive Folder ID</label>
+                <p class="setting-description">The folder ID from the Drive URL. Open your shared folder and copy the ID after <em>/folders/</em> in the URL.</p>
+              </div>
+              <div class="setting-control setting-control-text">
+                <input type="text" id="settingGdriveFolderId" placeholder="1ABC2DEF3GHI..." class="text-input" />
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-actions" style="margin-top: 1rem;">
+            <button id="saveGdriveSettingsBtn" type="button" class="btn-primary">Save Google Drive Settings</button>
+            <span id="gdriveSettingsStatus" class="settings-status"></span>
+          </div>
+        </div>
       </div>
     </section>
   </main>
+
+  <!-- Document Metadata Modal -->
+  <div id="metadataModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <h3>Edit Document Metadata</h3>
+      <input type="hidden" id="metadataDocId" />
+      <div class="field">
+        <label for="metaDocType">Document Type</label>
+        <select id="metaDocType">
+          <option value="">Unknown</option>
+          <option value="contract">Contract</option>
+          <option value="invoice">Invoice</option>
+          <option value="letter">Letter</option>
+          <option value="report">Report</option>
+          <option value="application">Application</option>
+          <option value="policy">Policy</option>
+          <option value="memo">Memo</option>
+          <option value="minutes">Minutes</option>
+          <option value="form">Form</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="metaClient">Client</label>
+        <input type="text" id="metaClient" placeholder="Client or counterparty" />
+      </div>
+      <div class="field">
+        <label for="metaJurisdiction">Jurisdiction</label>
+        <select id="metaJurisdiction">
+          <option value="">Unknown</option>
+          <option value="EU">EU</option>
+          <option value="US">US</option>
+          <option value="UK">UK</option>
+          <option value="DE">DE</option>
+          <option value="PL">PL</option>
+          <option value="FR">FR</option>
+          <option value="ES">ES</option>
+          <option value="international">International</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="metaTags">Tags (comma-separated)</label>
+        <input type="text" id="metaTags" placeholder="e.g. urgent, kyc, compliance" />
+      </div>
+      <div class="field">
+        <label for="metaStatus">Status</label>
+        <select id="metaStatus">
+          <option value="draft">Draft</option>
+          <option value="in_review">In Review</option>
+          <option value="approved">Approved</option>
+          <option value="archived">Archived</option>
+        </select>
+      </div>
+      <div class="actions">
+        <button id="saveMetadataBtn" type="button" class="btn-primary">Save</button>
+        <button id="cancelMetadataBtn" type="button" class="btn-secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

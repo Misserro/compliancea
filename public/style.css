@@ -1633,6 +1633,26 @@ code {
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
 }
 
+.setting-control-text {
+  min-width: 200px;
+}
+
+.text-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.28);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
 /* Settings actions */
 .settings-actions {
   display: flex;
@@ -1722,4 +1742,167 @@ code {
   .settings-status {
     text-align: center;
   }
+}
+
+/* ============================================
+   Phase 0: Governance & Metadata Styles
+   ============================================ */
+
+/* Metadata badges */
+.meta-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+  vertical-align: middle;
+  margin-right: 3px;
+}
+
+.tag-chip {
+  display: inline-block;
+  padding: 0 5px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  background: #2d333b;
+  color: #adbac7;
+  border: 1px solid #444c56;
+  margin-right: 2px;
+}
+
+/* Tab badge (task count) */
+.tab-badge {
+  display: inline-block;
+  background: #f85149;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* Google Drive status */
+.gdrive-status {
+  font-size: 0.8rem;
+  color: #888;
+}
+.gdrive-status.ready {
+  color: #2ea043;
+}
+
+/* Tasks list */
+.task-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #2d333b;
+}
+.task-item:last-child { border-bottom: none; }
+.task-info { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.task-desc { margin: 0.25rem 0 0; font-size: 0.85rem; }
+.task-actions { margin-top: 0.25rem; display: flex; gap: 0.25rem; }
+.task-count { font-size: 0.85rem; color: #e6a817; }
+
+/* Policy items */
+.policy-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #2d333b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.policy-item:last-child { border-bottom: none; }
+.policy-actions { display: flex; gap: 0.25rem; }
+.policy-form { margin-top: 1rem; }
+
+/* Audit log */
+.audit-entries { max-height: 300px; overflow-y: auto; }
+.audit-entry {
+  padding: 0.25rem 0;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #1c2128;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.audit-action {
+  font-weight: 600;
+  color: #539bf5;
+}
+
+/* Legal holds */
+.hold-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #2d333b;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.hold-item:last-child { border-bottom: none; }
+
+/* Small buttons */
+.btn-sm {
+  padding: 2px 8px;
+  font-size: 0.75rem;
+}
+
+.btn-metadata {
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  background: #2d333b;
+  color: #adbac7;
+  border: 1px solid #444c56;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.btn-metadata:hover { background: #373e47; }
+
+/* Modal overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: #22272e;
+  border: 1px solid #444c56;
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.modal-content h3 { margin-top: 0; }
+.modal-content .field { margin-bottom: 0.75rem; }
+.modal-content input, .modal-content select {
+  width: 100%;
+  padding: 0.4rem;
+  background: #1c2128;
+  border: 1px solid #444c56;
+  border-radius: 4px;
+  color: #adbac7;
+  font-size: 0.9rem;
+}
+.modal-content label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  color: #adbac7;
 }

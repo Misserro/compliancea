@@ -26,6 +26,11 @@ function switchTab(tabId) {
   if (tabId === "settings") {
     loadSettings();
   }
+
+  // Load governance data when switching to Governance tab
+  if (tabId === "governance") {
+    loadGovernanceData();
+  }
 }
 
 tabBtns.forEach(btn => {
@@ -130,6 +135,10 @@ const minResultsSettingEl = document.getElementById("minResultsSetting");
 const saveSettingsBtn = document.getElementById("saveSettingsBtn");
 const resetSettingsBtn = document.getElementById("resetSettingsBtn");
 const settingsStatusEl = document.getElementById("settingsStatus");
+const settingGdriveApiKeyEl = document.getElementById("settingGdriveApiKey");
+const settingGdriveFolderIdEl = document.getElementById("settingGdriveFolderId");
+const saveGdriveSettingsBtn = document.getElementById("saveGdriveSettingsBtn");
+const gdriveSettingsStatusEl = document.getElementById("gdriveSettingsStatus");
 
 // ============================================
 // Shared State
@@ -456,13 +465,48 @@ function renderDocumentList() {
     const statusText = doc.processed ? `${doc.word_count} words` : "Not processed";
     const dateStr = new Date(doc.added_at).toLocaleDateString();
 
+    // Phase 0: metadata badges
+    const docStatus = doc.status || "draft";
+    const statusColors = { draft: "#888", in_review: "#e6a817", approved: "#2ea043", archived: "#f85149" };
+    const statusBadge = `<span class="meta-badge" style="background:${statusColors[docStatus] || '#888'}">${docStatus}</span>`;
+
+    const sourceBadge = doc.source === "gdrive"
+      ? `<span class="meta-badge" style="background:#4285f4">Drive</span>`
+      : doc.source === "scan"
+        ? `<span class="meta-badge" style="background:#666">Local</span>`
+        : "";
+
+    const syncBadge = doc.sync_status === "modified"
+      ? `<span class="meta-badge" style="background:#e6a817">modified</span>`
+      : doc.sync_status === "deleted"
+        ? `<span class="meta-badge" style="background:#f85149">removed</span>`
+        : "";
+
+    const typeBadge = doc.doc_type ? `<span class="meta-badge" style="background:#6e40c9">${doc.doc_type}</span>` : "";
+
+    const holdBadge = doc.legal_hold ? `<span class="meta-badge" style="background:#f85149">HOLD</span>` : "";
+
+    const tagsBadge = doc.confirmed_tags === 0 && doc.auto_tags
+      ? `<span class="meta-badge" style="background:#888; border: 1px dashed #fff" title="Unconfirmed auto-tags">auto-tagged</span>`
+      : "";
+
+    let tagsList = "";
+    try {
+      const tags = doc.tags ? JSON.parse(doc.tags) : [];
+      if (tags.length > 0) {
+        tagsList = tags.slice(0, 3).map(t => `<span class="tag-chip">${escapeHtml(t)}</span>`).join("");
+      }
+    } catch { /* ignore parse errors */ }
+
     return `
       <div class="doc-item ${statusClass}" data-id="${doc.id}">
         <div class="doc-info">
           <span class="doc-name">${escapeHtml(doc.name)}</span>
           <div class="doc-meta">
+            ${statusBadge}${typeBadge}${sourceBadge}${syncBadge}${holdBadge}${tagsBadge}
             <span class="doc-status ${statusClass}">${statusText}</span>
             <span class="doc-date">${dateStr}</span>
+            ${tagsList}
           </div>
         </div>
         <div class="doc-category-select">
@@ -472,6 +516,7 @@ function renderDocumentList() {
           </select>
         </div>
         <div class="doc-actions">
+          <button class="btn-metadata" data-id="${doc.id}" title="Edit metadata">Edit</button>
           ${!doc.processed ? `<button class="btn-process" data-id="${doc.id}">Process</button>` : ""}
           <button class="btn-delete" data-id="${doc.id}">Delete</button>
         </div>
@@ -512,6 +557,11 @@ function renderDocumentList() {
 
   documentListEl.querySelectorAll(".category-select").forEach(select => {
     select.addEventListener("change", () => updateDocumentCategory(parseInt(select.dataset.id, 10), select.value));
+  });
+
+  // Phase 0: metadata edit buttons
+  documentListEl.querySelectorAll(".btn-metadata").forEach(btn => {
+    btn.addEventListener("click", () => openMetadataModal(parseInt(btn.dataset.id, 10)));
   });
 }
 
@@ -1375,6 +1425,9 @@ async function loadSettings() {
     currentSettings = data;
     renderSettings(data);
 
+    // Also load Google Drive settings (separate persistence)
+    loadGdriveSettings();
+
     // Update desk model indicator if settings changed
     updateDeskAnalyzeState();
   } catch (err) {
@@ -1493,8 +1546,617 @@ saveSettingsBtn.addEventListener("click", saveSettings);
 resetSettingsBtn.addEventListener("click", resetToDefaults);
 
 // ============================================
+// Phase 0: Google Drive Functions
+// ============================================
+
+async function checkGDriveStatus() {
+  const gdriveStatusEl = document.getElementById("gdriveStatus");
+  const scanGDriveBtn = document.getElementById("scanGDriveBtn");
+
+  try {
+    const res = await fetch("/api/gdrive/status");
+    const data = await res.json();
+
+    if (data.available) {
+      gdriveStatusEl.textContent = `Google Drive: Connected${data.lastSync ? ` (last sync: ${new Date(data.lastSync).toLocaleTimeString()})` : ""}`;
+      gdriveStatusEl.className = "gdrive-status ready";
+      gdriveStatusEl.style.display = "";
+      scanGDriveBtn.disabled = false;
+    } else {
+      gdriveStatusEl.textContent = `Google Drive: ${data.error || "Not configured"}`;
+      gdriveStatusEl.className = "gdrive-status";
+      gdriveStatusEl.style.display = "";
+      scanGDriveBtn.disabled = true;
+    }
+  } catch {
+    scanGDriveBtn.disabled = true;
+  }
+}
+
+async function scanGDrive() {
+  const scanGDriveBtn = document.getElementById("scanGDriveBtn");
+  scanGDriveBtn.disabled = true;
+  setStatusElement(libraryStatusEl, "Scanning Google Drive...", "info");
+
+  try {
+    const res = await fetch("/api/gdrive/scan", { method: "POST" });
+    const data = await res.json();
+
+    if (res.ok) {
+      documents = data.documents || [];
+      renderDocumentList();
+      setStatusElement(libraryStatusEl, data.message || "Google Drive scan complete", "good");
+      checkGDriveStatus(); // refresh status
+    } else {
+      setStatusElement(libraryStatusEl, data.error || "Google Drive scan failed", "bad");
+    }
+  } catch (err) {
+    setStatusElement(libraryStatusEl, `Error: ${err.message}`, "bad");
+  } finally {
+    scanGDriveBtn.disabled = false;
+  }
+}
+
+document.getElementById("scanGDriveBtn").addEventListener("click", scanGDrive);
+
+// ============================================
+// Google Drive Settings Functions
+// ============================================
+
+async function loadGdriveSettings() {
+  try {
+    const res = await fetch("/api/gdrive/settings");
+    const data = await res.json();
+
+    // Show masked API key if one exists, otherwise leave empty for input
+    settingGdriveApiKeyEl.value = "";
+    settingGdriveApiKeyEl.placeholder = data.hasApiKey ? data.apiKey : "AIza...";
+    settingGdriveFolderIdEl.value = data.folderId || "";
+  } catch (err) {
+    console.error("Error loading Google Drive settings:", err);
+  }
+}
+
+async function saveGdriveSettings() {
+  saveGdriveSettingsBtn.disabled = true;
+
+  const updates = {};
+
+  // Only send API key if user entered a new one (not empty = keep existing)
+  const apiKeyValue = settingGdriveApiKeyEl.value.trim();
+  if (apiKeyValue) {
+    updates.apiKey = apiKeyValue;
+  }
+
+  updates.folderId = settingGdriveFolderIdEl.value.trim();
+
+  try {
+    const res = await fetch("/api/gdrive/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      setGdriveSettingsStatus("Google Drive settings saved", "good");
+      // Clear the API key field and update placeholder with masked version
+      settingGdriveApiKeyEl.value = "";
+      settingGdriveApiKeyEl.placeholder = data.hasApiKey ? data.apiKey : "AIza...";
+      settingGdriveFolderIdEl.value = data.folderId || "";
+      // Refresh the GDrive status in the Library tab
+      checkGDriveStatus();
+    } else {
+      setGdriveSettingsStatus(data.error || "Failed to save", "bad");
+    }
+  } catch (err) {
+    setGdriveSettingsStatus(`Error: ${err.message}`, "bad");
+  } finally {
+    saveGdriveSettingsBtn.disabled = false;
+  }
+}
+
+function setGdriveSettingsStatus(message, kind = "info") {
+  gdriveSettingsStatusEl.textContent = message;
+  gdriveSettingsStatusEl.className = "settings-status";
+  if (kind === "good") gdriveSettingsStatusEl.classList.add("good");
+  if (kind === "bad") gdriveSettingsStatusEl.classList.add("bad");
+
+  setTimeout(() => {
+    gdriveSettingsStatusEl.textContent = "";
+    gdriveSettingsStatusEl.className = "settings-status";
+  }, 3000);
+}
+
+saveGdriveSettingsBtn.addEventListener("click", saveGdriveSettings);
+
+// ============================================
+// Phase 0: Metadata Modal Functions
+// ============================================
+
+function openMetadataModal(docId) {
+  const doc = documents.find(d => d.id === docId);
+  if (!doc) return;
+
+  document.getElementById("metadataDocId").value = docId;
+  document.getElementById("metaDocType").value = doc.doc_type || "";
+  document.getElementById("metaClient").value = doc.client || "";
+  document.getElementById("metaJurisdiction").value = doc.jurisdiction || "";
+  document.getElementById("metaStatus").value = doc.status || "draft";
+
+  let tags = [];
+  try { tags = doc.tags ? JSON.parse(doc.tags) : []; } catch { tags = []; }
+  document.getElementById("metaTags").value = tags.join(", ");
+
+  document.getElementById("metadataModal").style.display = "flex";
+}
+
+function closeMetadataModal() {
+  document.getElementById("metadataModal").style.display = "none";
+}
+
+async function saveMetadata() {
+  const docId = parseInt(document.getElementById("metadataDocId").value, 10);
+  const tagsStr = document.getElementById("metaTags").value;
+  const tags = tagsStr ? tagsStr.split(",").map(t => t.trim().toLowerCase()).filter(Boolean) : [];
+
+  const updates = {
+    doc_type: document.getElementById("metaDocType").value || null,
+    client: document.getElementById("metaClient").value || null,
+    jurisdiction: document.getElementById("metaJurisdiction").value || null,
+    tags: JSON.stringify(tags),
+    confirmed_tags: 1,
+  };
+
+  try {
+    const res = await fetch(`/api/documents/${docId}/metadata`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates)
+    });
+
+    if (res.ok) {
+      closeMetadataModal();
+      await loadDocuments();
+      setStatusElement(libraryStatusEl, "Metadata updated", "good");
+    } else {
+      const data = await res.json();
+      alert(data.error || "Failed to save metadata");
+    }
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+
+  // Handle status change separately (uses state machine endpoint)
+  const newStatus = document.getElementById("metaStatus").value;
+  const doc = documents.find(d => d.id === docId);
+  if (doc && newStatus !== (doc.status || "draft")) {
+    try {
+      await fetch(`/api/documents/${docId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      await loadDocuments();
+    } catch { /* ignore status change errors in modal flow */ }
+  }
+}
+
+document.getElementById("saveMetadataBtn").addEventListener("click", saveMetadata);
+document.getElementById("cancelMetadataBtn").addEventListener("click", closeMetadataModal);
+
+// Close modal on overlay click
+document.getElementById("metadataModal").addEventListener("click", (e) => {
+  if (e.target.id === "metadataModal") closeMetadataModal();
+});
+
+// ============================================
+// Phase 0: Governance Tab Functions
+// ============================================
+
+async function loadGovernanceData() {
+  await Promise.all([
+    loadTasks(),
+    loadPolicies(),
+    loadAuditLog(),
+    loadLegalHolds(),
+    loadMaintenanceStatus(),
+  ]);
+}
+
+// --- Tasks ---
+
+async function loadTasks() {
+  const statusFilter = document.getElementById("taskStatusFilter").value;
+  try {
+    const res = await fetch(`/api/tasks?status=${statusFilter}`);
+    const data = await res.json();
+    renderTasks(data.tasks || []);
+    updateTaskBadge(data.openCount || 0);
+  } catch (err) {
+    document.getElementById("tasksList").innerHTML = `<p class="subtle">Error loading tasks.</p>`;
+  }
+}
+
+function renderTasks(tasks) {
+  const el = document.getElementById("tasksList");
+  if (tasks.length === 0) {
+    el.innerHTML = `<p class="subtle">No tasks.</p>`;
+    return;
+  }
+
+  el.innerHTML = tasks.map(task => {
+    const date = new Date(task.created_at).toLocaleString();
+    const statusBadge = task.status === "open"
+      ? `<span class="meta-badge" style="background:#e6a817">open</span>`
+      : task.status === "resolved"
+        ? `<span class="meta-badge" style="background:#2ea043">resolved</span>`
+        : `<span class="meta-badge" style="background:#888">dismissed</span>`;
+
+    const actions = task.status === "open"
+      ? `<button class="btn-secondary btn-sm" onclick="resolveTask(${task.id})">Resolve</button>
+         <button class="btn-secondary btn-sm" onclick="dismissTask(${task.id})">Dismiss</button>`
+      : "";
+
+    return `
+      <div class="task-item">
+        <div class="task-info">
+          <strong>${escapeHtml(task.title)}</strong>
+          ${statusBadge}
+          <span class="subtle">${date}</span>
+        </div>
+        ${task.description ? `<p class="task-desc subtle">${escapeHtml(task.description)}</p>` : ""}
+        <div class="task-actions">${actions}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function updateTaskBadge(count) {
+  const badge = document.getElementById("taskBadge");
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = "";
+  } else {
+    badge.style.display = "none";
+  }
+  document.getElementById("openTaskCount").textContent = count > 0 ? `(${count} open)` : "";
+}
+
+async function resolveTask(id) {
+  await fetch(`/api/tasks/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: "resolved" })
+  });
+  loadTasks();
+}
+
+async function dismissTask(id) {
+  await fetch(`/api/tasks/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: "dismissed" })
+  });
+  loadTasks();
+}
+
+document.getElementById("taskStatusFilter").addEventListener("change", loadTasks);
+
+// --- Policies ---
+
+async function loadPolicies() {
+  try {
+    const res = await fetch("/api/policies");
+    const data = await res.json();
+    renderPolicies(data.policies || []);
+  } catch {
+    document.getElementById("policiesList").innerHTML = `<p class="subtle">Error loading policies.</p>`;
+  }
+}
+
+function renderPolicies(policies) {
+  const el = document.getElementById("policiesList");
+  if (policies.length === 0) {
+    el.innerHTML = `<p class="subtle">No policies defined. Click "Add Policy" to create one.</p>`;
+    return;
+  }
+
+  el.innerHTML = policies.map(p => {
+    let condStr = "";
+    try { const c = JSON.parse(p.condition_json); condStr = Object.entries(c).map(([k,v]) => `${k}=${v}`).join(", "); } catch { condStr = "invalid"; }
+    const enabledBadge = p.enabled ? `<span class="meta-badge" style="background:#2ea043">enabled</span>` : `<span class="meta-badge" style="background:#888">disabled</span>`;
+
+    return `
+      <div class="policy-item">
+        <div>
+          <strong>${escapeHtml(p.name)}</strong> ${enabledBadge}
+          <span class="subtle">If ${condStr} → ${p.action_type}</span>
+        </div>
+        <div class="policy-actions">
+          <button class="btn-secondary btn-sm" onclick="testPolicyRule(${p.id})">Test</button>
+          <button class="btn-secondary btn-sm" onclick="togglePolicyEnabled(${p.id}, ${p.enabled ? 0 : 1})">${p.enabled ? "Disable" : "Enable"}</button>
+          <button class="btn-delete btn-sm" onclick="deletePolicyRule(${p.id})">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function showPolicyForm() {
+  document.getElementById("policyForm").style.display = "";
+  document.getElementById("policyFormTitle").textContent = "Add Policy Rule";
+  document.getElementById("policyEditId").value = "";
+  document.getElementById("policyName").value = "";
+  document.getElementById("policyConditionValue").value = "";
+  updatePolicyFormFields();
+}
+
+function hidePolicyForm() {
+  document.getElementById("policyForm").style.display = "none";
+}
+
+function updatePolicyFormFields() {
+  const action = document.getElementById("policyActionType").value;
+  document.getElementById("policyRetentionField").style.display = action === "set_retention" ? "" : "none";
+  document.getElementById("policyTagField").style.display = action === "add_tag" ? "" : "none";
+}
+
+async function savePolicy() {
+  const name = document.getElementById("policyName").value.trim();
+  const field = document.getElementById("policyConditionField").value;
+  const value = document.getElementById("policyConditionValue").value.trim();
+  const actionType = document.getElementById("policyActionType").value;
+
+  if (!name || !value) { alert("Name and condition value are required."); return; }
+
+  const condition = { [field]: value };
+  const actionParams = {};
+
+  if (actionType === "set_retention") {
+    actionParams.retention_years = parseInt(document.getElementById("policyRetentionYears").value) || 5;
+    actionParams.retention_label = `retain-${actionParams.retention_years}y`;
+  }
+  if (actionType === "add_tag") {
+    actionParams.tag = document.getElementById("policyTagValue").value.trim();
+  }
+
+  try {
+    const res = await fetch("/api/policies", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, condition, actionType, actionParams })
+    });
+
+    if (res.ok) {
+      hidePolicyForm();
+      loadPolicies();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Failed to create policy");
+    }
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+}
+
+async function testPolicyRule(id) {
+  try {
+    const res = await fetch(`/api/policies/${id}/test`, { method: "POST" });
+    const data = await res.json();
+    alert(`Policy "${data.policy.name}" matches ${data.matches.length} of ${data.totalDocuments} documents:\n${data.matches.map(m => m.name).join("\n") || "(none)"}`);
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+}
+
+async function togglePolicyEnabled(id, enabled) {
+  await fetch(`/api/policies/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ enabled })
+  });
+  loadPolicies();
+}
+
+async function deletePolicyRule(id) {
+  if (!confirm("Delete this policy?")) return;
+  await fetch(`/api/policies/${id}`, { method: "DELETE" });
+  loadPolicies();
+}
+
+document.getElementById("addPolicyBtn").addEventListener("click", showPolicyForm);
+document.getElementById("cancelPolicyBtn").addEventListener("click", hidePolicyForm);
+document.getElementById("savePolicyBtn").addEventListener("click", savePolicy);
+document.getElementById("policyActionType").addEventListener("change", updatePolicyFormFields);
+
+// --- Audit Log ---
+
+async function loadAuditLog() {
+  try {
+    const res = await fetch("/api/audit?limit=50");
+    const data = await res.json();
+    renderAuditLog(data.entries || []);
+  } catch {
+    document.getElementById("auditLog").innerHTML = `<p class="subtle">Error loading audit log.</p>`;
+  }
+}
+
+function renderAuditLog(entries) {
+  const el = document.getElementById("auditLog");
+  if (entries.length === 0) {
+    el.innerHTML = `<p class="subtle">No audit entries yet.</p>`;
+    return;
+  }
+
+  el.innerHTML = `<div class="audit-entries">${entries.map(e => {
+    const date = new Date(e.created_at).toLocaleString();
+    return `<div class="audit-entry">
+      <span class="audit-action">${escapeHtml(e.action)}</span>
+      <span class="subtle">${e.entity_type}${e.entity_id ? `#${e.entity_id}` : ""} — ${date}</span>
+    </div>`;
+  }).join("")}</div>`;
+}
+
+document.getElementById("refreshAuditBtn").addEventListener("click", loadAuditLog);
+
+// --- Maintenance ---
+
+async function loadMaintenanceStatus() {
+  try {
+    const res = await fetch("/api/maintenance/status");
+    const data = await res.json();
+    const statusEl = document.getElementById("maintenanceStatus");
+    if (data.lastRun) {
+      statusEl.textContent = `Last run: ${new Date(data.lastRun).toLocaleString()}`;
+    }
+  } catch { /* ignore */ }
+}
+
+async function runMaintenance() {
+  const btn = document.getElementById("runMaintenanceBtn");
+  const statusEl = document.getElementById("maintenanceStatus");
+  const resultEl = document.getElementById("maintenanceResult");
+
+  btn.disabled = true;
+  statusEl.textContent = "Running...";
+
+  try {
+    const res = await fetch("/api/maintenance/run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ force: true })
+    });
+
+    const data = await res.json();
+
+    if (data.skipped) {
+      statusEl.textContent = data.reason;
+    } else {
+      statusEl.textContent = `Completed at ${new Date(data.completedAt).toLocaleTimeString()}`;
+      resultEl.style.display = "";
+      resultEl.innerHTML = `<div class="card">
+        <p><strong>Results:</strong></p>
+        ${data.gdrive ? `<p>Google Drive: ${data.gdrive.skipped ? data.gdrive.reason : `Added ${data.gdrive.added}, Updated ${data.gdrive.updated}`}</p>` : ""}
+        ${data.retention ? `<p>Retention: ${data.retention.tasksCreated} new disposal tasks</p>` : ""}
+        ${data.unconfirmedTags ? `<p>Unconfirmed tags: ${data.unconfirmedTags.flagged} flagged</p>` : ""}
+        ${data.tasks ? `<p>Open tasks: ${data.tasks.open}</p>` : ""}
+      </div>`;
+    }
+
+    // Refresh task count
+    loadTasks();
+  } catch (err) {
+    statusEl.textContent = `Error: ${err.message}`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById("runMaintenanceBtn").addEventListener("click", runMaintenance);
+
+// --- Legal Holds ---
+
+async function loadLegalHolds() {
+  try {
+    const res = await fetch("/api/legal-holds");
+    const data = await res.json();
+    renderLegalHolds(data.holds || []);
+  } catch {
+    document.getElementById("legalHoldsList").innerHTML = `<p class="subtle">Error loading legal holds.</p>`;
+  }
+}
+
+function renderLegalHolds(holds) {
+  const el = document.getElementById("legalHoldsList");
+  if (holds.length === 0) {
+    el.innerHTML = `<p class="subtle">No legal holds.</p>`;
+    return;
+  }
+
+  el.innerHTML = holds.map(h => {
+    const statusBadge = h.status === "active"
+      ? `<span class="meta-badge" style="background:#f85149">ACTIVE</span>`
+      : `<span class="meta-badge" style="background:#888">released</span>`;
+    const date = new Date(h.created_at).toLocaleDateString();
+    let scopeStr = "";
+    try { const s = JSON.parse(h.scope_json); scopeStr = Object.entries(s).map(([k,v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`).join(" | "); } catch { scopeStr = "invalid"; }
+
+    return `
+      <div class="hold-item">
+        <div>
+          <strong>${escapeHtml(h.matter_name)}</strong> ${statusBadge}
+          <span class="subtle">${date}</span>
+          <p class="subtle">${escapeHtml(scopeStr)}</p>
+        </div>
+        ${h.status === "active" ? `<button class="btn-secondary btn-sm" onclick="releaseLegalHold(${h.id})">Release</button>` : ""}
+      </div>
+    `;
+  }).join("");
+}
+
+function showLegalHoldForm() {
+  document.getElementById("legalHoldForm").style.display = "";
+}
+
+function hideLegalHoldForm() {
+  document.getElementById("legalHoldForm").style.display = "none";
+  document.getElementById("holdMatterName").value = "";
+  document.getElementById("holdScopeKeywords").value = "";
+  document.getElementById("holdScopeClients").value = "";
+}
+
+async function saveLegalHold() {
+  const matterName = document.getElementById("holdMatterName").value.trim();
+  const keywords = document.getElementById("holdScopeKeywords").value.split(",").map(s => s.trim()).filter(Boolean);
+  const clients = document.getElementById("holdScopeClients").value.split(",").map(s => s.trim()).filter(Boolean);
+
+  if (!matterName) { alert("Matter name is required."); return; }
+
+  const scope = {};
+  if (keywords.length) scope.keywords = keywords;
+  if (clients.length) scope.clients = clients;
+
+  try {
+    const res = await fetch("/api/legal-holds", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ matterName, scope })
+    });
+
+    if (res.ok) {
+      hideLegalHoldForm();
+      loadLegalHolds();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Failed to create legal hold");
+    }
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+}
+
+async function releaseLegalHold(id) {
+  if (!confirm("Release this legal hold? Documents will no longer be frozen.")) return;
+
+  await fetch(`/api/legal-holds/${id}/release`, { method: "POST" });
+  loadLegalHolds();
+}
+
+document.getElementById("addLegalHoldBtn").addEventListener("click", showLegalHoldForm);
+document.getElementById("cancelLegalHoldBtn").addEventListener("click", hideLegalHoldForm);
+document.getElementById("saveLegalHoldBtn").addEventListener("click", saveLegalHold);
+
+// ============================================
 // Initialize on Page Load
 // ============================================
 checkEmbeddingStatus();
+checkGDriveStatus();
 loadDocuments();
 loadSettings(); // Load settings on startup
+
+// Load open task count for badge
+fetch("/api/tasks?status=open").then(r => r.json()).then(data => {
+  updateTaskBadge(data.openCount || 0);
+}).catch(() => {});

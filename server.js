@@ -22,6 +22,22 @@ import {
   addChunksBatch,
   deleteChunksByDocumentId,
   getUnprocessedDocuments,
+  updateDocumentMetadata,
+  updateDocumentStatus,
+  getDocumentLineage,
+  addLineageEntry,
+  getAllTasks,
+  getTaskById,
+  updateTaskStatus,
+  getOpenTaskCount,
+  getAllLegalHolds,
+  getLegalHoldById,
+  createLegalHold,
+  releaseLegalHold,
+  getUserProfile,
+  updateUserProfile,
+  getAppSetting,
+  setAppSetting,
 } from "./lib/db.js";
 import {
   getEmbedding,
@@ -33,6 +49,15 @@ import { searchDocuments, formatSearchResults, getSourceDocuments } from "./lib/
 import { DOCUMENTS_DIR, DB_PATH, isRailway } from "./lib/paths.js";
 import { getSettings, updateSettings, resetSettings, getDefaultSettings } from "./lib/settings.js";
 import { shouldSkipTranslation } from "./lib/languageDetection.js";
+
+// Phase 0 imports
+import { computeFileHash, computeContentHash, findDuplicates, findNearDuplicates } from "./lib/hashing.js";
+import { logAction } from "./lib/audit.js";
+import { getAuditLog, getAuditLogCount } from "./lib/audit.js";
+import { extractMetadata } from "./lib/autoTagger.js";
+import { evaluateDocument, applyActions, getAllPolicies, getPolicyById, createPolicy, updatePolicy, deletePolicy, testPolicy } from "./lib/policies.js";
+import { scanGDrive, getGDriveStatus } from "./lib/gdrive.js";
+import { runMaintenanceCycle, getLastRunTime } from "./lib/maintenance.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -78,7 +103,7 @@ app.use((req, res, next) => {
   const allowedOrigin = process.env.ALLOWED_ORIGIN || "*";
   res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
   res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS, GET, DELETE");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS, GET, DELETE, PATCH");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Max-Age", "86400");
 
@@ -395,6 +420,33 @@ app.post("/api/documents/:id/process", async (req, res) => {
 
     const wordCount = countWords(text);
 
+    // Phase 0: Compute content hash and file hash
+    const contentHash = computeContentHash(text);
+    let fileHash = null;
+    try {
+      const fileBuffer = await fs.readFile(document.path);
+      fileHash = computeFileHash(fileBuffer);
+    } catch {
+      // File hash is optional — skip if file can't be read
+    }
+
+    // Store hashes
+    updateDocumentMetadata(documentId, {
+      content_hash: contentHash,
+      file_hash: fileHash,
+    });
+
+    // Phase 0: Check for duplicates
+    let duplicateInfo = null;
+    const duplicates = findDuplicates(contentHash, fileHash, documentId);
+    if (duplicates.contentMatches.length > 0 || duplicates.fileMatches.length > 0) {
+      duplicateInfo = duplicates;
+      for (const dup of duplicates.contentMatches) {
+        addLineageEntry(documentId, dup.id, "duplicate_of", 1.0);
+      }
+      logAction("document", documentId, "duplicate_detected", duplicateInfo);
+    }
+
     // Delete existing chunks if reprocessing
     deleteChunksByDocumentId(documentId);
 
@@ -427,13 +479,68 @@ app.post("/api/documents/:id/process", async (req, res) => {
     // Mark document as processed
     updateDocumentProcessed(documentId, wordCount);
 
+    // Phase 0: Auto-tag document metadata
+    let autoTagResult = null;
+    try {
+      autoTagResult = await extractMetadata(text);
+      updateDocumentMetadata(documentId, {
+        doc_type: autoTagResult.doc_type,
+        client: autoTagResult.client,
+        jurisdiction: autoTagResult.jurisdiction,
+        auto_tags: JSON.stringify(autoTagResult.tags),
+        tags: JSON.stringify(autoTagResult.tags),
+        confirmed_tags: 0,
+      });
+      logAction("document", documentId, "tagged", {
+        auto: true,
+        doc_type: autoTagResult.doc_type,
+        tags: autoTagResult.tags,
+      });
+    } catch (tagErr) {
+      console.warn("Auto-tagging failed:", tagErr.message);
+    }
+
+    // Phase 0: Evaluate policy rules
+    let policyResult = null;
+    try {
+      const enrichedDoc = getDocumentById(documentId);
+      const triggeredActions = evaluateDocument(enrichedDoc);
+      if (triggeredActions.length > 0) {
+        policyResult = applyActions(documentId, triggeredActions);
+      }
+    } catch (policyErr) {
+      console.warn("Policy evaluation failed:", policyErr.message);
+    }
+
+    // Phase 0: Check for near-duplicates (semantic)
+    let nearDuplicates = [];
+    try {
+      nearDuplicates = findNearDuplicates(documentId, 0.92);
+      for (const nd of nearDuplicates) {
+        addLineageEntry(documentId, nd.documentId, "duplicate_of", nd.similarity);
+      }
+    } catch {
+      // Near-duplicate check is optional
+    }
+
+    logAction("document", documentId, "processed", {
+      wordCount,
+      chunks: chunks.length,
+      duplicates: duplicateInfo ? duplicates.contentMatches.length : 0,
+      nearDuplicates: nearDuplicates.length,
+    });
+
     const updatedDocument = getDocumentById(documentId);
 
     res.json({
       message: "Document processed successfully",
       document: updatedDocument,
       chunks: chunks.length,
-      wordCount
+      wordCount,
+      autoTags: autoTagResult,
+      duplicates: duplicateInfo,
+      nearDuplicates,
+      policyActions: policyResult,
     });
   } catch (err) {
     console.error("Error processing document:", err);
@@ -557,6 +664,428 @@ app.get("/api/settings/defaults", (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ============================================
+// Phase 0: Document Metadata & Status Endpoints
+// ============================================
+
+// PATCH /api/documents/:id/metadata - Update document metadata
+app.patch("/api/documents/:id/metadata", (req, res) => {
+  const documentId = parseInt(req.params.id, 10);
+  try {
+    const document = getDocumentById(documentId);
+    if (!document) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    const updates = req.body;
+    updateDocumentMetadata(documentId, updates);
+    logAction("document", documentId, "updated", { fields: Object.keys(updates) });
+
+    const updatedDocument = getDocumentById(documentId);
+    res.json({ message: "Metadata updated", document: updatedDocument });
+  } catch (err) {
+    console.error("Error updating document metadata:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/documents/:id/status - Update document status (state machine)
+app.patch("/api/documents/:id/status", (req, res) => {
+  const documentId = parseInt(req.params.id, 10);
+  try {
+    const { status: newStatus } = req.body;
+    if (!newStatus) {
+      return res.status(400).json({ error: "Missing status field" });
+    }
+
+    const result = updateDocumentStatus(documentId, newStatus);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    logAction("document", documentId, "state_changed", {
+      from: result.from,
+      to: result.to,
+    });
+
+    const updatedDocument = getDocumentById(documentId);
+    res.json({ message: `Status changed: ${result.from} → ${result.to}`, document: updatedDocument });
+  } catch (err) {
+    console.error("Error updating document status:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/documents/:id/confirm-tags - Confirm auto-generated tags
+app.patch("/api/documents/:id/confirm-tags", (req, res) => {
+  const documentId = parseInt(req.params.id, 10);
+  try {
+    const document = getDocumentById(documentId);
+    if (!document) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    // Optionally accept edited tags
+    const { tags } = req.body;
+    const updates = { confirmed_tags: 1 };
+    if (tags !== undefined) {
+      updates.tags = JSON.stringify(Array.isArray(tags) ? tags : []);
+    }
+
+    updateDocumentMetadata(documentId, updates);
+    logAction("document", documentId, "tags_confirmed", { tags });
+
+    const updatedDocument = getDocumentById(documentId);
+    res.json({ message: "Tags confirmed", document: updatedDocument });
+  } catch (err) {
+    console.error("Error confirming tags:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/documents/:id/lineage - Get document lineage (versions, duplicates, forks)
+app.get("/api/documents/:id/lineage", (req, res) => {
+  const documentId = parseInt(req.params.id, 10);
+  try {
+    const lineage = getDocumentLineage(documentId);
+    res.json({ lineage });
+  } catch (err) {
+    console.error("Error fetching document lineage:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// Phase 0: Google Drive Endpoints
+// ============================================
+
+// POST /api/gdrive/scan - Trigger Google Drive scan
+app.post("/api/gdrive/scan", async (req, res) => {
+  try {
+    const status = getGDriveStatus();
+    if (!status.available) {
+      return res.status(503).json({ error: status.error || "Google Drive not configured" });
+    }
+
+    const result = await scanGDrive();
+    const documents = getAllDocuments();
+
+    res.json({
+      message: `Google Drive scan complete. Added: ${result.added}, Updated: ${result.updated}, Removed: ${result.deleted}, Unchanged: ${result.unchanged}`,
+      ...result,
+      documents,
+    });
+  } catch (err) {
+    console.error("Error scanning Google Drive:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/gdrive/status - Google Drive connection status
+app.get("/api/gdrive/status", (req, res) => {
+  try {
+    const status = getGDriveStatus();
+    res.json(status);
+  } catch (err) {
+    res.status(500).json({ available: false, error: err.message });
+  }
+});
+
+// GET /api/gdrive/settings - Get Google Drive settings (API key masked)
+app.get("/api/gdrive/settings", (req, res) => {
+  try {
+    const apiKey = getAppSetting("gdriveApiKey") || "";
+    const folderId = getAppSetting("gdriveFolderId") || "";
+
+    res.json({
+      apiKey: apiKey ? "••••" + apiKey.slice(-4) : "",
+      folderId,
+      hasApiKey: !!apiKey,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/gdrive/settings - Update Google Drive settings
+app.patch("/api/gdrive/settings", (req, res) => {
+  try {
+    const { apiKey, folderId } = req.body;
+
+    if (apiKey !== undefined) {
+      setAppSetting("gdriveApiKey", apiKey.trim());
+    }
+    if (folderId !== undefined) {
+      setAppSetting("gdriveFolderId", folderId.trim());
+    }
+
+    const currentKey = getAppSetting("gdriveApiKey") || "";
+    res.json({
+      apiKey: currentKey ? "••••" + currentKey.slice(-4) : "",
+      folderId: getAppSetting("gdriveFolderId") || "",
+      hasApiKey: !!currentKey,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// Phase 0: Audit Log Endpoints
+// ============================================
+
+// GET /api/audit - Get audit log entries
+app.get("/api/audit", (req, res) => {
+  try {
+    const filters = {
+      entityType: req.query.entityType || undefined,
+      entityId: req.query.entityId ? parseInt(req.query.entityId) : undefined,
+      action: req.query.action || undefined,
+      since: req.query.since || undefined,
+      until: req.query.until || undefined,
+      limit: req.query.limit ? parseInt(req.query.limit) : 100,
+      offset: req.query.offset ? parseInt(req.query.offset) : 0,
+    };
+
+    const entries = getAuditLog(filters);
+    const total = getAuditLogCount(filters);
+
+    res.json({ entries, total, limit: filters.limit, offset: filters.offset });
+  } catch (err) {
+    console.error("Error fetching audit log:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// Phase 0: Tasks Endpoints
+// ============================================
+
+// GET /api/tasks - Get all tasks
+app.get("/api/tasks", (req, res) => {
+  try {
+    const statusFilter = req.query.status || null;
+    const tasks = getAllTasks(statusFilter);
+    const openCount = getOpenTaskCount();
+    res.json({ tasks, openCount });
+  } catch (err) {
+    console.error("Error fetching tasks:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/tasks/:id - Update task status (resolve/dismiss)
+app.patch("/api/tasks/:id", (req, res) => {
+  const taskId = parseInt(req.params.id, 10);
+  try {
+    const task = getTaskById(taskId);
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    const { status } = req.body;
+    if (!["open", "resolved", "dismissed"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status. Must be: open, resolved, dismissed" });
+    }
+
+    updateTaskStatus(taskId, status);
+    logAction("task", taskId, "updated", { status });
+
+    const updated = getTaskById(taskId);
+    res.json({ message: "Task updated", task: updated });
+  } catch (err) {
+    console.error("Error updating task:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// Phase 0: Policy Endpoints
+// ============================================
+
+// GET /api/policies - List all policy rules
+app.get("/api/policies", (req, res) => {
+  try {
+    const enabledOnly = req.query.enabled === "true";
+    const policies = getAllPolicies(enabledOnly);
+    res.json({ policies });
+  } catch (err) {
+    console.error("Error fetching policies:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/policies - Create a new policy rule
+app.post("/api/policies", (req, res) => {
+  try {
+    const { name, condition, actionType, actionParams } = req.body;
+    if (!name || !condition || !actionType) {
+      return res.status(400).json({ error: "Missing required fields: name, condition, actionType" });
+    }
+
+    const id = createPolicy(name, condition, actionType, actionParams || {});
+    const policy = getPolicyById(id);
+    res.json({ message: "Policy created", policy });
+  } catch (err) {
+    console.error("Error creating policy:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/policies/:id - Update a policy rule
+app.patch("/api/policies/:id", (req, res) => {
+  const policyId = parseInt(req.params.id, 10);
+  try {
+    const policy = getPolicyById(policyId);
+    if (!policy) {
+      return res.status(404).json({ error: "Policy not found" });
+    }
+
+    updatePolicy(policyId, req.body);
+    const updated = getPolicyById(policyId);
+    res.json({ message: "Policy updated", policy: updated });
+  } catch (err) {
+    console.error("Error updating policy:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/policies/:id - Delete a policy rule
+app.delete("/api/policies/:id", (req, res) => {
+  const policyId = parseInt(req.params.id, 10);
+  try {
+    const deleted = deletePolicy(policyId);
+    if (!deleted) {
+      return res.status(404).json({ error: "Policy not found" });
+    }
+    res.json({ message: "Policy deleted" });
+  } catch (err) {
+    console.error("Error deleting policy:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/policies/:id/test - Dry-run a policy against all documents
+app.post("/api/policies/:id/test", (req, res) => {
+  const policyId = parseInt(req.params.id, 10);
+  try {
+    const result = testPolicy(policyId);
+    res.json(result);
+  } catch (err) {
+    console.error("Error testing policy:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// Phase 0: Maintenance Endpoint
+// ============================================
+
+// POST /api/maintenance/run - Run maintenance cycle
+app.post("/api/maintenance/run", async (req, res) => {
+  try {
+    const force = req.body.force === true;
+    const result = await runMaintenanceCycle({ force });
+    res.json(result);
+  } catch (err) {
+    console.error("Error running maintenance:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/maintenance/status - Get last maintenance run info
+app.get("/api/maintenance/status", (req, res) => {
+  res.json({
+    lastRun: getLastRunTime(),
+    openTasks: getOpenTaskCount(),
+    gdriveStatus: getGDriveStatus(),
+  });
+});
+
+// ============================================
+// Phase 0: Legal Holds Endpoints
+// ============================================
+
+// GET /api/legal-holds - List all legal holds
+app.get("/api/legal-holds", (req, res) => {
+  try {
+    const activeOnly = req.query.active === "true";
+    const holds = getAllLegalHolds(activeOnly);
+    res.json({ holds });
+  } catch (err) {
+    console.error("Error fetching legal holds:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/legal-holds - Create a legal hold
+app.post("/api/legal-holds", (req, res) => {
+  try {
+    const { matterName, scope } = req.body;
+    if (!matterName || !scope) {
+      return res.status(400).json({ error: "Missing required fields: matterName, scope" });
+    }
+
+    const id = createLegalHold(matterName, scope);
+    logAction("legal_hold", id, "created", { matterName, scope });
+
+    const hold = getLegalHoldById(id);
+    res.json({ message: "Legal hold created", hold });
+  } catch (err) {
+    console.error("Error creating legal hold:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/legal-holds/:id/release - Release a legal hold
+app.post("/api/legal-holds/:id/release", (req, res) => {
+  const holdId = parseInt(req.params.id, 10);
+  try {
+    const hold = getLegalHoldById(holdId);
+    if (!hold) {
+      return res.status(404).json({ error: "Legal hold not found" });
+    }
+
+    releaseLegalHold(holdId);
+    logAction("legal_hold", holdId, "released", { matterName: hold.matter_name });
+
+    const updated = getLegalHoldById(holdId);
+    res.json({ message: "Legal hold released", hold: updated });
+  } catch (err) {
+    console.error("Error releasing legal hold:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// Phase 0: User Profile Endpoint
+// ============================================
+
+// GET /api/profile - Get current user profile
+app.get("/api/profile", (req, res) => {
+  try {
+    const profile = getUserProfile();
+    res.json(profile || {});
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/profile - Update user profile
+app.patch("/api/profile", (req, res) => {
+  try {
+    updateUserProfile(req.body);
+    const profile = getUserProfile();
+    res.json({ message: "Profile updated", profile });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// Q&A Ask Endpoint
+// ============================================
 
 // POST /api/ask - Ask a question against selected documents
 app.post("/api/ask", async (req, res) => {
@@ -1203,6 +1732,19 @@ async function startServer() {
     console.log("Environment:", isRailway ? "Railway" : "Local");
     console.log("Documents directory:", DOCUMENTS_DIR);
     console.log("Database path:", DB_PATH);
+
+    // Try initial Google Drive sync (if configured in Settings)
+    try {
+      const gdriveStatus = getGDriveStatus();
+      if (gdriveStatus.available) {
+        const syncResult = await scanGDrive();
+        console.log(`Google Drive sync: +${syncResult.added} ~${syncResult.updated} -${syncResult.deleted}`);
+      } else {
+        console.log(`Google Drive: ${gdriveStatus.error || "Not configured"}`);
+      }
+    } catch (gdriveErr) {
+      console.warn("Google Drive initial sync skipped:", gdriveErr.message);
+    }
 
     // Start server
     app.listen(PORT, "0.0.0.0", () => {
