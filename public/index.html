@@ -593,53 +593,99 @@
     <div class="modal-content">
       <h3>Edit Document Metadata</h3>
       <input type="hidden" id="metadataDocId" />
-      <div class="field">
-        <label for="metaDocType">Document Type</label>
-        <select id="metaDocType">
-          <option value="">Unknown</option>
-          <option value="contract">Contract</option>
-          <option value="invoice">Invoice</option>
-          <option value="letter">Letter</option>
-          <option value="report">Report</option>
-          <option value="application">Application</option>
-          <option value="policy">Policy</option>
-          <option value="memo">Memo</option>
-          <option value="minutes">Minutes</option>
-          <option value="form">Form</option>
-          <option value="other">Other</option>
-        </select>
+
+      <p id="metaSummary" class="meta-summary"></p>
+
+      <div class="modal-grid">
+        <div class="field">
+          <label for="metaDocType">Document Type</label>
+          <select id="metaDocType">
+            <option value="">Unknown</option>
+            <option value="contract">Contract</option>
+            <option value="invoice">Invoice</option>
+            <option value="letter">Letter</option>
+            <option value="report">Report</option>
+            <option value="application">Application</option>
+            <option value="policy">Policy</option>
+            <option value="memo">Memo</option>
+            <option value="minutes">Minutes</option>
+            <option value="form">Form</option>
+            <option value="regulation">Regulation</option>
+            <option value="certificate">Certificate</option>
+            <option value="agreement">Agreement</option>
+            <option value="notice">Notice</option>
+            <option value="statement">Statement</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="metaCategory">Category (Department)</label>
+          <select id="metaCategory">
+            <option value="">Unassigned</option>
+            <option value="Finance">Finance</option>
+            <option value="Compliance">Compliance</option>
+            <option value="Operations">Operations</option>
+            <option value="HR">HR</option>
+            <option value="Board">Board</option>
+            <option value="IT">IT</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="metaJurisdiction">Jurisdiction</label>
+          <select id="metaJurisdiction">
+            <option value="">Unknown</option>
+            <option value="EU">EU</option>
+            <option value="US">US</option>
+            <option value="UK">UK</option>
+            <option value="DE">DE</option>
+            <option value="PL">PL</option>
+            <option value="FR">FR</option>
+            <option value="ES">ES</option>
+            <option value="NL">NL</option>
+            <option value="IT">IT</option>
+            <option value="CH">CH</option>
+            <option value="international">International</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="metaSensitivity">Sensitivity</label>
+          <select id="metaSensitivity">
+            <option value="public">Public</option>
+            <option value="internal">Internal</option>
+            <option value="confidential">Confidential</option>
+            <option value="restricted">Restricted</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="metaStatus">Status</label>
+          <select id="metaStatus">
+            <option value="draft">Draft</option>
+            <option value="in_review">In Review</option>
+            <option value="approved">Approved</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="metaLanguage">Language</label>
+          <input type="text" id="metaLanguage" placeholder="e.g. English, Polish" />
+        </div>
       </div>
+
       <div class="field">
-        <label for="metaClient">Client</label>
-        <input type="text" id="metaClient" placeholder="Client or counterparty" />
+        <label for="metaClient">Client / Counterparty</label>
+        <input type="text" id="metaClient" placeholder="Client or counterparty name" />
       </div>
-      <div class="field">
-        <label for="metaJurisdiction">Jurisdiction</label>
-        <select id="metaJurisdiction">
-          <option value="">Unknown</option>
-          <option value="EU">EU</option>
-          <option value="US">US</option>
-          <option value="UK">UK</option>
-          <option value="DE">DE</option>
-          <option value="PL">PL</option>
-          <option value="FR">FR</option>
-          <option value="ES">ES</option>
-          <option value="international">International</option>
-        </select>
-      </div>
+
       <div class="field">
         <label for="metaTags">Tags (comma-separated)</label>
-        <input type="text" id="metaTags" placeholder="e.g. urgent, kyc, compliance" />
+        <input type="text" id="metaTags" placeholder="e.g. urgent, kyc, compliance, 2024" />
       </div>
-      <div class="field">
-        <label for="metaStatus">Status</label>
-        <select id="metaStatus">
-          <option value="draft">Draft</option>
-          <option value="in_review">In Review</option>
-          <option value="approved">Approved</option>
-          <option value="archived">Archived</option>
-        </select>
-      </div>
+
       <div class="actions">
         <button id="saveMetadataBtn" type="button" class="btn-primary">Save</button>
         <button id="cancelMetadataBtn" type="button" class="btn-secondary">Cancel</button>

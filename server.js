@@ -479,21 +479,49 @@ app.post("/api/documents/:id/process", async (req, res) => {
     // Mark document as processed
     updateDocumentProcessed(documentId, wordCount);
 
-    // Phase 0: Auto-tag document metadata
+    // Phase 0: Auto-tag document metadata (classification, category, jurisdiction, status, etc.)
     let autoTagResult = null;
     try {
       autoTagResult = await extractMetadata(text);
-      updateDocumentMetadata(documentId, {
+
+      const metadataUpdate = {
         doc_type: autoTagResult.doc_type,
         client: autoTagResult.client,
         jurisdiction: autoTagResult.jurisdiction,
+        sensitivity: autoTagResult.sensitivity,
+        language: autoTagResult.language,
         auto_tags: JSON.stringify(autoTagResult.tags),
         tags: JSON.stringify(autoTagResult.tags),
         confirmed_tags: 0,
-      });
+      };
+
+      // Assign category (department) if AI identified one
+      if (autoTagResult.category) {
+        metadataUpdate.category = autoTagResult.category;
+      }
+
+      // Set AI-suggested status (only if document is still in 'draft')
+      const currentDoc = getDocumentById(documentId);
+      if (autoTagResult.suggested_status && (!currentDoc.status || currentDoc.status === "draft")) {
+        metadataUpdate.status = autoTagResult.suggested_status;
+      }
+
+      // Store summary in metadata_json
+      if (autoTagResult.summary) {
+        const existingMeta = currentDoc.metadata_json ? JSON.parse(currentDoc.metadata_json) : {};
+        existingMeta.summary = autoTagResult.summary;
+        metadataUpdate.metadata_json = JSON.stringify(existingMeta);
+      }
+
+      updateDocumentMetadata(documentId, metadataUpdate);
+
       logAction("document", documentId, "tagged", {
         auto: true,
         doc_type: autoTagResult.doc_type,
+        category: autoTagResult.category,
+        jurisdiction: autoTagResult.jurisdiction,
+        sensitivity: autoTagResult.sensitivity,
+        suggested_status: autoTagResult.suggested_status,
         tags: autoTagResult.tags,
       });
     } catch (tagErr) {

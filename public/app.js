@@ -468,8 +468,8 @@ function renderDocumentList() {
 
     // Phase 0: metadata badges
     const docStatus = doc.status || "draft";
-    const statusColors = { draft: "#888", in_review: "#e6a817", approved: "#2ea043", archived: "#f85149" };
-    const statusBadge = `<span class="meta-badge" style="background:${statusColors[docStatus] || '#888'}">${docStatus}</span>`;
+    const statusColors = { draft: "#888", in_review: "#e6a817", approved: "#2ea043", archived: "#666", disposed: "#f85149" };
+    const statusBadge = `<span class="meta-badge" style="background:${statusColors[docStatus] || '#888'}">${docStatus.replace("_", " ")}</span>`;
 
     const sourceBadge = doc.source === "gdrive"
       ? `<span class="meta-badge" style="background:#4285f4">Drive</span>`
@@ -483,9 +483,25 @@ function renderDocumentList() {
         ? `<span class="meta-badge" style="background:#f85149">removed</span>`
         : "";
 
-    const typeBadge = doc.doc_type ? `<span class="meta-badge" style="background:#6e40c9">${doc.doc_type}</span>` : "";
+    const typeBadge = doc.doc_type ? `<span class="meta-badge" style="background:#6e40c9">${escapeHtml(doc.doc_type)}</span>` : "";
 
     const holdBadge = doc.legal_hold ? `<span class="meta-badge" style="background:#f85149">HOLD</span>` : "";
+
+    // Sensitivity badge with color coding
+    const sensitivityColors = { public: "#2ea043", internal: "#888", confidential: "#e6a817", restricted: "#f85149" };
+    const sensitivityBadge = doc.sensitivity && doc.sensitivity !== "internal"
+      ? `<span class="meta-badge" style="background:${sensitivityColors[doc.sensitivity] || '#888'}">${escapeHtml(doc.sensitivity)}</span>`
+      : "";
+
+    // Jurisdiction badge
+    const jurisdictionBadge = doc.jurisdiction
+      ? `<span class="meta-badge meta-badge-outline" title="Jurisdiction">${escapeHtml(doc.jurisdiction)}</span>`
+      : "";
+
+    // Language badge (only if non-English)
+    const languageBadge = doc.language && doc.language.toLowerCase() !== "english"
+      ? `<span class="meta-badge meta-badge-outline" title="Language">${escapeHtml(doc.language)}</span>`
+      : "";
 
     const tagsBadge = doc.confirmed_tags === 0 && doc.auto_tags
       ? `<span class="meta-badge" style="background:#888; border: 1px dashed #fff" title="Unconfirmed auto-tags">auto-tagged</span>`
@@ -499,16 +515,29 @@ function renderDocumentList() {
       }
     } catch { /* ignore parse errors */ }
 
+    // AI summary snippet (first 80 chars)
+    let summarySnippet = "";
+    try {
+      if (doc.metadata_json) {
+        const meta = JSON.parse(doc.metadata_json);
+        if (meta.summary) {
+          const text = meta.summary.length > 80 ? meta.summary.substring(0, 80) + "..." : meta.summary;
+          summarySnippet = `<div class="doc-summary">${escapeHtml(text)}</div>`;
+        }
+      }
+    } catch { /* ignore parse errors */ }
+
     return `
       <div class="doc-item ${statusClass}" data-id="${doc.id}">
         <div class="doc-info">
           <span class="doc-name">${escapeHtml(doc.name)}</span>
           <div class="doc-meta">
-            ${statusBadge}${typeBadge}${sourceBadge}${syncBadge}${holdBadge}${tagsBadge}
+            ${statusBadge}${typeBadge}${sensitivityBadge}${jurisdictionBadge}${sourceBadge}${syncBadge}${holdBadge}${languageBadge}${tagsBadge}
             <span class="doc-status ${statusClass}">${statusText}</span>
             <span class="doc-date">${dateStr}</span>
             ${tagsList}
           </div>
+          ${summarySnippet}
         </div>
         <div class="doc-category-select">
           <select class="category-select" data-id="${doc.id}">
@@ -1693,9 +1722,26 @@ function openMetadataModal(docId) {
 
   document.getElementById("metadataDocId").value = docId;
   document.getElementById("metaDocType").value = doc.doc_type || "";
+  document.getElementById("metaCategory").value = doc.category || "";
   document.getElementById("metaClient").value = doc.client || "";
   document.getElementById("metaJurisdiction").value = doc.jurisdiction || "";
+  document.getElementById("metaSensitivity").value = doc.sensitivity || "internal";
   document.getElementById("metaStatus").value = doc.status || "draft";
+  document.getElementById("metaLanguage").value = doc.language || "";
+
+  // Show AI summary if available
+  const summaryEl = document.getElementById("metaSummary");
+  let summary = null;
+  try {
+    const metaJson = doc.metadata_json ? JSON.parse(doc.metadata_json) : {};
+    summary = metaJson.summary;
+  } catch { /* ignore */ }
+  if (summary) {
+    summaryEl.textContent = summary;
+    summaryEl.style.display = "";
+  } else {
+    summaryEl.style.display = "none";
+  }
 
   let tags = [];
   try { tags = doc.tags ? JSON.parse(doc.tags) : []; } catch { tags = []; }
@@ -1715,8 +1761,11 @@ async function saveMetadata() {
 
   const updates = {
     doc_type: document.getElementById("metaDocType").value || null,
+    category: document.getElementById("metaCategory").value || null,
     client: document.getElementById("metaClient").value || null,
     jurisdiction: document.getElementById("metaJurisdiction").value || null,
+    sensitivity: document.getElementById("metaSensitivity").value || "internal",
+    language: document.getElementById("metaLanguage").value || null,
     tags: JSON.stringify(tags),
     confirmed_tags: 1,
   };
