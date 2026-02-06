@@ -554,23 +554,24 @@
 
         <div class="settings-section">
           <h3>Google Drive Integration</h3>
-          <p class="hint" style="margin-bottom: 1rem;">Connect to publicly shared Google Drive folders. Requires a Google API Key with the Drive API enabled. Only files shared as "Anyone with the link" will be accessible.</p>
+          <p class="hint" style="margin-bottom: 1rem;">Connect to Google Drive using a service account. Share your Drive folder with the service account email, then paste the credentials JSON here.</p>
 
           <div class="settings-list">
-            <div class="setting-item">
+            <div class="setting-item setting-item-vertical">
               <div class="setting-info">
-                <label class="setting-label" for="settingGdriveApiKey">Google API Key</label>
-                <p class="setting-description">Your Google Cloud API Key with Drive API enabled. Create one at <em>console.cloud.google.com > APIs & Services > Credentials</em>.</p>
+                <label class="setting-label" for="settingGdriveServiceAccount">Service Account Credentials (JSON)</label>
+                <p class="setting-description">Paste the full JSON key file from <em>Google Cloud Console &gt; IAM &gt; Service Accounts &gt; Keys</em>. The service account needs the Drive API enabled. Share your target folder with the service account's <code>client_email</code>.</p>
               </div>
-              <div class="setting-control setting-control-text">
-                <input type="password" id="settingGdriveApiKey" placeholder="AIza..." class="text-input" />
+              <div class="setting-control-full">
+                <textarea id="settingGdriveServiceAccount" placeholder='{"type": "service_account", "client_email": "...", ...}' class="textarea-input" rows="4"></textarea>
+                <p id="gdriveServiceAccountInfo" class="hint" style="margin-top: 0.5rem;"></p>
               </div>
             </div>
 
             <div class="setting-item">
               <div class="setting-info">
                 <label class="setting-label" for="settingGdriveFolderId">Google Drive Folder ID</label>
-                <p class="setting-description">The folder ID from the Drive URL. Open your shared folder and copy the ID after <em>/folders/</em> in the URL.</p>
+                <p class="setting-description">The folder ID from the Drive URL. Open your folder and copy the ID after <em>/folders/</em> in the URL.</p>
               </div>
               <div class="setting-control setting-control-text">
                 <input type="text" id="settingGdriveFolderId" placeholder="1ABC2DEF3GHI..." class="text-input" />

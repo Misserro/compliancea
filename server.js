@@ -792,16 +792,27 @@ app.get("/api/gdrive/status", (req, res) => {
   }
 });
 
-// GET /api/gdrive/settings - Get Google Drive settings (API key masked)
+// GET /api/gdrive/settings - Get Google Drive settings (credentials masked)
 app.get("/api/gdrive/settings", (req, res) => {
   try {
-    const apiKey = getAppSetting("gdriveApiKey") || "";
+    const credentialsJson = getAppSetting("gdriveServiceAccount") || "";
     const folderId = getAppSetting("gdriveFolderId") || "";
 
+    // Extract service account email for display (don't expose full credentials)
+    let serviceAccountEmail = "";
+    if (credentialsJson) {
+      try {
+        const creds = JSON.parse(credentialsJson);
+        serviceAccountEmail = creds.client_email || "";
+      } catch {
+        // Invalid JSON, will be caught by status check
+      }
+    }
+
     res.json({
-      apiKey: apiKey ? "••••" + apiKey.slice(-4) : "",
       folderId,
-      hasApiKey: !!apiKey,
+      hasCredentials: !!credentialsJson,
+      serviceAccountEmail,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -811,20 +822,41 @@ app.get("/api/gdrive/settings", (req, res) => {
 // PATCH /api/gdrive/settings - Update Google Drive settings
 app.patch("/api/gdrive/settings", (req, res) => {
   try {
-    const { apiKey, folderId } = req.body;
+    const { serviceAccountJson, folderId } = req.body;
 
-    if (apiKey !== undefined) {
-      setAppSetting("gdriveApiKey", apiKey.trim());
+    if (serviceAccountJson !== undefined) {
+      // Validate JSON before saving
+      if (serviceAccountJson.trim()) {
+        try {
+          const parsed = JSON.parse(serviceAccountJson);
+          if (!parsed.client_email || !parsed.private_key) {
+            return res.status(400).json({
+              error: "Invalid service account JSON: missing client_email or private_key fields.",
+            });
+          }
+        } catch {
+          return res.status(400).json({ error: "Invalid JSON format." });
+        }
+      }
+      setAppSetting("gdriveServiceAccount", serviceAccountJson.trim());
     }
     if (folderId !== undefined) {
       setAppSetting("gdriveFolderId", folderId.trim());
     }
 
-    const currentKey = getAppSetting("gdriveApiKey") || "";
+    // Return updated state
+    const currentCreds = getAppSetting("gdriveServiceAccount") || "";
+    let serviceAccountEmail = "";
+    if (currentCreds) {
+      try {
+        serviceAccountEmail = JSON.parse(currentCreds).client_email || "";
+      } catch { /* ignore */ }
+    }
+
     res.json({
-      apiKey: currentKey ? "••••" + currentKey.slice(-4) : "",
       folderId: getAppSetting("gdriveFolderId") || "",
-      hasApiKey: !!currentKey,
+      hasCredentials: !!currentCreds,
+      serviceAccountEmail,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

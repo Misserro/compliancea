@@ -1653,6 +1653,35 @@ code {
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
 }
 
+.setting-item-vertical {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.setting-control-full {
+  width: 100%;
+}
+
+.textarea-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.28);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-family: monospace;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.textarea-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
 /* Settings actions */
 .settings-actions {
   display: flex;

@@ -135,7 +135,8 @@ const minResultsSettingEl = document.getElementById("minResultsSetting");
 const saveSettingsBtn = document.getElementById("saveSettingsBtn");
 const resetSettingsBtn = document.getElementById("resetSettingsBtn");
 const settingsStatusEl = document.getElementById("settingsStatus");
-const settingGdriveApiKeyEl = document.getElementById("settingGdriveApiKey");
+const settingGdriveServiceAccountEl = document.getElementById("settingGdriveServiceAccount");
+const gdriveServiceAccountInfoEl = document.getElementById("gdriveServiceAccountInfo");
 const settingGdriveFolderIdEl = document.getElementById("settingGdriveFolderId");
 const saveGdriveSettingsBtn = document.getElementById("saveGdriveSettingsBtn");
 const gdriveSettingsStatusEl = document.getElementById("gdriveSettingsStatus");
@@ -1608,9 +1609,17 @@ async function loadGdriveSettings() {
     const res = await fetch("/api/gdrive/settings");
     const data = await res.json();
 
-    // Show masked API key if one exists, otherwise leave empty for input
-    settingGdriveApiKeyEl.value = "";
-    settingGdriveApiKeyEl.placeholder = data.hasApiKey ? data.apiKey : "AIza...";
+    // Don't show the full credentials — just show status
+    settingGdriveServiceAccountEl.value = "";
+    if (data.hasCredentials && data.serviceAccountEmail) {
+      gdriveServiceAccountInfoEl.textContent = `Connected as: ${data.serviceAccountEmail}`;
+      gdriveServiceAccountInfoEl.style.color = "var(--success, #22c55e)";
+    } else if (data.hasCredentials) {
+      gdriveServiceAccountInfoEl.textContent = "Credentials saved (could not read email)";
+      gdriveServiceAccountInfoEl.style.color = "var(--warning, #f59e0b)";
+    } else {
+      gdriveServiceAccountInfoEl.textContent = "";
+    }
     settingGdriveFolderIdEl.value = data.folderId || "";
   } catch (err) {
     console.error("Error loading Google Drive settings:", err);
@@ -1622,10 +1631,10 @@ async function saveGdriveSettings() {
 
   const updates = {};
 
-  // Only send API key if user entered a new one (not empty = keep existing)
-  const apiKeyValue = settingGdriveApiKeyEl.value.trim();
-  if (apiKeyValue) {
-    updates.apiKey = apiKeyValue;
+  // Only send credentials if user entered new ones (empty = keep existing)
+  const serviceAccountValue = settingGdriveServiceAccountEl.value.trim();
+  if (serviceAccountValue) {
+    updates.serviceAccountJson = serviceAccountValue;
   }
 
   updates.folderId = settingGdriveFolderIdEl.value.trim();
@@ -1641,9 +1650,12 @@ async function saveGdriveSettings() {
 
     if (res.ok) {
       setGdriveSettingsStatus("Google Drive settings saved", "good");
-      // Clear the API key field and update placeholder with masked version
-      settingGdriveApiKeyEl.value = "";
-      settingGdriveApiKeyEl.placeholder = data.hasApiKey ? data.apiKey : "AIza...";
+      // Clear textarea and update status info
+      settingGdriveServiceAccountEl.value = "";
+      if (data.hasCredentials && data.serviceAccountEmail) {
+        gdriveServiceAccountInfoEl.textContent = `Connected as: ${data.serviceAccountEmail}`;
+        gdriveServiceAccountInfoEl.style.color = "var(--success, #22c55e)";
+      }
       settingGdriveFolderIdEl.value = data.folderId || "";
       // Refresh the GDrive status in the Library tab
       checkGDriveStatus();
