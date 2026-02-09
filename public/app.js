@@ -12,19 +12,15 @@ function switchTab(tabId) {
     content.classList.toggle("active", content.id === `tab-${tabId}`);
   });
 
-  // Refresh document selects when switching to Desk tab
-  if (tabId === "desk") {
+  // Refresh document selects when switching to Analyze & Ask tab
+  if (tabId === "analyze") {
     renderDeskDocumentSelects();
   }
 
-  // Refresh statistics when switching to Statistics tab
-  if (tabId === "statistics") {
-    renderStatistics();
-  }
-
-  // Load settings when switching to Settings tab
+  // Load settings, stats, and maintenance when switching to Settings tab
   if (tabId === "settings") {
     loadSettings();
+    renderStatistics();
   }
 
   // Load governance data when switching to Governance tab
@@ -50,7 +46,7 @@ const uploadCategoryInput = document.getElementById("uploadCategoryInput");
 const uploadBtn = document.getElementById("uploadBtn");
 
 // ============================================
-// Document Analyzer Elements (Tab 2)
+// Analyze & Ask: Analyzer Elements (Tab 2)
 // ============================================
 const analyzeForm = document.getElementById("analyzeForm");
 const analyzerFileInput = document.getElementById("analyzerFileInput");
@@ -77,7 +73,7 @@ const exportAnalyzerTranslationBtn = document.getElementById("exportAnalyzerTran
 const exportAnalyzerTodosBtn = document.getElementById("exportAnalyzerTodosBtn");
 
 // ============================================
-// Desk Elements (Tab 3)
+// Analyze & Ask: Desk / Q&A Elements (Tab 2)
 // ============================================
 const deskDocumentSelectEl = document.getElementById("deskDocumentSelect");
 const deskCrossRefSelectEl = document.getElementById("deskCrossRefSelect");
@@ -117,12 +113,12 @@ const deskTemplateBoxEl = document.getElementById("deskTemplateBox");
 const exportDeskTemplateBtn = document.getElementById("exportDeskTemplateBtn");
 
 // ============================================
-// Statistics Elements (Tab 4)
+// Settings: Statistics Elements (Tab 4)
 // ============================================
 const statsContentEl = document.getElementById("statsContent");
 
 // ============================================
-// Settings Elements (Tab 5)
+// Settings: Configuration Elements (Tab 4)
 // ============================================
 const settingHaikuEl = document.getElementById("settingHaiku");
 const settingSkipTranslationEl = document.getElementById("settingSkipTranslation");
@@ -209,7 +205,7 @@ function formatCost(cost) {
 }
 
 // ============================================
-// Statistics Functions (Tab 4)
+// Statistics Functions (Settings Tab)
 // ============================================
 
 // Pricing constants (per 1M tokens)
@@ -466,11 +462,29 @@ function renderDocumentList() {
     const statusText = doc.processed ? `${doc.word_count} words` : "Not processed";
     const dateStr = new Date(doc.added_at).toLocaleDateString();
 
-    // Phase 0: metadata badges
+    // === ESSENTIAL BADGES (always visible) ===
     const docStatus = doc.status || "draft";
     const statusColors = { draft: "#888", in_review: "#e6a817", approved: "#2ea043", archived: "#666", disposed: "#f85149" };
     const statusBadge = `<span class="meta-badge" style="background:${statusColors[docStatus] || '#888'}">${docStatus.replace("_", " ")}</span>`;
 
+    const typeBadge = doc.doc_type ? `<span class="meta-badge" style="background:#6e40c9">${escapeHtml(doc.doc_type)}</span>` : "";
+
+    // In-force badge
+    const inForceColors = { in_force: "#2ea043", archival: "#666" };
+    const inForceLabels = { in_force: "IN FORCE", archival: "ARCHIVAL" };
+    const inForceBadge = doc.in_force && inForceLabels[doc.in_force]
+      ? `<span class="meta-badge" style="background:${inForceColors[doc.in_force]}">${inForceLabels[doc.in_force]}</span>`
+      : "";
+
+    // Sensitivity badge
+    const sensitivityColors = { public: "#2ea043", internal: "#888", confidential: "#e6a817", restricted: "#f85149" };
+    const sensitivityBadge = doc.sensitivity && doc.sensitivity !== "internal"
+      ? `<span class="meta-badge" style="background:${sensitivityColors[doc.sensitivity] || '#888'}">${escapeHtml(doc.sensitivity)}</span>`
+      : "";
+
+    const essentialBadges = `${statusBadge}${typeBadge}${inForceBadge}${sensitivityBadge}`;
+
+    // === EXPANDABLE BADGES (hidden by default) ===
     const sourceBadge = doc.source === "gdrive"
       ? `<span class="meta-badge" style="background:#4285f4">Drive</span>`
       : doc.source === "scan"
@@ -483,61 +497,68 @@ function renderDocumentList() {
         ? `<span class="meta-badge" style="background:#f85149">removed</span>`
         : "";
 
-    const typeBadge = doc.doc_type ? `<span class="meta-badge" style="background:#6e40c9">${escapeHtml(doc.doc_type)}</span>` : "";
-
-    const holdBadge = doc.legal_hold ? `<span class="meta-badge" style="background:#f85149">HOLD</span>` : "";
-
-    // Sensitivity badge with color coding
-    const sensitivityColors = { public: "#2ea043", internal: "#888", confidential: "#e6a817", restricted: "#f85149" };
-    const sensitivityBadge = doc.sensitivity && doc.sensitivity !== "internal"
-      ? `<span class="meta-badge" style="background:${sensitivityColors[doc.sensitivity] || '#888'}">${escapeHtml(doc.sensitivity)}</span>`
-      : "";
-
-    // Jurisdiction badge
     const jurisdictionBadge = doc.jurisdiction
       ? `<span class="meta-badge meta-badge-outline" title="Jurisdiction">${escapeHtml(doc.jurisdiction)}</span>`
       : "";
 
-    // Language badge (only if non-English)
     const languageBadge = doc.language && doc.language.toLowerCase() !== "english"
       ? `<span class="meta-badge meta-badge-outline" title="Language">${escapeHtml(doc.language)}</span>`
       : "";
+
+    const holdBadge = doc.legal_hold ? `<span class="meta-badge" style="background:#f85149">HOLD</span>` : "";
 
     const tagsBadge = doc.confirmed_tags === 0 && doc.auto_tags
       ? `<span class="meta-badge" style="background:#888; border: 1px dashed #fff" title="Unconfirmed auto-tags">auto-tagged</span>`
       : "";
 
     let tagsList = "";
+    let tagCount = 0;
     try {
       const tags = doc.tags ? JSON.parse(doc.tags) : [];
+      tagCount = tags.length;
       if (tags.length > 0) {
-        tagsList = tags.slice(0, 3).map(t => `<span class="tag-chip">${escapeHtml(t)}</span>`).join("");
+        tagsList = tags.slice(0, 5).map(t => `<span class="tag-chip">${escapeHtml(t)}</span>`).join("");
+        if (tags.length > 5) tagsList += `<span class="tag-chip tag-chip-more">+${tags.length - 5}</span>`;
       }
     } catch { /* ignore parse errors */ }
 
-    // AI summary snippet (first 80 chars)
+    // AI summary snippet
     let summarySnippet = "";
     try {
       if (doc.metadata_json) {
         const meta = JSON.parse(doc.metadata_json);
         if (meta.summary) {
-          const text = meta.summary.length > 80 ? meta.summary.substring(0, 80) + "..." : meta.summary;
+          const text = meta.summary.length > 100 ? meta.summary.substring(0, 100) + "..." : meta.summary;
           summarySnippet = `<div class="doc-summary">${escapeHtml(text)}</div>`;
         }
       }
     } catch { /* ignore parse errors */ }
+
+    const expandableBadges = `${jurisdictionBadge}${sourceBadge}${syncBadge}${holdBadge}${languageBadge}${tagsBadge}`;
+    const hasExpandable = jurisdictionBadge || sourceBadge || syncBadge || holdBadge || languageBadge || tagsBadge || tagsList || summarySnippet;
+
+    const toggleBtn = hasExpandable
+      ? `<button class="btn-expand-meta" data-id="${doc.id}" title="Show details">&#9662;</button>`
+      : "";
+
+    // Tag count indicator (shown inline when collapsed, if tags exist)
+    const tagCountHint = tagCount > 0 ? `<span class="tag-count-hint">${tagCount} tags</span>` : "";
 
     return `
       <div class="doc-item ${statusClass}" data-id="${doc.id}">
         <div class="doc-info">
           <span class="doc-name">${escapeHtml(doc.name)}</span>
           <div class="doc-meta">
-            ${statusBadge}${typeBadge}${sensitivityBadge}${jurisdictionBadge}${sourceBadge}${syncBadge}${holdBadge}${languageBadge}${tagsBadge}
+            ${essentialBadges}
+            ${toggleBtn}
             <span class="doc-status ${statusClass}">${statusText}</span>
             <span class="doc-date">${dateStr}</span>
-            ${tagsList}
+            ${tagCountHint}
           </div>
-          ${summarySnippet}
+          <div class="doc-meta-expanded" data-id="${doc.id}" style="display: none;">
+            <div class="doc-meta">${expandableBadges} ${tagsList}</div>
+            ${summarySnippet}
+          </div>
         </div>
         <div class="doc-category-select">
           <select class="category-select" data-id="${doc.id}">
@@ -592,6 +613,21 @@ function renderDocumentList() {
   // Phase 0: metadata edit buttons
   documentListEl.querySelectorAll(".btn-metadata").forEach(btn => {
     btn.addEventListener("click", () => openMetadataModal(parseInt(btn.dataset.id, 10)));
+  });
+
+  // Expand/collapse detail buttons
+  documentListEl.querySelectorAll(".btn-expand-meta").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const docId = btn.dataset.id;
+      const expanded = documentListEl.querySelector(`.doc-meta-expanded[data-id="${docId}"]`);
+      if (expanded) {
+        const isVisible = expanded.style.display !== "none";
+        expanded.style.display = isVisible ? "none" : "block";
+        btn.innerHTML = isVisible ? "&#9662;" : "&#9652;";
+        btn.title = isVisible ? "Show details" : "Hide details";
+      }
+    });
   });
 }
 
@@ -736,8 +772,46 @@ scanBtn.addEventListener("click", scanDocuments);
 processAllBtn.addEventListener("click", processAllDocuments);
 uploadBtn.addEventListener("click", uploadDocument);
 
+// Show/Hide All Details toggle
+let allMetaExpanded = false;
+document.getElementById("toggleAllMeta").addEventListener("click", () => {
+  allMetaExpanded = !allMetaExpanded;
+  document.querySelectorAll(".doc-meta-expanded").forEach(el => {
+    el.style.display = allMetaExpanded ? "block" : "none";
+  });
+  document.querySelectorAll(".btn-expand-meta").forEach(btn => {
+    btn.innerHTML = allMetaExpanded ? "&#9652;" : "&#9662;";
+    btn.title = allMetaExpanded ? "Hide details" : "Show details";
+  });
+  document.getElementById("toggleAllMeta").textContent = allMetaExpanded ? "Hide All Details" : "Show All Details";
+});
+
+// Retag All button
+document.getElementById("retagAllBtn").addEventListener("click", async () => {
+  const btn = document.getElementById("retagAllBtn");
+  if (!confirm("Re-run AI tagger on all processed documents? This may take a while and use API tokens.")) return;
+  btn.disabled = true;
+  btn.textContent = "Retagging...";
+  setStatusElement(libraryStatusEl, "Retagging all documents...", "info");
+  try {
+    const res = await fetch("/api/documents/retag-all", { method: "POST" });
+    const data = await res.json();
+    if (res.ok) {
+      setStatusElement(libraryStatusEl, data.message, "good");
+      await loadDocuments();
+    } else {
+      setStatusElement(libraryStatusEl, `Error: ${data.error}`, "bad");
+    }
+  } catch (err) {
+    setStatusElement(libraryStatusEl, `Error: ${err.message}`, "bad");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Retag All";
+  }
+});
+
 // ============================================
-// Document Analyzer Functions (Tab 2)
+// Document Analyzer Functions (Analyze & Ask Tab)
 // ============================================
 
 function getAnalyzerOutputs() {
@@ -980,7 +1054,7 @@ analyzeForm.addEventListener("submit", async (e) => {
 });
 
 // ============================================
-// Desk Functions (Tab 3)
+// Desk / Q&A Functions (Analyze & Ask Tab)
 // ============================================
 
 function renderDeskDocumentSelects() {
@@ -1445,7 +1519,7 @@ updateDeskPrefillVisibility();
 updateDeskCrossRefFieldVisibility();
 
 // ============================================
-// Settings Functions (Tab 5)
+// Settings Functions (Settings Tab)
 // ============================================
 
 async function loadSettings() {
@@ -1727,6 +1801,7 @@ function openMetadataModal(docId) {
   document.getElementById("metaJurisdiction").value = doc.jurisdiction || "";
   document.getElementById("metaSensitivity").value = doc.sensitivity || "internal";
   document.getElementById("metaStatus").value = doc.status || "draft";
+  document.getElementById("metaInForce").value = doc.in_force || "unknown";
   document.getElementById("metaLanguage").value = doc.language || "";
 
   // Show AI summary if available
@@ -1765,6 +1840,7 @@ async function saveMetadata() {
     client: document.getElementById("metaClient").value || null,
     jurisdiction: document.getElementById("metaJurisdiction").value || null,
     sensitivity: document.getElementById("metaSensitivity").value || "internal",
+    in_force: document.getElementById("metaInForce").value || "unknown",
     language: document.getElementById("metaLanguage").value || null,
     tags: JSON.stringify(tags),
     confirmed_tags: 1,

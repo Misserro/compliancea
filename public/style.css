@@ -911,7 +911,7 @@ code {
 }
 
 /* ============================================
-   Desk Tab Styles
+   Desk / Q&A Styles (Analyze & Ask Tab)
    ============================================ */
 
 .desk-section {
@@ -1119,7 +1119,7 @@ code {
 }
 
 /* ============================================
-   Statistics Tab Styles
+   Statistics Styles (Settings Tab)
    ============================================ */
 
 .stats-empty {
@@ -1414,7 +1414,7 @@ code {
   align-items: center;
 }
 
-/* Category grouping in document select lists (Desk tab) */
+/* Category grouping in document select lists (Analyze & Ask tab) */
 .doc-select-category {
   margin-bottom: 0.5rem;
 }
@@ -1819,6 +1819,61 @@ code {
   color: #adbac7;
   border: 1px solid #444c56;
   margin-right: 2px;
+}
+
+.tag-chip-more {
+  background: transparent;
+  border-style: dashed;
+  color: #768390;
+}
+
+/* Expand/collapse metadata button */
+.btn-expand-meta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin: 0 3px;
+  background: transparent;
+  border: 1px solid #444c56;
+  border-radius: 3px;
+  color: #adbac7;
+  font-size: 0.6rem;
+  cursor: pointer;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.btn-expand-meta:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #768390;
+}
+
+/* Expanded metadata section */
+.doc-meta-expanded {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.doc-meta-expanded .doc-meta {
+  flex-wrap: wrap;
+}
+
+/* Tag count hint (inline when collapsed) */
+.tag-count-hint {
+  font-size: 0.65rem;
+  color: #636c76;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* Toggle meta button in library actions */
+.btn-toggle-meta {
+  font-size: 0.75rem !important;
+  padding: 3px 8px !important;
 }
 
 /* Tab badge (task count) */

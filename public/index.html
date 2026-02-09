@@ -13,17 +13,17 @@
       <h1>Document Analyzer</h1>
     </header>
 
-    <!-- Tab Navigation -->
+    <!-- Tab Navigation (4 tabs) -->
     <nav class="tab-nav">
-      <button class="tab-btn active" data-tab="library">Document Library</button>
-      <button class="tab-btn" data-tab="analyzer">Document Analyzer</button>
-      <button class="tab-btn" data-tab="desk">Desk</button>
+      <button class="tab-btn active" data-tab="library">Documents</button>
+      <button class="tab-btn" data-tab="analyze">Analyze & Ask</button>
       <button class="tab-btn" data-tab="governance">Governance <span id="taskBadge" class="tab-badge" style="display:none;">0</span></button>
-      <button class="tab-btn" data-tab="statistics">Statistics</button>
       <button class="tab-btn" data-tab="settings">Settings</button>
     </nav>
 
-    <!-- Tab 1: Document Library -->
+    <!-- ============================================
+         Tab 1: Documents
+         ============================================ -->
     <section class="tab-content active" id="tab-library">
       <div class="card">
         <h2 class="section-title">Document Library</h2>
@@ -56,6 +56,8 @@
           <button id="scanBtn" type="button" class="btn-secondary">Scan Server Folder</button>
           <button id="scanGDriveBtn" type="button" class="btn-secondary">Scan Google Drive</button>
           <button id="processAllBtn" type="button" class="btn-secondary">Process All</button>
+          <button id="retagAllBtn" type="button" class="btn-secondary">Retag All</button>
+          <button id="toggleAllMeta" type="button" class="btn-secondary btn-toggle-meta">Show All Details</button>
           <span id="embeddingStatus" class="embedding-status"></span>
           <span id="gdriveStatus" class="gdrive-status" style="display:none;"></span>
         </div>
@@ -68,11 +70,15 @@
       </div>
     </section>
 
-    <!-- Tab 2: Document Analyzer -->
-    <section class="tab-content" id="tab-analyzer">
+    <!-- ============================================
+         Tab 2: Analyze & Ask
+         ============================================ -->
+    <section class="tab-content" id="tab-analyze">
+
+      <!-- Section A: Analyze Document -->
       <div class="card">
-        <h2 class="section-title">Document Analyzer</h2>
-        <p class="subtle" style="margin-bottom: 1rem;">Translate, summarize, and extract key information from documents.</p>
+        <h2 class="section-title">Analyze Document</h2>
+        <p class="subtle" style="margin-bottom: 1rem;">Upload a file to translate, summarize, and extract key information.</p>
 
         <form id="analyzeForm">
           <div class="field">
@@ -159,19 +165,15 @@
           <div id="analyzerTodos" class="result-box subtle" style="margin-top:10px;">No data yet.</div>
         </div>
       </section>
-    </section>
 
-    <!-- Tab 3: Desk -->
-    <section class="tab-content" id="tab-desk">
+      <div style="height: 1.5rem;"></div>
+
+      <!-- Section B: Ask the Library -->
       <div class="card">
-        <h2 class="section-title">Desk</h2>
-        <p class="subtle" style="margin-bottom: 1rem;">Ask questions, cross-reference external documents, and generate response templates.</p>
+        <h2 class="section-title">Ask the Library</h2>
+        <p class="subtle" style="margin-bottom: 1rem;">Select documents from your library and ask questions. AI finds answers using semantic search.</p>
 
-        <!-- Q&A Section -->
         <div class="desk-section">
-          <h3>Ask a Question</h3>
-          <p class="hint">Select documents from your library to search through.</p>
-
           <div class="field">
             <div class="field-header">
               <label>Select Library Documents</label>
@@ -202,14 +204,16 @@
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="library-divider"></div>
+      <div style="height: 1.5rem;"></div>
 
-        <!-- Cross-Reference & Template Section -->
+      <!-- Section C: Cross-Reference & Response Template -->
+      <div class="card">
+        <h2 class="section-title">Cross-Reference & Response Template</h2>
+        <p class="subtle" style="margin-bottom: 1rem;">Upload an external document to cross-reference against your library and generate response templates.</p>
+
         <div class="desk-section">
-          <h3>Cross-Reference & Response Template</h3>
-          <p class="hint">Upload external documents to analyze and generate response templates. Optionally cross-reference with library documents.</p>
-
           <div class="field">
             <label for="deskExternalFile">External Document (PDF or DOCX)</label>
             <input id="deskExternalFile" type="file"
@@ -287,25 +291,43 @@
       </section>
     </section>
 
-    <!-- Tab 4: Governance -->
+    <!-- ============================================
+         Tab 3: Governance
+         ============================================ -->
     <section class="tab-content" id="tab-governance">
       <div class="card">
-        <h2 class="section-title">Governance Dashboard</h2>
-        <p class="subtle" style="margin-bottom: 1rem;">Manage policies, tasks, audit trail, and legal holds.</p>
+        <h2 class="section-title">Governance</h2>
+        <p class="subtle" style="margin-bottom: 1rem;">Manage compliance, policies, tasks, audit trail, and legal holds.</p>
 
-        <!-- Tasks Section -->
+        <!-- Compliance: Legal Holds + Policy Rules -->
         <div class="desk-section">
           <div class="field-header">
-            <h3>Tasks <span id="openTaskCount" class="task-count"></span></h3>
-            <select id="taskStatusFilter" class="category-input" style="width: auto;">
-              <option value="open">Open</option>
-              <option value="resolved">Resolved</option>
-              <option value="dismissed">Dismissed</option>
-              <option value="">All</option>
-            </select>
+            <h3>Legal Holds</h3>
+            <button id="addLegalHoldBtn" type="button" class="btn-secondary">Add Hold</button>
           </div>
-          <div id="tasksList" class="tasks-list">
-            <p class="subtle">No tasks.</p>
+          <div id="legalHoldsList" class="legal-holds-list">
+            <p class="subtle">No legal holds.</p>
+          </div>
+        </div>
+
+        <!-- Add Legal Hold Form (hidden by default) -->
+        <div id="legalHoldForm" class="card" style="display: none;">
+          <h3>Create Legal Hold</h3>
+          <div class="field">
+            <label for="holdMatterName">Matter Name</label>
+            <input type="text" id="holdMatterName" placeholder="e.g. Acme Corp Investigation" />
+          </div>
+          <div class="field">
+            <label for="holdScopeKeywords">Keywords (comma-separated)</label>
+            <input type="text" id="holdScopeKeywords" placeholder="e.g. merger, acquisition, acme" />
+          </div>
+          <div class="field">
+            <label for="holdScopeClients">Clients (comma-separated)</label>
+            <input type="text" id="holdScopeClients" placeholder="e.g. Acme Corp, Beta Inc" />
+          </div>
+          <div class="actions">
+            <button id="saveLegalHoldBtn" type="button" class="btn-primary">Create Hold</button>
+            <button id="cancelLegalHoldBtn" type="button" class="btn-secondary">Cancel</button>
           </div>
         </div>
 
@@ -368,6 +390,24 @@
 
         <div class="library-divider"></div>
 
+        <!-- Tasks Section -->
+        <div class="desk-section">
+          <div class="field-header">
+            <h3>Tasks <span id="openTaskCount" class="task-count"></span></h3>
+            <select id="taskStatusFilter" class="category-input" style="width: auto;">
+              <option value="open">Open</option>
+              <option value="resolved">Resolved</option>
+              <option value="dismissed">Dismissed</option>
+              <option value="">All</option>
+            </select>
+          </div>
+          <div id="tasksList" class="tasks-list">
+            <p class="subtle">No tasks.</p>
+          </div>
+        </div>
+
+        <div class="library-divider"></div>
+
         <!-- Audit Log Section -->
         <div class="desk-section">
           <div class="field-header">
@@ -378,101 +418,21 @@
             <p class="subtle">No audit entries.</p>
           </div>
         </div>
-
-        <div class="library-divider"></div>
-
-        <!-- Maintenance Section -->
-        <div class="desk-section">
-          <h3>Maintenance</h3>
-          <p class="hint">Run periodic checks: retention, unconfirmed tags, Google Drive sync.</p>
-          <div class="actions" style="margin-top: 0.5rem;">
-            <button id="runMaintenanceBtn" type="button" class="btn-secondary">Run Maintenance Now</button>
-            <span id="maintenanceStatus" class="settings-status"></span>
-          </div>
-          <div id="maintenanceResult" style="display: none; margin-top: 1rem;"></div>
-        </div>
-
-        <div class="library-divider"></div>
-
-        <!-- Legal Holds Section -->
-        <div class="desk-section">
-          <div class="field-header">
-            <h3>Legal Holds</h3>
-            <button id="addLegalHoldBtn" type="button" class="btn-secondary">Add Hold</button>
-          </div>
-          <div id="legalHoldsList" class="legal-holds-list">
-            <p class="subtle">No legal holds.</p>
-          </div>
-        </div>
-
-        <!-- Add Legal Hold Form (hidden by default) -->
-        <div id="legalHoldForm" class="card" style="display: none;">
-          <h3>Create Legal Hold</h3>
-          <div class="field">
-            <label for="holdMatterName">Matter Name</label>
-            <input type="text" id="holdMatterName" placeholder="e.g. Acme Corp Investigation" />
-          </div>
-          <div class="field">
-            <label for="holdScopeKeywords">Keywords (comma-separated)</label>
-            <input type="text" id="holdScopeKeywords" placeholder="e.g. merger, acquisition, acme" />
-          </div>
-          <div class="field">
-            <label for="holdScopeClients">Clients (comma-separated)</label>
-            <input type="text" id="holdScopeClients" placeholder="e.g. Acme Corp, Beta Inc" />
-          </div>
-          <div class="actions">
-            <button id="saveLegalHoldBtn" type="button" class="btn-primary">Create Hold</button>
-            <button id="cancelLegalHoldBtn" type="button" class="btn-secondary">Cancel</button>
-          </div>
-        </div>
       </div>
     </section>
 
-    <!-- Tab 5: Statistics -->
-    <section class="tab-content" id="tab-statistics">
-      <div class="card">
-        <h2 class="section-title">Statistics</h2>
-        <p class="subtle" style="margin-bottom: 1rem;">View token usage from your last action.</p>
-
-        <div id="statsContent">
-          <div class="stats-empty">
-            <p class="subtle">No statistics available yet. Perform an action (ask a question, analyze a document, or use the desk) to see token usage.</p>
-          </div>
-        </div>
-
-        <div class="stats-info">
-          <h3>Token Pricing Reference</h3>
-          <div class="pricing-table">
-            <div class="pricing-row">
-              <span class="pricing-service">Claude (Sonnet)</span>
-              <span class="pricing-detail">Input: $3.00 / 1M tokens | Output: $15.00 / 1M tokens</span>
-            </div>
-            <div class="pricing-row">
-              <span class="pricing-service">Claude (Haiku)</span>
-              <span class="pricing-detail">Input: $0.25 / 1M tokens | Output: $1.25 / 1M tokens</span>
-            </div>
-            <div class="pricing-row">
-              <span class="pricing-service">Voyage AI (voyage-3-lite)</span>
-              <span class="pricing-detail">$0.02 / 1M tokens</span>
-            </div>
-          </div>
-          <p class="hint" style="margin-top: 1rem;">
-            Token counts are estimates. Claude tokens are reported directly from the API.
-            Voyage AI tokens are estimated as ~1 token per 4 characters.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Tab 5: Settings -->
+    <!-- ============================================
+         Tab 4: Settings
+         ============================================ -->
     <section class="tab-content" id="tab-settings">
       <div class="card">
         <h2 class="section-title">Settings</h2>
-        <p class="subtle" style="margin-bottom: 1.5rem;">Configure token optimization settings to balance cost and quality.</p>
+        <p class="subtle" style="margin-bottom: 1.5rem;">Configure AI optimization, integrations, and maintenance.</p>
 
+        <!-- AI & Optimization -->
         <div class="settings-section">
-          <h3>Token Optimization Options</h3>
-          <p class="hint" style="margin-bottom: 1rem;">These settings help reduce token usage while maintaining output quality. Disable them if you experience quality issues.</p>
+          <h3>AI & Optimization</h3>
+          <p class="hint" style="margin-bottom: 1rem;">These settings help reduce token usage while maintaining output quality.</p>
 
           <div class="settings-list">
             <!-- Use Haiku for extraction -->
@@ -521,7 +481,7 @@
             <div class="setting-item setting-sub-item" id="relevanceThresholdValueSetting">
               <div class="setting-info">
                 <label class="setting-label" for="settingRelevanceValue">Relevance threshold value</label>
-                <p class="setting-description">Minimum relevance score (0-100%). Results below this threshold are filtered out. Lower = more results, higher = stricter filtering.</p>
+                <p class="setting-description">Minimum relevance score (0-100%). Results below this threshold are filtered out.</p>
               </div>
               <div class="setting-control setting-control-slider">
                 <input type="range" id="settingRelevanceValue" min="0" max="100" value="25" class="slider" />
@@ -552,6 +512,7 @@
 
         <div class="library-divider"></div>
 
+        <!-- Google Drive Integration -->
         <div class="settings-section">
           <h3>Google Drive Integration</h3>
           <p class="hint" style="margin-bottom: 1rem;">Connect to Google Drive using a service account. Share your Drive folder with the service account email, then paste the credentials JSON here.</p>
@@ -582,6 +543,55 @@
           <div class="settings-actions" style="margin-top: 1rem;">
             <button id="saveGdriveSettingsBtn" type="button" class="btn-primary">Save Google Drive Settings</button>
             <span id="gdriveSettingsStatus" class="settings-status"></span>
+          </div>
+        </div>
+
+        <div class="library-divider"></div>
+
+        <!-- Maintenance (moved from Governance) -->
+        <div class="settings-section">
+          <h3>Maintenance</h3>
+          <p class="hint">Run periodic checks: retention enforcement, unconfirmed tags, Google Drive sync.</p>
+          <div class="actions" style="margin-top: 0.5rem;">
+            <button id="runMaintenanceBtn" type="button" class="btn-secondary">Run Maintenance Now</button>
+            <span id="maintenanceStatus" class="settings-status"></span>
+          </div>
+          <div id="maintenanceResult" style="display: none; margin-top: 1rem;"></div>
+        </div>
+
+        <div class="library-divider"></div>
+
+        <!-- Statistics (moved from separate tab) -->
+        <div class="settings-section">
+          <h3>Usage & Costs</h3>
+          <p class="hint" style="margin-bottom: 1rem;">Token usage from your last action.</p>
+
+          <div id="statsContent">
+            <div class="stats-empty">
+              <p class="subtle">No statistics available yet. Perform an action to see token usage.</p>
+            </div>
+          </div>
+
+          <div class="stats-info" style="margin-top: 1.5rem;">
+            <h4>Token Pricing Reference</h4>
+            <div class="pricing-table">
+              <div class="pricing-row">
+                <span class="pricing-service">Claude (Sonnet)</span>
+                <span class="pricing-detail">Input: $3.00 / 1M tokens | Output: $15.00 / 1M tokens</span>
+              </div>
+              <div class="pricing-row">
+                <span class="pricing-service">Claude (Haiku)</span>
+                <span class="pricing-detail">Input: $0.25 / 1M tokens | Output: $1.25 / 1M tokens</span>
+              </div>
+              <div class="pricing-row">
+                <span class="pricing-service">Voyage AI (voyage-3-lite)</span>
+                <span class="pricing-detail">$0.02 / 1M tokens</span>
+              </div>
+            </div>
+            <p class="hint" style="margin-top: 0.5rem;">
+              Token counts are estimates. Claude tokens are reported directly from the API.
+              Voyage AI tokens are estimated as ~1 token per 4 characters.
+            </p>
           </div>
         </div>
       </div>
@@ -667,6 +677,15 @@
             <option value="in_review">In Review</option>
             <option value="approved">Approved</option>
             <option value="archived">Archived</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="metaInForce">Enforcement</label>
+          <select id="metaInForce">
+            <option value="unknown">Unknown</option>
+            <option value="in_force">In Force</option>
+            <option value="archival">Archival</option>
           </select>
         </div>
 

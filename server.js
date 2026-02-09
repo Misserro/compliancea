@@ -34,10 +34,9 @@ import {
   getLegalHoldById,
   createLegalHold,
   releaseLegalHold,
-  getUserProfile,
-  updateUserProfile,
   getAppSetting,
   setAppSetting,
+  getChunksByDocumentId,
 } from "./lib/db.js";
 import {
   getEmbedding,
@@ -45,7 +44,7 @@ import {
   checkEmbeddingStatus,
 } from "./lib/embeddings.js";
 import { chunkText, countWords } from "./lib/chunker.js";
-import { searchDocuments, formatSearchResults, getSourceDocuments } from "./lib/search.js";
+import { searchDocuments, formatSearchResults, getSourceDocuments, extractQueryTags, scoreDocumentsByTags } from "./lib/search.js";
 import { DOCUMENTS_DIR, DB_PATH, isRailway } from "./lib/paths.js";
 import { getSettings, updateSettings, resetSettings, getDefaultSettings } from "./lib/settings.js";
 import { shouldSkipTranslation } from "./lib/languageDetection.js";
@@ -490,6 +489,7 @@ app.post("/api/documents/:id/process", async (req, res) => {
         jurisdiction: autoTagResult.jurisdiction,
         sensitivity: autoTagResult.sensitivity,
         language: autoTagResult.language,
+        in_force: autoTagResult.in_force,
         auto_tags: JSON.stringify(autoTagResult.tags),
         tags: JSON.stringify(autoTagResult.tags),
         confirmed_tags: 0,
@@ -506,12 +506,15 @@ app.post("/api/documents/:id/process", async (req, res) => {
         metadataUpdate.status = autoTagResult.suggested_status;
       }
 
-      // Store summary in metadata_json
+      // Store summary and structured tags in metadata_json
+      const existingMeta = currentDoc.metadata_json ? JSON.parse(currentDoc.metadata_json) : {};
       if (autoTagResult.summary) {
-        const existingMeta = currentDoc.metadata_json ? JSON.parse(currentDoc.metadata_json) : {};
         existingMeta.summary = autoTagResult.summary;
-        metadataUpdate.metadata_json = JSON.stringify(existingMeta);
       }
+      if (autoTagResult.structured_tags) {
+        existingMeta.structured_tags = autoTagResult.structured_tags;
+      }
+      metadataUpdate.metadata_json = JSON.stringify(existingMeta);
 
       updateDocumentMetadata(documentId, metadataUpdate);
 
@@ -521,8 +524,9 @@ app.post("/api/documents/:id/process", async (req, res) => {
         category: autoTagResult.category,
         jurisdiction: autoTagResult.jurisdiction,
         sensitivity: autoTagResult.sensitivity,
+        in_force: autoTagResult.in_force,
         suggested_status: autoTagResult.suggested_status,
-        tags: autoTagResult.tags,
+        tagCount: autoTagResult.tags.length,
       });
     } catch (tagErr) {
       console.warn("Auto-tagging failed:", tagErr.message);
@@ -768,6 +772,71 @@ app.patch("/api/documents/:id/confirm-tags", (req, res) => {
     res.json({ message: "Tags confirmed", document: updatedDocument });
   } catch (err) {
     console.error("Error confirming tags:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/documents/retag-all - Re-run expanded auto-tagger on all processed documents
+app.post("/api/documents/retag-all", async (req, res) => {
+  try {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set." });
+    }
+
+    const docs = getAllDocuments().filter((d) => d.processed);
+    let retagged = 0;
+    let failed = 0;
+    const errors = [];
+
+    for (const doc of docs) {
+      try {
+        // Reconstruct text from chunks
+        const chunks = getChunksByDocumentId(doc.id);
+        if (!chunks || chunks.length === 0) continue;
+
+        const text = chunks
+          .sort((a, b) => a.chunk_index - b.chunk_index)
+          .map((c) => c.content)
+          .join("\n");
+
+        const autoTagResult = await extractMetadata(text);
+
+        const metadataUpdate = {
+          doc_type: autoTagResult.doc_type,
+          client: autoTagResult.client,
+          jurisdiction: autoTagResult.jurisdiction,
+          sensitivity: autoTagResult.sensitivity,
+          language: autoTagResult.language,
+          in_force: autoTagResult.in_force,
+          auto_tags: JSON.stringify(autoTagResult.tags),
+          tags: JSON.stringify(autoTagResult.tags),
+          confirmed_tags: 0,
+        };
+
+        if (autoTagResult.category) {
+          metadataUpdate.category = autoTagResult.category;
+        }
+
+        const existingMeta = doc.metadata_json ? JSON.parse(doc.metadata_json) : {};
+        if (autoTagResult.summary) existingMeta.summary = autoTagResult.summary;
+        if (autoTagResult.structured_tags) existingMeta.structured_tags = autoTagResult.structured_tags;
+        metadataUpdate.metadata_json = JSON.stringify(existingMeta);
+
+        updateDocumentMetadata(doc.id, metadataUpdate);
+        retagged++;
+
+        console.log(`Retagged [${retagged}/${docs.length}]: ${doc.name} (${autoTagResult.tags.length} tags)`);
+      } catch (tagErr) {
+        failed++;
+        errors.push({ id: doc.id, name: doc.name, error: tagErr.message });
+        console.warn(`Retag failed for ${doc.name}:`, tagErr.message);
+      }
+    }
+
+    logAction("system", null, "retag_all", { retagged, failed, total: docs.length });
+    res.json({ message: `Retagged ${retagged}/${docs.length} documents`, retagged, failed, errors });
+  } catch (err) {
+    console.error("Error in retag-all:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1124,31 +1193,6 @@ app.post("/api/legal-holds/:id/release", (req, res) => {
 });
 
 // ============================================
-// Phase 0: User Profile Endpoint
-// ============================================
-
-// GET /api/profile - Get current user profile
-app.get("/api/profile", (req, res) => {
-  try {
-    const profile = getUserProfile();
-    res.json(profile || {});
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// PATCH /api/profile - Update user profile
-app.patch("/api/profile", (req, res) => {
-  try {
-    updateUserProfile(req.body);
-    const profile = getUserProfile();
-    res.json({ message: "Profile updated", profile });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ============================================
 // Q&A Ask Endpoint
 // ============================================
 
@@ -1173,8 +1217,29 @@ app.post("/api/ask", async (req, res) => {
     // Estimate Voyage tokens for question embedding (rough: 1 token per 4 chars)
     voyageTokens = Math.ceil(question.length / 4);
 
-    // Search for relevant chunks
-    let searchResults = await searchDocuments(question, documentIds || [], topK);
+    // Stage 1: Tag-based pre-filtering (only when no specific documents selected)
+    let targetDocumentIds = documentIds || [];
+    let tagPreFilterUsed = false;
+
+    if (targetDocumentIds.length === 0) {
+      try {
+        const queryTagResult = await extractQueryTags(question);
+        const tagMatchedIds = scoreDocumentsByTags(queryTagResult.tags, 15);
+        if (tagMatchedIds.length > 0) {
+          targetDocumentIds = tagMatchedIds;
+          tagPreFilterUsed = true;
+          console.log(`Tag pre-filter: query tags=${queryTagResult.tags.join(", ")} → ${tagMatchedIds.length} candidate docs`);
+        }
+        // Track tag extraction token usage
+        inputTokens += queryTagResult.tokenUsage.input;
+        outputTokens += queryTagResult.tokenUsage.output;
+      } catch (tagErr) {
+        console.warn("Tag pre-filtering failed, falling back to full search:", tagErr.message);
+      }
+    }
+
+    // Stage 2: Semantic search (within tag-matched candidates or all docs)
+    let searchResults = await searchDocuments(question, targetDocumentIds, topK);
 
     // Apply relevance threshold if enabled
     if (settings.useRelevanceThreshold && searchResults.length > 0) {
@@ -1235,8 +1300,9 @@ app.post("/api/ask", async (req, res) => {
       ]
     });
 
-    inputTokens = message.usage?.input_tokens || 0;
-    outputTokens = message.usage?.output_tokens || 0;
+    // Add Claude answer tokens to running total (tag pre-filter tokens already included)
+    inputTokens += message.usage?.input_tokens || 0;
+    outputTokens += message.usage?.output_tokens || 0;
 
     const answer = message.content
       .filter(block => block.type === "text")
@@ -1245,6 +1311,7 @@ app.post("/api/ask", async (req, res) => {
 
     res.json({
       answer,
+      tagPreFilterUsed,
       sources: sources.map(s => ({
         documentId: s.documentId,
         documentName: s.documentName,
