@@ -1431,6 +1431,75 @@ code {
   letter-spacing: 0.05em;
 }
 
+/* Category-level checkbox label */
+.category-select-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.category-select-label input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  transform: scale(1.15);
+  accent-color: var(--btn-primary);
+  cursor: pointer;
+}
+
+.category-doc-count {
+  font-weight: 400;
+  font-size: 0.7rem;
+  color: rgba(160, 168, 192, 0.6);
+}
+
+/* Entire Library toggle */
+.entire-library-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
+  background: rgba(76, 111, 255, 0.06);
+  border: 1px solid rgba(76, 111, 255, 0.2);
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.entire-library-toggle:hover {
+  background: rgba(76, 111, 255, 0.1);
+  border-color: rgba(76, 111, 255, 0.35);
+}
+
+.entire-library-toggle input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  transform: scale(1.2);
+  accent-color: var(--btn-primary);
+  cursor: pointer;
+}
+
+.entire-library-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.entire-library-hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* Document select list disabled state (when entire library is active) */
+.document-select-list.disabled-overlay {
+  opacity: 0.35;
+  pointer-events: none;
+  user-select: none;
+}
+
 /* Hint inline style for field labels */
 .hint-inline {
   font-weight: 400;

@@ -98,6 +98,9 @@ const deskStatusEl = document.getElementById("deskStatus");
 const qaSelectAllBtn = document.getElementById("qaSelectAllBtn");
 const crossRefSelectAllBtn = document.getElementById("crossRefSelectAllBtn");
 
+// Entire Library toggle
+const qaEntireLibraryEl = document.getElementById("qaEntireLibrary");
+
 // Cross-reference field (for showing/hiding)
 const deskCrossRefField = document.getElementById("deskCrossRefField");
 
@@ -1087,14 +1090,20 @@ function renderDeskDocumentSelects() {
   const renderSelectList = (containerId) => {
     let html = "";
 
-    // Render by category
+    // Render by category with category-level checkboxes
     for (const dept of DEPARTMENTS) {
       if (grouped[dept] && grouped[dept].length > 0) {
-        html += `<div class="doc-select-category">
-          <div class="doc-select-category-header">${escapeHtml(dept)}</div>
+        html += `<div class="doc-select-category" data-category="${escapeHtml(dept)}">
+          <div class="doc-select-category-header">
+            <label class="category-select-label">
+              <input type="checkbox" class="${containerId}-category-checkbox" data-category="${escapeHtml(dept)}" />
+              <span>${escapeHtml(dept)}</span>
+              <span class="category-doc-count">(${grouped[dept].length})</span>
+            </label>
+          </div>
           ${grouped[dept].map(doc => `
             <label class="document-select-item">
-              <input type="checkbox" class="${containerId}-checkbox" data-id="${doc.id}" />
+              <input type="checkbox" class="${containerId}-checkbox" data-id="${doc.id}" data-category="${escapeHtml(dept)}" />
               <span class="doc-select-name">${escapeHtml(doc.name)}</span>
               <span class="doc-select-status processed">${doc.word_count} words</span>
             </label>
@@ -1105,11 +1114,17 @@ function renderDeskDocumentSelects() {
 
     // Render uncategorized
     if (uncategorized.length > 0) {
-      html += `<div class="doc-select-category">
-        <div class="doc-select-category-header">Uncategorized</div>
+      html += `<div class="doc-select-category" data-category="Uncategorized">
+        <div class="doc-select-category-header">
+          <label class="category-select-label">
+            <input type="checkbox" class="${containerId}-category-checkbox" data-category="Uncategorized" />
+            <span>Uncategorized</span>
+            <span class="category-doc-count">(${uncategorized.length})</span>
+          </label>
+        </div>
         ${uncategorized.map(doc => `
           <label class="document-select-item">
-            <input type="checkbox" class="${containerId}-checkbox" data-id="${doc.id}" />
+            <input type="checkbox" class="${containerId}-checkbox" data-id="${doc.id}" data-category="Uncategorized" />
             <span class="doc-select-name">${escapeHtml(doc.name)}</span>
             <span class="doc-select-status processed">${doc.word_count} words</span>
           </label>
@@ -1123,17 +1138,77 @@ function renderDeskDocumentSelects() {
   deskDocumentSelectEl.innerHTML = renderSelectList("qa-doc");
   deskCrossRefSelectEl.innerHTML = renderSelectList("crossref-doc");
 
-  // Add event listeners
+  // Add event listeners for individual doc checkboxes
   deskDocumentSelectEl.querySelectorAll(".qa-doc-checkbox").forEach(cb => {
-    cb.addEventListener("change", updateAskButtonState);
+    cb.addEventListener("change", () => {
+      updateCategoryCheckboxStates("qa-doc");
+      updateAskButtonState();
+    });
   });
 
   deskCrossRefSelectEl.querySelectorAll(".crossref-doc-checkbox").forEach(cb => {
     cb.addEventListener("change", updateDeskAnalyzeState);
   });
 
+  // Add event listeners for category checkboxes (Q&A)
+  deskDocumentSelectEl.querySelectorAll(".qa-doc-category-checkbox").forEach(cb => {
+    cb.addEventListener("change", () => {
+      toggleCategoryDocs(cb, "qa-doc");
+      updateAskButtonState();
+    });
+  });
+
+  // Apply disabled overlay if entire library is toggled
+  updateEntireLibraryState();
+
   updateAskButtonState();
   updateDeskAnalyzeState();
+}
+
+// Category checkbox: toggle all docs in that category
+function toggleCategoryDocs(categoryCb, prefix) {
+  const category = categoryCb.dataset.category;
+  const container = prefix === "qa-doc" ? deskDocumentSelectEl : deskCrossRefSelectEl;
+  const docCheckboxes = container.querySelectorAll(`.${prefix}-checkbox[data-category="${category}"]`);
+  docCheckboxes.forEach(cb => {
+    cb.checked = categoryCb.checked;
+  });
+}
+
+// Sync category checkboxes with individual doc checkbox states
+function updateCategoryCheckboxStates(prefix) {
+  const container = prefix === "qa-doc" ? deskDocumentSelectEl : deskCrossRefSelectEl;
+  const categoryCheckboxes = container.querySelectorAll(`.${prefix}-category-checkbox`);
+
+  categoryCheckboxes.forEach(catCb => {
+    const category = catCb.dataset.category;
+    const docCbs = container.querySelectorAll(`.${prefix}-checkbox[data-category="${category}"]`);
+    const checkedCount = container.querySelectorAll(`.${prefix}-checkbox[data-category="${category}"]:checked`).length;
+    const totalCount = docCbs.length;
+
+    if (checkedCount === 0) {
+      catCb.checked = false;
+      catCb.indeterminate = false;
+    } else if (checkedCount === totalCount) {
+      catCb.checked = true;
+      catCb.indeterminate = false;
+    } else {
+      catCb.checked = false;
+      catCb.indeterminate = true;
+    }
+  });
+}
+
+// Entire Library toggle state management
+function updateEntireLibraryState() {
+  const isEntireLibrary = qaEntireLibraryEl && qaEntireLibraryEl.checked;
+  if (isEntireLibrary) {
+    deskDocumentSelectEl.classList.add("disabled-overlay");
+    if (qaSelectAllBtn) qaSelectAllBtn.disabled = true;
+  } else {
+    deskDocumentSelectEl.classList.remove("disabled-overlay");
+    if (qaSelectAllBtn) qaSelectAllBtn.disabled = false;
+  }
 }
 
 function getSelectedQADocumentIds() {
@@ -1149,7 +1224,10 @@ function getSelectedCrossRefDocumentIds() {
 function updateAskButtonState() {
   const selectedIds = getSelectedQADocumentIds();
   const hasQuestion = questionInput.value.trim().length > 0;
-  askBtn.disabled = selectedIds.length === 0 || !hasQuestion;
+  const isEntireLibrary = qaEntireLibraryEl && qaEntireLibraryEl.checked;
+
+  // Enable ask button if: has question AND (entire library OR at least one doc selected)
+  askBtn.disabled = !hasQuestion || (!isEntireLibrary && selectedIds.length === 0);
 
   // Update Select All button text
   const allCheckboxes = deskDocumentSelectEl.querySelectorAll(".qa-doc-checkbox");
@@ -1248,6 +1326,7 @@ function toggleSelectAllQA() {
     cb.checked = !allChecked;
   });
 
+  updateCategoryCheckboxStates("qa-doc");
   updateAskButtonState();
 }
 
@@ -1265,23 +1344,35 @@ function toggleSelectAllCrossRef() {
 qaSelectAllBtn.addEventListener("click", toggleSelectAllQA);
 crossRefSelectAllBtn.addEventListener("click", toggleSelectAllCrossRef);
 
+// Entire Library toggle
+if (qaEntireLibraryEl) {
+  qaEntireLibraryEl.addEventListener("change", () => {
+    updateEntireLibraryState();
+    updateAskButtonState();
+  });
+}
+
 // Q&A functionality
 async function askQuestion() {
   const question = questionInput.value.trim();
-  const selectedIds = getSelectedQADocumentIds();
+  const isEntireLibrary = qaEntireLibraryEl && qaEntireLibraryEl.checked;
+  const selectedIds = isEntireLibrary ? [] : getSelectedQADocumentIds();
 
   if (!question) {
     setStatusElement(qaStatusEl, "Please enter a question.", "warn");
     return;
   }
 
-  if (selectedIds.length === 0) {
-    setStatusElement(qaStatusEl, "Please select at least one document.", "warn");
+  if (!isEntireLibrary && selectedIds.length === 0) {
+    setStatusElement(qaStatusEl, "Please select at least one document or enable 'Search entire library'.", "warn");
     return;
   }
 
   askBtn.disabled = true;
-  setStatusElement(qaStatusEl, "Searching and generating answer...", "info");
+  const statusMsg = isEntireLibrary
+    ? "Searching entire library and generating answer..."
+    : "Searching and generating answer...";
+  setStatusElement(qaStatusEl, statusMsg, "info");
   answerSection.style.display = "none";
 
   try {
