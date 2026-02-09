@@ -37,6 +37,7 @@ import {
   getAppSetting,
   setAppSetting,
   getChunksByDocumentId,
+  getChunkCountsByDocumentIds,
 } from "./lib/db.js";
 import {
   getEmbedding,
@@ -44,7 +45,7 @@ import {
   checkEmbeddingStatus,
 } from "./lib/embeddings.js";
 import { chunkText, countWords } from "./lib/chunker.js";
-import { searchDocuments, formatSearchResults, getSourceDocuments, extractQueryTags, scoreDocumentsByTags } from "./lib/search.js";
+import { searchDocuments, formatSearchResults, formatSearchResultsForCitations, getSourceDocuments, extractQueryTags, scoreDocumentsByTags } from "./lib/search.js";
 import { DOCUMENTS_DIR, DB_PATH, isRailway } from "./lib/paths.js";
 import { getSettings, updateSettings, resetSettings, getDefaultSettings } from "./lib/settings.js";
 import { shouldSkipTranslation } from "./lib/languageDetection.js";
@@ -634,6 +635,55 @@ app.delete("/api/documents/:id", async (req, res) => {
     res.json({ message: "Document deleted successfully" });
   } catch (err) {
     console.error("Error deleting document:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/documents/:id/download - Download/view original document
+app.get("/api/documents/:id/download", async (req, res) => {
+  const documentId = parseInt(req.params.id, 10);
+
+  try {
+    const document = getDocumentById(documentId);
+    if (!document) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    // Security: verify path is within DOCUMENTS_DIR
+    const resolvedPath = path.resolve(document.path);
+    const resolvedDocsDir = path.resolve(DOCUMENTS_DIR);
+    if (!resolvedPath.startsWith(resolvedDocsDir)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    // Verify file exists
+    try {
+      await fs.access(resolvedPath);
+    } catch {
+      return res.status(404).json({ error: "Document file not found on disk" });
+    }
+
+    // Determine MIME type
+    const ext = path.extname(resolvedPath).toLowerCase();
+    const mimeTypes = {
+      ".pdf": "application/pdf",
+      ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ".doc": "application/msword",
+      ".txt": "text/plain",
+      ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    };
+    const contentType = mimeTypes[ext] || "application/octet-stream";
+
+    // Set headers for inline display or download
+    const disposition = req.query.download === "true" ? "attachment" : "inline";
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Content-Disposition", `${disposition}; filename="${encodeURIComponent(document.name)}"`);
+
+    // Stream the file
+    const fileStream = fsSync.createReadStream(resolvedPath);
+    fileStream.pipe(res);
+  } catch (err) {
+    console.error("Error downloading document:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1260,8 +1310,8 @@ app.post("/api/ask", async (req, res) => {
     if (searchResults.length === 0) {
       return res.json({
         answer: "I couldn't find any relevant information in the selected documents to answer your question.",
+        citations: [],
         sources: [],
-        context: [],
         tokenUsage: {
           claude: { input: 0, output: 0, total: 0 },
           voyage: { tokens: voyageTokens }
@@ -1269,10 +1319,12 @@ app.post("/api/ask", async (req, res) => {
       });
     }
 
-    // Format context for Claude (optimized formatting)
-    const contextText = settings.optimizeContextFormatting
-      ? formatContextOptimized(searchResults)
-      : formatSearchResults(searchResults);
+    // Get chunk counts for citation position info ("section X of Y")
+    const uniqueDocIds = [...new Set(searchResults.map(r => r.documentId))];
+    const chunkCounts = getChunkCountsByDocumentIds(uniqueDocIds);
+
+    // Format context with numbered citations for Claude
+    const contextText = formatSearchResultsForCitations(searchResults, chunkCounts);
 
     const sources = getSourceDocuments(searchResults);
 
@@ -1283,8 +1335,8 @@ app.post("/api/ask", async (req, res) => {
 
     const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
 
-    // Optimized system prompt (shorter but equally effective)
-    const systemPrompt = `Answer questions using ONLY the provided document excerpts. Be concise but thorough. Cite document names when relevant. If context is insufficient, say so.`;
+    // System prompt with citation instructions
+    const systemPrompt = `Answer questions using ONLY the provided document excerpts. Be concise but thorough. When referencing information from a specific excerpt, include the citation number in brackets, e.g. [1], [2]. You may cite multiple sources for the same claim, e.g. [1][3]. Always cite your sources. If context is insufficient, say so.`;
 
     const userPrompt = `Context:\n${contextText}\n\nQuestion: ${question}`;
 
@@ -1312,15 +1364,19 @@ app.post("/api/ask", async (req, res) => {
     res.json({
       answer,
       tagPreFilterUsed,
+      citations: searchResults.map((r, i) => ({
+        index: i + 1,
+        documentId: r.documentId,
+        documentName: r.documentName,
+        chunkIndex: r.chunkIndex,
+        totalChunks: chunkCounts.get(r.documentId) || null,
+        relevance: Math.round(r.score * 100),
+        contentPreview: r.content.substring(0, 300) + (r.content.length > 300 ? "..." : ""),
+      })),
       sources: sources.map(s => ({
         documentId: s.documentId,
         documentName: s.documentName,
         relevance: Math.round(s.maxScore * 100)
-      })),
-      context: searchResults.map(r => ({
-        content: r.content.substring(0, 200) + (r.content.length > 200 ? "..." : ""),
-        documentName: r.documentName,
-        score: Math.round(r.score * 100)
       })),
       tokenUsage: {
         claude: {

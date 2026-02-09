@@ -1311,18 +1311,96 @@ async function askQuestion() {
   }
 }
 
+function renderAnswerWithCitations(answerText, citations) {
+  let html = escapeHtml(answerText).replace(/\n/g, "<br>");
+
+  // Replace [N] markers with interactive citation spans
+  html = html.replace(/\[(\d+)\]/g, (match, num) => {
+    const index = parseInt(num, 10);
+    const citation = citations.find(c => c.index === index);
+    if (!citation) return match; // Leave as-is if no matching citation
+    const position = citation.chunkIndex + 1;
+    const total = citation.totalChunks || "?";
+    const title = `${escapeHtml(citation.documentName)} (section ${position} of ${total})`;
+    return `<span class="citation-ref" data-citation="${index}" title="${title}">[${index}]</span>`;
+  });
+
+  return html;
+}
+
+function renderCitationPanel(citations) {
+  if (!citations || citations.length === 0) return "";
+
+  return citations.map(c => {
+    const position = `Section ${c.chunkIndex + 1}${c.totalChunks ? ` of ${c.totalChunks}` : ""}`;
+    return `
+      <div class="citation-item" data-citation="${c.index}">
+        <div class="citation-header">
+          <span class="citation-number">[${c.index}]</span>
+          <a href="/api/documents/${c.documentId}/download" target="_blank" class="citation-doc-link" title="Open document">
+            ${escapeHtml(c.documentName)}
+          </a>
+          <span class="citation-position">${escapeHtml(position)}</span>
+          <span class="citation-relevance">${c.relevance}%</span>
+        </div>
+        <div class="citation-preview">${escapeHtml(c.contentPreview)}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function setupCitationInteractivity() {
+  // Hovering over [N] in the answer highlights the corresponding footnote
+  document.querySelectorAll(".citation-ref").forEach(ref => {
+    const citNum = ref.dataset.citation;
+
+    ref.addEventListener("mouseenter", () => {
+      const item = document.querySelector(`.citation-item[data-citation="${citNum}"]`);
+      if (item) item.classList.add("citation-highlight");
+    });
+
+    ref.addEventListener("mouseleave", () => {
+      const item = document.querySelector(`.citation-item[data-citation="${citNum}"]`);
+      if (item) item.classList.remove("citation-highlight");
+    });
+
+    // Click scrolls to the footnote
+    ref.addEventListener("click", () => {
+      const item = document.querySelector(`.citation-item[data-citation="${citNum}"]`);
+      if (item) {
+        item.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        item.classList.add("citation-flash");
+        setTimeout(() => item.classList.remove("citation-flash"), 1500);
+      }
+    });
+  });
+
+  // Clicking a footnote number highlights all matching [N] refs in the answer
+  document.querySelectorAll(".citation-number").forEach(num => {
+    num.addEventListener("click", () => {
+      const citNum = num.closest(".citation-item")?.dataset.citation;
+      document.querySelectorAll(`.citation-ref[data-citation="${citNum}"]`).forEach(ref => {
+        ref.classList.add("citation-flash");
+        setTimeout(() => ref.classList.remove("citation-flash"), 1500);
+      });
+    });
+  });
+}
+
 function renderAnswer(data) {
   answerSection.style.display = "block";
-  answerContent.innerHTML = `<p>${escapeHtml(data.answer).replace(/\n/g, "<br>")}</p>`;
 
-  if (data.sources && data.sources.length > 0) {
+  const citations = data.citations || [];
+
+  // Render answer with inline citation markers
+  const answerHtml = renderAnswerWithCitations(data.answer, citations);
+  answerContent.innerHTML = `<p>${answerHtml}</p>`;
+
+  // Render citation panel (footnotes)
+  if (citations.length > 0) {
     sourcesSection.style.display = "block";
-    sourcesList.innerHTML = data.sources.map(s => `
-      <div class="source-item">
-        <span class="source-name">${escapeHtml(s.documentName)}</span>
-        <span class="source-relevance">${s.relevance}% relevance</span>
-      </div>
-    `).join("");
+    sourcesList.innerHTML = renderCitationPanel(citations);
+    setupCitationInteractivity();
   } else {
     sourcesSection.style.display = "none";
   }
