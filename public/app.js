@@ -1311,6 +1311,9 @@ async function askQuestion() {
   }
 }
 
+// Shared citation data for tooltips
+let currentCitations = [];
+
 function renderAnswerWithCitations(answerText, citations) {
   let html = escapeHtml(answerText).replace(/\n/g, "<br>");
 
@@ -1319,10 +1322,7 @@ function renderAnswerWithCitations(answerText, citations) {
     const index = parseInt(num, 10);
     const citation = citations.find(c => c.index === index);
     if (!citation) return match; // Leave as-is if no matching citation
-    const position = citation.chunkIndex + 1;
-    const total = citation.totalChunks || "?";
-    const title = `${escapeHtml(citation.documentName)} (section ${position} of ${total})`;
-    return `<span class="citation-ref" data-citation="${index}" title="${title}">[${index}]</span>`;
+    return `<span class="citation-ref" data-citation="${index}">[${index}]</span>`;
   });
 
   return html;
@@ -1338,7 +1338,7 @@ function renderCitationPanel(citations) {
         <div class="citation-header">
           <span class="citation-number">[${c.index}]</span>
           <a href="/api/documents/${c.documentId}/download" target="_blank" class="citation-doc-link" title="Open document">
-            ${escapeHtml(c.documentName)}
+            <span class="citation-link-icon">&#128196;</span> ${escapeHtml(c.documentName)}
           </a>
           <span class="citation-position">${escapeHtml(position)}</span>
           <span class="citation-relevance">${c.relevance}%</span>
@@ -1349,23 +1349,91 @@ function renderCitationPanel(citations) {
   }).join("");
 }
 
+function ensureCitationTooltip() {
+  let tooltip = document.getElementById("citationTooltip");
+  if (!tooltip) {
+    tooltip = document.createElement("div");
+    tooltip.id = "citationTooltip";
+    tooltip.className = "citation-tooltip";
+    tooltip.style.display = "none";
+    document.body.appendChild(tooltip);
+  }
+  return tooltip;
+}
+
+function showCitationTooltip(ref, citation) {
+  const tooltip = ensureCitationTooltip();
+  const position = citation.chunkIndex + 1;
+  const total = citation.totalChunks || "?";
+  const preview = citation.contentPreview.length > 200
+    ? citation.contentPreview.substring(0, 200) + "..."
+    : citation.contentPreview;
+
+  tooltip.innerHTML = `
+    <div class="citation-tooltip-header">
+      <strong>${escapeHtml(citation.documentName)}</strong>
+      <span class="citation-tooltip-pos">Section ${position} of ${total}</span>
+    </div>
+    <div class="citation-tooltip-preview">${escapeHtml(preview)}</div>
+    <div class="citation-tooltip-footer">
+      <span class="citation-tooltip-relevance">${citation.relevance}% relevance</span>
+      <span class="citation-tooltip-hint">Click to scroll to details</span>
+    </div>
+  `;
+
+  // Position the tooltip near the reference
+  const rect = ref.getBoundingClientRect();
+  tooltip.style.display = "block";
+
+  // Calculate position — try below first, then above if no space
+  const tooltipRect = tooltip.getBoundingClientRect();
+  let top = rect.bottom + window.scrollY + 8;
+  let left = rect.left + window.scrollX - 20;
+
+  // Keep within viewport
+  if (left + tooltipRect.width > window.innerWidth - 16) {
+    left = window.innerWidth - tooltipRect.width - 16;
+  }
+  if (left < 16) left = 16;
+
+  // If no room below, show above
+  if (rect.bottom + tooltipRect.height + 8 > window.innerHeight) {
+    top = rect.top + window.scrollY - tooltipRect.height - 8;
+  }
+
+  tooltip.style.top = `${top}px`;
+  tooltip.style.left = `${left}px`;
+}
+
+function hideCitationTooltip() {
+  const tooltip = document.getElementById("citationTooltip");
+  if (tooltip) tooltip.style.display = "none";
+}
+
 function setupCitationInteractivity() {
-  // Hovering over [N] in the answer highlights the corresponding footnote
+  // Hovering over [N] in the answer shows tooltip and highlights the corresponding footnote
   document.querySelectorAll(".citation-ref").forEach(ref => {
     const citNum = ref.dataset.citation;
 
     ref.addEventListener("mouseenter", () => {
+      // Highlight footnote
       const item = document.querySelector(`.citation-item[data-citation="${citNum}"]`);
       if (item) item.classList.add("citation-highlight");
+
+      // Show tooltip
+      const citation = currentCitations.find(c => c.index === parseInt(citNum, 10));
+      if (citation) showCitationTooltip(ref, citation);
     });
 
     ref.addEventListener("mouseleave", () => {
       const item = document.querySelector(`.citation-item[data-citation="${citNum}"]`);
       if (item) item.classList.remove("citation-highlight");
+      hideCitationTooltip();
     });
 
     // Click scrolls to the footnote
     ref.addEventListener("click", () => {
+      hideCitationTooltip();
       const item = document.querySelector(`.citation-item[data-citation="${citNum}"]`);
       if (item) {
         item.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -1391,6 +1459,7 @@ function renderAnswer(data) {
   answerSection.style.display = "block";
 
   const citations = data.citations || [];
+  currentCitations = citations;
 
   // Render answer with inline citation markers
   const answerHtml = renderAnswerWithCitations(data.answer, citations);

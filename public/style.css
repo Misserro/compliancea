@@ -2082,16 +2082,27 @@ code {
 }
 
 .citation-doc-link {
-  color: var(--text);
+  color: #93c5fd;
   font-weight: 500;
   text-decoration: none;
-  border-bottom: 1px dashed rgba(255,255,255,0.3);
+  border-bottom: 1px solid rgba(147, 197, 253, 0.4);
   transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
 .citation-doc-link:hover {
-  color: #93c5fd;
-  border-bottom-color: #93c5fd;
+  color: #bfdbfe;
+  border-bottom-color: #bfdbfe;
+  background: rgba(76, 111, 255, 0.1);
+  border-radius: 4px;
+  padding: 0 0.25rem;
+  margin: 0 -0.25rem;
+}
+
+.citation-link-icon {
+  font-size: 0.9rem;
 }
 
 .citation-position {
@@ -2147,4 +2158,78 @@ code {
 @keyframes citationRefFlash {
   0%   { background: rgba(76, 111, 255, 0.4); color: #fff; }
   100% { background: transparent; }
+}
+
+/* Citation tooltip (floating popover on hover) */
+.citation-tooltip {
+  position: absolute;
+  z-index: 1000;
+  max-width: 420px;
+  min-width: 280px;
+  padding: 1rem;
+  background: #1a1a2e;
+  border: 1px solid rgba(76, 111, 255, 0.4);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(76, 111, 255, 0.1);
+  pointer-events: none;
+  animation: tooltipFadeIn 0.15s ease;
+}
+
+@keyframes tooltipFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.citation-tooltip-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.citation-tooltip-header strong {
+  color: #93c5fd;
+  font-size: 0.9rem;
+}
+
+.citation-tooltip-pos {
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: rgba(255,255,255,0.05);
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+}
+
+.citation-tooltip-preview {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
+  padding: 0.6rem;
+  background: rgba(0,0,0,0.25);
+  border-radius: 8px;
+  max-height: 100px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 0.5rem;
+}
+
+.citation-tooltip-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.citation-tooltip-relevance {
+  font-size: 0.75rem;
+  color: var(--good);
+  font-weight: 500;
+}
+
+.citation-tooltip-hint {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.3);
+  font-style: italic;
 }
