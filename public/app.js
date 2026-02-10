@@ -158,7 +158,8 @@ const qaReviewList = document.getElementById("qaReviewList");
 const qaReviewStats = document.getElementById("qaReviewStats");
 
 // Obligations Tab Elements (Tab 3)
-const obligationsTabList = document.getElementById("obligationsTabList");
+const obligationsActiveList = document.getElementById("obligationsActiveList");
+const obligationsDormantList = document.getElementById("obligationsDormantList");
 const obligationSortBy = document.getElementById("obligationSortBy");
 const obligationFilterStatus = document.getElementById("obligationFilterStatus");
 
@@ -2098,16 +2099,11 @@ async function loadObligationsTab() {
     const data = await res.json();
     allObligationsData = data.obligations || [];
 
-    // Update stats bar
     updateObligationsStats(data.stats || {});
-
-    // Update badge
     updateObligationBadge(data.stats?.overdue || 0);
-
-    // Render with current sort/filter
     renderObligationsTab();
   } catch (err) {
-    obligationsTabList.innerHTML = `<p class="subtle">Error loading obligations.</p>`;
+    obligationsActiveList.innerHTML = `<p class="subtle">Error loading obligations.</p>`;
   }
 }
 
@@ -2119,6 +2115,7 @@ function updateObligationsStats(stats) {
     <span class="ob-stat ob-stat-overdue">Overdue: <strong>${stats.overdue || 0}</strong></span>
     <span class="ob-stat ob-stat-upcoming">Due soon: <strong>${stats.upcoming || 0}</strong></span>
     <span class="ob-stat ob-stat-met">Met: <strong>${stats.met || 0}</strong></span>
+    <span class="ob-stat ob-stat-dormant">Dormant: <strong>${stats.dormant || 0}</strong></span>
   `;
 }
 
@@ -2132,25 +2129,177 @@ function updateObligationBadge(overdueCount) {
   }
 }
 
+const CATEGORY_COLORS = {
+  payment: "#7c3aed",
+  reporting: "#d97706",
+  termination: "#dc2626",
+  renewal: "#4f46e5",
+  delivery: "#059669",
+  compliance: "#0891b2",
+  confidentiality: "#6b7280",
+  insurance: "#ea580c",
+  indemnification: "#be185d",
+  other: "#6b7280",
+};
+
+const CATEGORY_ICONS = {
+  payment: "$",
+  reporting: "\u{1f4cb}",
+  termination: "\u{1f6d1}",
+  renewal: "\u{1f504}",
+  delivery: "\u{1f4e6}",
+  compliance: "\u2705",
+  confidentiality: "\u{1f512}",
+  insurance: "\u{1f6e1}",
+  indemnification: "\u2696",
+  other: "\u2022",
+};
+
+function renderObligationCard(ob, isDormant = false) {
+  const evidence = JSON.parse(ob.evidence_json || "[]");
+  const details = JSON.parse(ob.details_json || "{}");
+  const dueDates = details.due_dates || [];
+  const keyValues = details.key_values || {};
+  const cat = ob.category || ob.obligation_type || "other";
+  const catColor = CATEGORY_COLORS[cat] || "#6b7280";
+  const catIcon = CATEGORY_ICONS[cat] || "\u2022";
+  const isOverdue = ob.status === "active" && ob.due_date && new Date(ob.due_date) < new Date();
+
+  const statusBadge = isDormant
+    ? `<span class="ob-status-badge ob-status-dormant">Dormant</span>`
+    : isOverdue
+      ? `<span class="ob-status-badge ob-status-overdue">Overdue</span>`
+      : ob.status === "active"
+        ? `<span class="ob-status-badge ob-status-active">Active</span>`
+        : ob.status === "met"
+          ? `<span class="ob-status-badge ob-status-met">Met</span>`
+          : `<span class="ob-status-badge ob-status-waived">Waived</span>`;
+
+  // Key values at-a-glance
+  const allKv = [...(keyValues.amounts || []), ...(keyValues.deadlines || []), ...(keyValues.conditions || [])];
+  const kvHtml = allKv.length > 0
+    ? `<div class="ob-key-values">${allKv.map(v => `<span class="ob-kv-chip">${escapeHtml(v)}</span>`).join("")}</div>`
+    : "";
+
+  // Schedule / due dates table
+  let scheduleHtml = "";
+  if (dueDates.length > 0 && !isDormant) {
+    const visibleDates = dueDates.slice(0, 6);
+    const hasMore = dueDates.length > 6;
+    scheduleHtml = `<div class="ob-schedule">
+      <table class="ob-schedule-table">
+        <thead><tr><th>What</th><th>When</th><th>Amount</th></tr></thead>
+        <tbody>
+          ${visibleDates.map(dd => {
+            const ddClass = getDueDateClass(dd.date);
+            return `<tr>
+              <td>${escapeHtml(dd.label || "—")}</td>
+              <td class="${ddClass}">${dd.date || "—"}</td>
+              <td class="ob-amount">${dd.amount ? escapeHtml(dd.amount) : "—"}</td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+      ${hasMore ? `<p class="subtle" style="font-size:0.7rem; margin-top:0.25rem;">+ ${dueDates.length - 6} more entries</p>` : ""}
+    </div>`;
+  }
+
+  // Penalties
+  const penaltiesHtml = ob.penalties
+    ? `<div class="ob-penalties"><strong>Penalties:</strong> ${escapeHtml(ob.penalties)}</div>`
+    : "";
+
+  // Evidence
+  const evidenceHtml = evidence.length > 0
+    ? evidence.map((ev, idx) => `
+        <div class="ob-evidence-item">
+          <a href="/api/documents/${ev.documentId}/download" target="_blank" class="ob-evidence-link">${escapeHtml(ev.documentName)}</a>
+          ${ev.note ? `<span class="subtle">${escapeHtml(ev.note)}</span>` : ""}
+          <button class="btn-sm btn-remove-evidence" onclick="removeEvidence(${ob.id}, ${idx})">×</button>
+        </div>`).join("")
+    : `<p class="subtle">No evidence linked yet.</p>`;
+
+  // Contract label
+  const contractLabel = `<span class="ob-contract-label" title="${escapeHtml(ob.document_name || "")}">${escapeHtml(ob.document_name || "Unknown")}</span>`;
+
+  return `
+    <div class="obligation-card ${isDormant ? "ob-dormant" : ""}" data-id="${ob.id}" style="border-left-color: ${catColor};">
+      <div class="ob-header">
+        <div class="ob-title-row">
+          <span class="ob-cat-icon" style="color:${catColor}">${catIcon}</span>
+          <span class="ob-type-badge" style="background:${catColor}">${(cat).replace(/_/g, " ")}</span>
+          <strong>${escapeHtml(ob.title)}</strong>
+          ${statusBadge}
+          ${contractLabel}
+        </div>
+        <div class="ob-meta-row">
+          ${ob.clause_reference ? `<span class="ob-clause">${escapeHtml(ob.clause_reference)}</span>` : ""}
+          ${ob.recurrence && ob.recurrence !== "one_time" && ob.recurrence !== "on_trigger" ? `<span class="ob-recurrence">${ob.recurrence}</span>` : ""}
+          ${!isDormant && ob.due_date ? `<span class="ob-due-date ${getDueDateClass(ob.due_date)}">Next: ${ob.due_date}</span>` : ""}
+          ${isDormant && ob.notice_period_days ? `<span class="ob-notice">Notice: ${ob.notice_period_days} days</span>` : ""}
+        </div>
+      </div>
+
+      ${ob.summary ? `<p class="ob-description">${escapeHtml(ob.summary)}</p>` : (ob.description ? `<p class="ob-description">${escapeHtml(ob.description)}</p>` : "")}
+
+      ${kvHtml}
+      ${scheduleHtml}
+      ${penaltiesHtml}
+
+      <div class="ob-details">
+        <div class="ob-field">
+          <label>Owner:</label>
+          <input type="text" value="${escapeHtml(ob.owner || "")}" class="ob-inline-input" placeholder="Assign owner..." onchange="updateObligationField(${ob.id}, 'owner', this.value)" />
+        </div>
+        <div class="ob-field">
+          <label>Escalation:</label>
+          <input type="text" value="${escapeHtml(ob.escalation_to || "")}" class="ob-inline-input" placeholder="Escalation contact..." onchange="updateObligationField(${ob.id}, 'escalation_to', this.value)" />
+        </div>
+      </div>
+
+      ${ob.proof_description ? `<div class="ob-proof"><strong>Required proof:</strong> ${escapeHtml(ob.proof_description)}</div>` : ""}
+
+      <div class="ob-evidence">
+        <div class="ob-evidence-header">
+          <strong>Evidence</strong>
+          <button class="btn-secondary btn-sm" onclick="openAddEvidenceModal(${ob.id})">Add Evidence</button>
+        </div>
+        ${evidenceHtml}
+      </div>
+
+      <div class="ob-actions">
+        <button class="btn-secondary btn-sm" onclick="checkCompliance(${ob.id})">Check Compliance</button>
+        ${isDormant
+          ? `<button class="btn-activate btn-sm" onclick="toggleObligationActivation(${ob.id}, 'active')">Activate</button>`
+          : `<button class="btn-dormant-toggle btn-sm" onclick="toggleObligationActivation(${ob.id}, 'dormant')">Make Dormant</button>`
+        }
+        <select class="ob-status-select" onchange="updateObligationField(${ob.id}, 'status', this.value); setTimeout(loadObligationsTab, 300);">
+          <option value="active" ${ob.status === "active" ? "selected" : ""}>Active</option>
+          <option value="met" ${ob.status === "met" ? "selected" : ""}>Met</option>
+          <option value="waived" ${ob.status === "waived" ? "selected" : ""}>Waived</option>
+        </select>
+      </div>
+      <div class="ob-compliance-result" id="compliance-${ob.id}" style="display: none;"></div>
+    </div>
+  `;
+}
+
 function renderObligationsTab() {
   const sortBy = obligationSortBy.value;
   const filterStatus = obligationFilterStatus.value;
 
-  // Filter
-  let filtered = allObligationsData;
+  // Split active vs dormant
+  const activeObs = allObligationsData.filter(ob => ob.activation !== "dormant");
+  const dormantObs = allObligationsData.filter(ob => ob.activation === "dormant");
+
+  // Filter active
+  let filtered = activeObs;
   if (filterStatus) {
     if (filterStatus === "overdue") {
       filtered = filtered.filter(ob => ob.status === "active" && ob.due_date && new Date(ob.due_date) < new Date());
     } else {
       filtered = filtered.filter(ob => ob.status === filterStatus);
     }
-  }
-
-  if (filtered.length === 0) {
-    obligationsTabList.innerHTML = `<p class="subtle">${allObligationsData.length === 0
-      ? 'No obligations found. Process a contract in the Documents tab and click "Obligations" to extract them.'
-      : 'No obligations match the current filter.'}</p>`;
-    return;
   }
 
   // Sort
@@ -2162,130 +2311,105 @@ function renderObligationsTab() {
       if (!b.due_date) return -1;
       return new Date(a.due_date) - new Date(b.due_date);
     });
-  } else if (sortBy === "type") {
-    sorted.sort((a, b) => a.obligation_type.localeCompare(b.obligation_type));
-  } else {
-    // contract — group by document_id
+  } else if (sortBy === "category") {
     sorted.sort((a, b) => {
-      const nameCompare = (a.document_name || "").localeCompare(b.document_name || "");
-      if (nameCompare !== 0) return nameCompare;
+      const catA = a.category || a.obligation_type || "other";
+      const catB = b.category || b.obligation_type || "other";
+      const catCompare = catA.localeCompare(catB);
+      if (catCompare !== 0) return catCompare;
       if (!a.due_date && !b.due_date) return 0;
       if (!a.due_date) return 1;
       if (!b.due_date) return -1;
       return new Date(a.due_date) - new Date(b.due_date);
     });
+  } else {
+    // contract
+    sorted.sort((a, b) => {
+      const nameCompare = (a.document_name || "").localeCompare(b.document_name || "");
+      if (nameCompare !== 0) return nameCompare;
+      const catA = a.category || "other";
+      const catB = b.category || "other";
+      return catA.localeCompare(catB);
+    });
   }
 
-  // Render
-  const typeColors = {
-    renewal: "#4f46e5",
-    termination_notice: "#dc2626",
-    duty: "#059669",
-    penalty: "#dc2626",
-    reporting: "#d97706",
-    payment: "#7c3aed",
-  };
+  // Render active
+  if (sorted.length === 0) {
+    obligationsActiveList.innerHTML = `<p class="subtle">${allObligationsData.length === 0
+      ? 'No obligations found. Process a contract in the Documents tab and click "Obligations" to extract them.'
+      : 'No obligations match the current filter.'}</p>`;
+  } else {
+    let html = "";
+    let currentGroup = null;
 
-  let html = "";
-  let currentGroup = null;
+    for (const ob of sorted) {
+      const cat = ob.category || ob.obligation_type || "other";
+      let groupKey;
+      if (sortBy === "category") {
+        groupKey = cat.replace(/_/g, " ");
+        groupKey = groupKey.charAt(0).toUpperCase() + groupKey.slice(1);
+      } else if (sortBy === "contract") {
+        groupKey = ob.document_name || "Unknown Contract";
+      } else {
+        groupKey = null;
+      }
 
-  for (const ob of sorted) {
-    // Group headers for contract sort
-    if (sortBy === "contract") {
-      const groupKey = ob.document_name || "Unknown Contract";
-      if (groupKey !== currentGroup) {
+      if (groupKey && groupKey !== currentGroup) {
         currentGroup = groupKey;
-        html += `<div class="ob-group-header">${escapeHtml(groupKey)}</div>`;
+        const color = sortBy === "category" ? (CATEGORY_COLORS[cat] || "#6b7280") : "";
+        html += `<div class="ob-group-header" ${color ? `style="border-left: 3px solid ${color}; padding-left: 0.5rem;"` : ""}>${escapeHtml(groupKey)}</div>`;
       }
-    } else if (sortBy === "type") {
-      const groupKey = ob.obligation_type.replace(/_/g, " ");
-      if (groupKey !== currentGroup) {
-        currentGroup = groupKey;
-        html += `<div class="ob-group-header">${escapeHtml(groupKey.charAt(0).toUpperCase() + groupKey.slice(1))}</div>`;
-      }
+
+      html += renderObligationCard(ob, false);
     }
 
-    const evidence = JSON.parse(ob.evidence_json || "[]");
-    const dueDateClass = getDueDateClass(ob.due_date);
-    const isOverdue = ob.status === "active" && ob.due_date && new Date(ob.due_date) < new Date();
-
-    const statusBadge = isOverdue
-      ? `<span class="ob-status-badge ob-status-overdue">Overdue</span>`
-      : ob.status === "active"
-        ? `<span class="ob-status-badge ob-status-active">Active</span>`
-        : ob.status === "met"
-          ? `<span class="ob-status-badge ob-status-met">Met</span>`
-          : `<span class="ob-status-badge ob-status-waived">Waived</span>`;
-
-    const typeBadge = `<span class="ob-type-badge" style="background:${typeColors[ob.obligation_type] || '#6b7280'}">${ob.obligation_type.replace(/_/g, " ")}</span>`;
-
-    const evidenceHtml = evidence.length > 0
-      ? evidence.map((ev, idx) => `
-          <div class="ob-evidence-item">
-            <a href="/api/documents/${ev.documentId}/download" target="_blank" class="ob-evidence-link">${escapeHtml(ev.documentName)}</a>
-            ${ev.note ? `<span class="subtle">${escapeHtml(ev.note)}</span>` : ""}
-            <button class="btn-sm btn-remove-evidence" onclick="removeEvidence(${ob.id}, ${idx})">×</button>
-          </div>`).join("")
-      : `<p class="subtle">No evidence linked yet.</p>`;
-
-    // Show contract name if not grouping by contract
-    const contractLabel = sortBy !== "contract"
-      ? `<span class="ob-contract-label" title="${escapeHtml(ob.document_name || "")}">${escapeHtml(ob.document_name || "Unknown")}</span>`
-      : "";
-
-    html += `
-      <div class="obligation-card" data-id="${ob.id}">
-        <div class="ob-header">
-          <div class="ob-title-row">
-            ${typeBadge}
-            <strong>${escapeHtml(ob.title)}</strong>
-            ${statusBadge}
-            ${contractLabel}
-          </div>
-          <div class="ob-meta-row">
-            ${ob.clause_reference ? `<span class="ob-clause">${escapeHtml(ob.clause_reference)}</span>` : ""}
-            ${ob.due_date ? `<span class="ob-due-date ${dueDateClass}">${ob.due_date}</span>` : `<span class="ob-due-date">Ongoing</span>`}
-            ${ob.recurrence && ob.recurrence !== "one_time" ? `<span class="ob-recurrence">${ob.recurrence}</span>` : ""}
-          </div>
-        </div>
-        ${ob.description ? `<p class="ob-description">${escapeHtml(ob.description)}</p>` : ""}
-        <div class="ob-details">
-          <div class="ob-field">
-            <label>Owner:</label>
-            <input type="text" value="${escapeHtml(ob.owner || "")}" class="ob-inline-input" data-id="${ob.id}" data-field="owner" placeholder="Assign owner..." onchange="updateObligationField(${ob.id}, 'owner', this.value)" />
-          </div>
-          <div class="ob-field">
-            <label>Escalation:</label>
-            <input type="text" value="${escapeHtml(ob.escalation_to || "")}" class="ob-inline-input" data-id="${ob.id}" data-field="escalation_to" placeholder="Escalation contact..." onchange="updateObligationField(${ob.id}, 'escalation_to', this.value)" />
-          </div>
-        </div>
-        ${ob.proof_description ? `<div class="ob-proof"><strong>Required proof:</strong> ${escapeHtml(ob.proof_description)}</div>` : ""}
-        <div class="ob-evidence">
-          <div class="ob-evidence-header">
-            <strong>Evidence</strong>
-            <button class="btn-secondary btn-sm" onclick="openAddEvidenceModal(${ob.id})">Add Evidence</button>
-          </div>
-          ${evidenceHtml}
-        </div>
-        <div class="ob-actions">
-          <button class="btn-secondary btn-sm" onclick="checkCompliance(${ob.id})">Check Compliance</button>
-          <select class="ob-status-select" onchange="updateObligationField(${ob.id}, 'status', this.value); setTimeout(loadObligationsTab, 300);">
-            <option value="active" ${ob.status === "active" ? "selected" : ""}>Active</option>
-            <option value="met" ${ob.status === "met" ? "selected" : ""}>Met</option>
-            <option value="waived" ${ob.status === "waived" ? "selected" : ""}>Waived</option>
-          </select>
-        </div>
-        <div class="ob-compliance-result" id="compliance-${ob.id}" style="display: none;"></div>
-      </div>
-    `;
+    obligationsActiveList.innerHTML = html;
   }
 
-  obligationsTabList.innerHTML = html;
+  // Render dormant
+  document.getElementById("dormantCount").textContent = dormantObs.length;
+  if (dormantObs.length === 0) {
+    obligationsDormantList.innerHTML = `<p class="subtle">No dormant obligations.</p>`;
+  } else {
+    // Group dormant by contract
+    const dormantSorted = [...dormantObs].sort((a, b) => (a.document_name || "").localeCompare(b.document_name || ""));
+    let dHtml = "";
+    let dGroup = null;
+    for (const ob of dormantSorted) {
+      const gKey = ob.document_name || "Unknown Contract";
+      if (gKey !== dGroup) {
+        dGroup = gKey;
+        dHtml += `<div class="ob-group-header ob-group-dormant">${escapeHtml(gKey)}</div>`;
+      }
+      dHtml += renderObligationCard(ob, true);
+    }
+    obligationsDormantList.innerHTML = dHtml;
+  }
+}
+
+async function toggleObligationActivation(obId, newActivation) {
+  try {
+    await fetch(`/api/obligations/${obId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activation: newActivation }),
+    });
+    loadObligationsTab();
+  } catch (err) {
+    console.error("Error toggling activation:", err);
+  }
 }
 
 // Sort/filter change listeners
 obligationSortBy.addEventListener("change", renderObligationsTab);
 obligationFilterStatus.addEventListener("change", renderObligationsTab);
+
+// Dormant section toggle
+document.getElementById("dormantToggle").addEventListener("click", () => {
+  const list = obligationsDormantList;
+  const isHidden = list.style.display === "none";
+  list.style.display = isHidden ? "" : "none";
+});
 
 // ============================================
 // Contract Analysis Functions

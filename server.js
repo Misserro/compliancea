@@ -1921,11 +1921,14 @@ app.get("/api/obligations", (req, res) => {
     const obligations = getAllObligations();
     const overdue = getOverdueObligations();
     const upcoming = getUpcomingObligations(30);
+    const activeObs = obligations.filter(o => o.activation !== "dormant" && o.status === "active");
+    const dormantObs = obligations.filter(o => o.activation === "dormant");
     res.json({
       obligations,
       stats: {
         total: obligations.length,
-        active: obligations.filter(o => o.status === "active").length,
+        active: activeObs.length,
+        dormant: dormantObs.length,
         met: obligations.filter(o => o.status === "met").length,
         overdue: overdue.length,
         upcoming: upcoming.length,
@@ -1963,39 +1966,58 @@ app.post("/api/documents/:id/analyze-contract", async (req, res) => {
     // Extract contract terms via Claude
     const result = await extractContractTerms(fullText);
 
-    // Create obligation records
+    // Create obligation records (category-based)
     const createdObligations = [];
     let tasksCreated = 0;
 
     for (const ob of result.obligations) {
+      // First due_date for the obligation record (earliest upcoming)
+      const firstDueDate = ob.due_dates.length > 0 ? ob.due_dates[0].date : null;
+
+      // Store rich details as JSON
+      const detailsJson = JSON.stringify({
+        due_dates: ob.due_dates,
+        key_values: ob.key_values,
+        clause_references: ob.clause_references,
+      });
+
       const obligationId = insertObligation({
         documentId: docId,
-        obligationType: ob.type,
+        obligationType: ob.category,
         title: ob.title,
-        description: ob.description,
-        clauseReference: ob.clause_reference,
-        dueDate: ob.due_date,
+        description: ob.summary,
+        clauseReference: ob.clause_references.join(", ") || null,
+        dueDate: firstDueDate,
         recurrence: ob.recurrence,
         noticePeriodDays: ob.notice_period_days,
         owner: ob.suggested_owner,
         escalationTo: null,
         proofDescription: ob.proof_description,
         evidenceJson: "[]",
+        category: ob.category,
+        activation: ob.activation,
+        summary: ob.summary,
+        detailsJson,
+        penalties: ob.penalties,
       });
 
       const created = getObligationById(obligationId);
       createdObligations.push(created);
 
-      // Create task for date-based obligations
-      if (ob.due_date) {
-        createTaskForObligation(obligationId, {
-          title: `${ob.title} — ${doc.name}`,
-          description: ob.description,
-          dueDate: ob.due_date,
-          owner: ob.suggested_owner,
-          escalationTo: null,
-        });
-        tasksCreated++;
+      // Create tasks for each due_date in active obligations
+      if (ob.activation === "active" && ob.due_dates.length > 0) {
+        for (const dd of ob.due_dates) {
+          if (dd.date) {
+            createTaskForObligation(obligationId, {
+              title: `${dd.label || ob.title}${dd.amount ? ` — ${dd.amount}` : ""} — ${doc.name}`,
+              description: dd.details || ob.summary,
+              dueDate: dd.date,
+              owner: ob.suggested_owner,
+              escalationTo: null,
+            });
+            tasksCreated++;
+          }
+        }
       }
     }
 
@@ -2040,7 +2062,7 @@ app.patch("/api/obligations/:id", (req, res) => {
     const ob = getObligationById(obId);
     if (!ob) return res.status(404).json({ error: "Obligation not found" });
 
-    const allowed = ["owner", "escalation_to", "status", "proof_description", "due_date", "title", "description"];
+    const allowed = ["owner", "escalation_to", "status", "proof_description", "due_date", "title", "description", "activation"];
     const updates = {};
     for (const key of allowed) {
       if (req.body[key] !== undefined) {

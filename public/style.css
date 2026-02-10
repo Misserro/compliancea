@@ -2524,6 +2524,180 @@ code {
   vertical-align: middle;
 }
 
+/* Category icon in obligation title */
+.ob-cat-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* Dormant styling */
+.ob-dormant {
+  opacity: 0.55;
+  border-left-style: dashed !important;
+}
+
+.ob-dormant:hover {
+  opacity: 0.85;
+}
+
+.ob-status-dormant {
+  background: rgba(107, 114, 128, 0.2);
+  color: #9ca3af;
+  border: 1px dashed rgba(107, 114, 128, 0.4);
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.ob-stat-dormant strong { color: #9ca3af; }
+
+.dormant-section {
+  margin-top: 0;
+}
+
+.dormant-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  user-select: none;
+}
+
+.dormant-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.dormant-hint {
+  font-size: 0.75rem;
+}
+
+.dormant-count {
+  font-size: 0.7rem;
+  background: rgba(107, 114, 128, 0.2);
+  color: #9ca3af;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+
+.dormant-list {
+  margin-top: 0.5rem;
+}
+
+.ob-group-dormant {
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+/* Notice period badge */
+.ob-notice {
+  font-size: 0.75rem;
+  color: #fbbf24;
+  font-style: italic;
+}
+
+/* Key values chips */
+.ob-key-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.5rem 0;
+}
+
+.ob-kv-chip {
+  font-size: 0.7rem;
+  background: rgba(76, 111, 255, 0.08);
+  color: var(--text);
+  border: 1px solid rgba(76, 111, 255, 0.15);
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+/* Schedule table */
+.ob-schedule {
+  margin: 0.5rem 0;
+  overflow-x: auto;
+}
+
+.ob-schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.ob-schedule-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ob-schedule-table td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--text);
+}
+
+.ob-schedule-table tr:last-child td {
+  border-bottom: none;
+}
+
+.ob-amount {
+  font-weight: 600;
+  color: #c084fc;
+  font-family: monospace;
+}
+
+/* Penalties */
+.ob-penalties {
+  font-size: 0.8rem;
+  color: var(--bad);
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  background: rgba(239, 68, 68, 0.06);
+  border-radius: 6px;
+  border: 1px dashed rgba(239, 68, 68, 0.2);
+}
+
+/* Activate / make dormant buttons */
+.btn-activate {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--good);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  transition: all 0.15s ease;
+}
+
+.btn-activate:hover {
+  background: rgba(16, 185, 129, 0.25);
+}
+
+.btn-dormant-toggle {
+  background: rgba(107, 114, 128, 0.1);
+  color: #9ca3af;
+  border: 1px solid rgba(107, 114, 128, 0.25);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  transition: all 0.15s ease;
+}
+
+.btn-dormant-toggle:hover {
+  background: rgba(107, 114, 128, 0.2);
+}
+
 /* ============================================
    Questionnaire Review
    ============================================ */

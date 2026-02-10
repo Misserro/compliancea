@@ -367,42 +367,48 @@
     <section class="tab-content" id="tab-obligations">
       <div class="card">
         <h2 class="section-title">Contract Obligations</h2>
-        <p class="subtle" style="margin-bottom: 1rem;">Track all obligations across your contracts. Add evidence and check compliance.</p>
+        <p class="subtle" style="margin-bottom: 1rem;">Track recurring duties, payments, and deadlines. Dormant obligations activate only when you need them.</p>
 
         <!-- Stats bar -->
-        <div id="obligationsStats" class="obligations-stats-bar">
-          <span class="ob-stat ob-stat-total">Total: <strong>0</strong></span>
-          <span class="ob-stat ob-stat-active">Active: <strong>0</strong></span>
-          <span class="ob-stat ob-stat-overdue">Overdue: <strong>0</strong></span>
-          <span class="ob-stat ob-stat-upcoming">Due soon: <strong>0</strong></span>
-          <span class="ob-stat ob-stat-met">Met: <strong>0</strong></span>
-        </div>
+        <div id="obligationsStats" class="obligations-stats-bar"></div>
 
         <!-- Sort & Filter controls -->
         <div class="obligations-controls">
           <div class="obligations-sort">
-            <label>Sort by:</label>
+            <label>Group by:</label>
             <select id="obligationSortBy">
+              <option value="category">Category</option>
               <option value="contract">Contract</option>
               <option value="deadline">Deadline</option>
-              <option value="type">Obligation Type</option>
             </select>
           </div>
           <div class="obligations-filter">
-            <label>Status:</label>
+            <label>Show:</label>
             <select id="obligationFilterStatus">
+              <option value="active" selected>Active obligations</option>
               <option value="">All</option>
-              <option value="active" selected>Active</option>
               <option value="met">Met</option>
               <option value="waived">Waived</option>
-              <option value="overdue">Overdue</option>
             </select>
           </div>
         </div>
 
-        <!-- Obligations list -->
-        <div id="obligationsTabList" class="obligations-tab-list">
+        <!-- Active obligations -->
+        <div id="obligationsActiveList" class="obligations-tab-list">
           <p class="subtle">No obligations found. Process a contract in the Documents tab and click "Obligations" to extract them.</p>
+        </div>
+
+        <!-- Dormant obligations section -->
+        <div class="library-divider" style="margin: 1.5rem 0;"></div>
+        <div class="dormant-section">
+          <div class="dormant-header" id="dormantToggle">
+            <h3>Dormant Obligations</h3>
+            <span class="subtle dormant-hint">Activated only when needed (termination, indemnification, etc.)</span>
+            <span id="dormantCount" class="dormant-count">0</span>
+          </div>
+          <div id="obligationsDormantList" class="obligations-tab-list dormant-list">
+            <p class="subtle">No dormant obligations.</p>
+          </div>
         </div>
       </div>
     </section>
