@@ -49,6 +49,7 @@ import {
   deleteObligation,
   getUpcomingObligations,
   getOverdueObligations,
+  getAllObligations,
   createTaskForObligation,
 } from "./lib/db.js";
 import {
@@ -1907,6 +1908,32 @@ app.post("/api/analyze", async (req, res) => {
     console.error("Error processing request:", err);
     const status = err?.statusCode || 500;
     return res.status(status).json({ error: err?.message || "Server error" });
+  }
+});
+
+// ============================================
+// Obligations Tab Endpoints
+// ============================================
+
+// GET /api/obligations - List all obligations across all contracts
+app.get("/api/obligations", (req, res) => {
+  try {
+    const obligations = getAllObligations();
+    const overdue = getOverdueObligations();
+    const upcoming = getUpcomingObligations(30);
+    res.json({
+      obligations,
+      stats: {
+        total: obligations.length,
+        active: obligations.filter(o => o.status === "active").length,
+        met: obligations.filter(o => o.status === "met").length,
+        overdue: overdue.length,
+        upcoming: upcoming.length,
+      }
+    });
+  } catch (err) {
+    console.error("Error fetching all obligations:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 

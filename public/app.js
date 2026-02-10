@@ -22,11 +22,12 @@ function switchTab(tabId) {
   if (tabId === "settings") {
     loadSettings();
     renderStatistics();
+    loadMaintenanceStatus();
   }
 
-  // Load governance data when switching to Governance tab
-  if (tabId === "governance") {
-    loadGovernanceData();
+  // Load obligations when switching to Obligations tab
+  if (tabId === "obligations") {
+    loadObligationsTab();
   }
 }
 
@@ -156,10 +157,10 @@ const questionnaireResultsCard = document.getElementById("questionnaireResultsCa
 const qaReviewList = document.getElementById("qaReviewList");
 const qaReviewStats = document.getElementById("qaReviewStats");
 
-// Contract Obligations Elements (Tab 1)
-const contractObligationsCard = document.getElementById("contractObligationsCard");
-const obligationsList = document.getElementById("obligationsList");
-const contractInfo = document.getElementById("contractInfo");
+// Obligations Tab Elements (Tab 3)
+const obligationsTabList = document.getElementById("obligationsTabList");
+const obligationSortBy = document.getElementById("obligationSortBy");
+const obligationFilterStatus = document.getElementById("obligationFilterStatus");
 
 // Evidence Modal
 const evidenceModal = document.getElementById("evidenceModal");
@@ -175,6 +176,7 @@ let deskLastResult = null;
 let deskTemplateText = "";
 let currentQuestionnaireData = null;
 let currentContractDocId = null;
+let allObligationsData = [];
 
 // Statistics tracking
 let lastStatistics = null;
@@ -1794,6 +1796,60 @@ saveSettingsBtn.addEventListener("click", saveSettings);
 resetSettingsBtn.addEventListener("click", resetToDefaults);
 
 // ============================================
+// Maintenance Functions (Settings tab)
+// ============================================
+
+async function loadMaintenanceStatus() {
+  try {
+    const res = await fetch("/api/maintenance/status");
+    const data = await res.json();
+    const statusEl = document.getElementById("maintenanceStatus");
+    if (data.lastRun) {
+      statusEl.textContent = `Last run: ${new Date(data.lastRun).toLocaleString()}`;
+    }
+  } catch { /* ignore */ }
+}
+
+async function runMaintenance() {
+  const btn = document.getElementById("runMaintenanceBtn");
+  const statusEl = document.getElementById("maintenanceStatus");
+  const resultEl = document.getElementById("maintenanceResult");
+
+  btn.disabled = true;
+  statusEl.textContent = "Running...";
+
+  try {
+    const res = await fetch("/api/maintenance/run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ force: true })
+    });
+
+    const data = await res.json();
+
+    if (data.skipped) {
+      statusEl.textContent = data.reason;
+    } else {
+      statusEl.textContent = `Completed at ${new Date(data.completedAt).toLocaleTimeString()}`;
+      resultEl.style.display = "";
+      resultEl.innerHTML = `<div class="card">
+        <p><strong>Results:</strong></p>
+        ${data.gdrive ? `<p>Google Drive: ${data.gdrive.skipped ? data.gdrive.reason : `Added ${data.gdrive.added}, Updated ${data.gdrive.updated}`}</p>` : ""}
+        ${data.retention ? `<p>Retention: ${data.retention.tasksCreated} new disposal tasks</p>` : ""}
+        ${data.unconfirmedTags ? `<p>Unconfirmed tags: ${data.unconfirmedTags.flagged} flagged</p>` : ""}
+        ${data.tasks ? `<p>Open tasks: ${data.tasks.open}</p>` : ""}
+      </div>`;
+    }
+  } catch (err) {
+    statusEl.textContent = `Error: ${err.message}`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById("runMaintenanceBtn").addEventListener("click", runMaintenance);
+
+// ============================================
 // Phase 0: Google Drive Functions
 // ============================================
 
@@ -2033,476 +2089,94 @@ document.getElementById("metadataModal").addEventListener("click", (e) => {
 });
 
 // ============================================
-// Phase 0: Governance Tab Functions
+// Obligations Tab Functions (Tab 3)
 // ============================================
 
-async function loadGovernanceData() {
-  await Promise.all([
-    loadTasks(),
-    loadPolicies(),
-    loadAuditLog(),
-    loadLegalHolds(),
-    loadMaintenanceStatus(),
-  ]);
-}
-
-// --- Tasks ---
-
-async function loadTasks() {
-  const statusFilter = document.getElementById("taskStatusFilter").value;
+async function loadObligationsTab() {
   try {
-    const res = await fetch(`/api/tasks?status=${statusFilter}`);
+    const res = await fetch("/api/obligations");
     const data = await res.json();
-    renderTasks(data.tasks || []);
-    updateTaskBadge(data.openCount || 0);
+    allObligationsData = data.obligations || [];
+
+    // Update stats bar
+    updateObligationsStats(data.stats || {});
+
+    // Update badge
+    updateObligationBadge(data.stats?.overdue || 0);
+
+    // Render with current sort/filter
+    renderObligationsTab();
   } catch (err) {
-    document.getElementById("tasksList").innerHTML = `<p class="subtle">Error loading tasks.</p>`;
+    obligationsTabList.innerHTML = `<p class="subtle">Error loading obligations.</p>`;
   }
 }
 
-function renderTasks(tasks) {
-  const el = document.getElementById("tasksList");
-  if (tasks.length === 0) {
-    el.innerHTML = `<p class="subtle">No tasks.</p>`;
-    return;
-  }
-
-  el.innerHTML = tasks.map(task => {
-    const date = new Date(task.created_at).toLocaleString();
-    const statusBadge = task.status === "open"
-      ? `<span class="meta-badge" style="background:#e6a817">open</span>`
-      : task.status === "resolved"
-        ? `<span class="meta-badge" style="background:#2ea043">resolved</span>`
-        : `<span class="meta-badge" style="background:#888">dismissed</span>`;
-
-    const actions = task.status === "open"
-      ? `<button class="btn-secondary btn-sm" onclick="resolveTask(${task.id})">Resolve</button>
-         <button class="btn-secondary btn-sm" onclick="dismissTask(${task.id})">Dismiss</button>`
-      : "";
-
-    return `
-      <div class="task-item">
-        <div class="task-info">
-          <strong>${escapeHtml(task.title)}</strong>
-          ${statusBadge}
-          <span class="subtle">${date}</span>
-        </div>
-        ${task.description ? `<p class="task-desc subtle">${escapeHtml(task.description)}</p>` : ""}
-        <div class="task-actions">${actions}</div>
-      </div>
-    `;
-  }).join("");
+function updateObligationsStats(stats) {
+  const el = document.getElementById("obligationsStats");
+  el.innerHTML = `
+    <span class="ob-stat ob-stat-total">Total: <strong>${stats.total || 0}</strong></span>
+    <span class="ob-stat ob-stat-active">Active: <strong>${stats.active || 0}</strong></span>
+    <span class="ob-stat ob-stat-overdue">Overdue: <strong>${stats.overdue || 0}</strong></span>
+    <span class="ob-stat ob-stat-upcoming">Due soon: <strong>${stats.upcoming || 0}</strong></span>
+    <span class="ob-stat ob-stat-met">Met: <strong>${stats.met || 0}</strong></span>
+  `;
 }
 
-function updateTaskBadge(count) {
-  const badge = document.getElementById("taskBadge");
-  if (count > 0) {
-    badge.textContent = count;
+function updateObligationBadge(overdueCount) {
+  const badge = document.getElementById("obligationBadge");
+  if (overdueCount > 0) {
+    badge.textContent = overdueCount;
     badge.style.display = "";
   } else {
     badge.style.display = "none";
   }
-  document.getElementById("openTaskCount").textContent = count > 0 ? `(${count} open)` : "";
 }
 
-async function resolveTask(id) {
-  await fetch(`/api/tasks/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status: "resolved" })
-  });
-  loadTasks();
-}
+function renderObligationsTab() {
+  const sortBy = obligationSortBy.value;
+  const filterStatus = obligationFilterStatus.value;
 
-async function dismissTask(id) {
-  await fetch(`/api/tasks/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status: "dismissed" })
-  });
-  loadTasks();
-}
-
-document.getElementById("taskStatusFilter").addEventListener("change", loadTasks);
-
-// --- Policies ---
-
-async function loadPolicies() {
-  try {
-    const res = await fetch("/api/policies");
-    const data = await res.json();
-    renderPolicies(data.policies || []);
-  } catch {
-    document.getElementById("policiesList").innerHTML = `<p class="subtle">Error loading policies.</p>`;
-  }
-}
-
-function renderPolicies(policies) {
-  const el = document.getElementById("policiesList");
-  if (policies.length === 0) {
-    el.innerHTML = `<p class="subtle">No policies defined. Click "Add Policy" to create one.</p>`;
-    return;
-  }
-
-  el.innerHTML = policies.map(p => {
-    let condStr = "";
-    try { const c = JSON.parse(p.condition_json); condStr = Object.entries(c).map(([k,v]) => `${k}=${v}`).join(", "); } catch { condStr = "invalid"; }
-    const enabledBadge = p.enabled ? `<span class="meta-badge" style="background:#2ea043">enabled</span>` : `<span class="meta-badge" style="background:#888">disabled</span>`;
-
-    return `
-      <div class="policy-item">
-        <div>
-          <strong>${escapeHtml(p.name)}</strong> ${enabledBadge}
-          <span class="subtle">If ${condStr} → ${p.action_type}</span>
-        </div>
-        <div class="policy-actions">
-          <button class="btn-secondary btn-sm" onclick="testPolicyRule(${p.id})">Test</button>
-          <button class="btn-secondary btn-sm" onclick="togglePolicyEnabled(${p.id}, ${p.enabled ? 0 : 1})">${p.enabled ? "Disable" : "Enable"}</button>
-          <button class="btn-delete btn-sm" onclick="deletePolicyRule(${p.id})">Delete</button>
-        </div>
-      </div>
-    `;
-  }).join("");
-}
-
-function showPolicyForm() {
-  document.getElementById("policyForm").style.display = "";
-  document.getElementById("policyFormTitle").textContent = "Add Policy Rule";
-  document.getElementById("policyEditId").value = "";
-  document.getElementById("policyName").value = "";
-  document.getElementById("policyConditionValue").value = "";
-  updatePolicyFormFields();
-}
-
-function hidePolicyForm() {
-  document.getElementById("policyForm").style.display = "none";
-}
-
-function updatePolicyFormFields() {
-  const action = document.getElementById("policyActionType").value;
-  document.getElementById("policyRetentionField").style.display = action === "set_retention" ? "" : "none";
-  document.getElementById("policyTagField").style.display = action === "add_tag" ? "" : "none";
-}
-
-async function savePolicy() {
-  const name = document.getElementById("policyName").value.trim();
-  const field = document.getElementById("policyConditionField").value;
-  const value = document.getElementById("policyConditionValue").value.trim();
-  const actionType = document.getElementById("policyActionType").value;
-
-  if (!name || !value) { alert("Name and condition value are required."); return; }
-
-  const condition = { [field]: value };
-  const actionParams = {};
-
-  if (actionType === "set_retention") {
-    actionParams.retention_years = parseInt(document.getElementById("policyRetentionYears").value) || 5;
-    actionParams.retention_label = `retain-${actionParams.retention_years}y`;
-  }
-  if (actionType === "add_tag") {
-    actionParams.tag = document.getElementById("policyTagValue").value.trim();
-  }
-
-  try {
-    const res = await fetch("/api/policies", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, condition, actionType, actionParams })
-    });
-
-    if (res.ok) {
-      hidePolicyForm();
-      loadPolicies();
+  // Filter
+  let filtered = allObligationsData;
+  if (filterStatus) {
+    if (filterStatus === "overdue") {
+      filtered = filtered.filter(ob => ob.status === "active" && ob.due_date && new Date(ob.due_date) < new Date());
     } else {
-      const data = await res.json();
-      alert(data.error || "Failed to create policy");
+      filtered = filtered.filter(ob => ob.status === filterStatus);
     }
-  } catch (err) {
-    alert(`Error: ${err.message}`);
   }
-}
 
-async function testPolicyRule(id) {
-  try {
-    const res = await fetch(`/api/policies/${id}/test`, { method: "POST" });
-    const data = await res.json();
-    alert(`Policy "${data.policy.name}" matches ${data.matches.length} of ${data.totalDocuments} documents:\n${data.matches.map(m => m.name).join("\n") || "(none)"}`);
-  } catch (err) {
-    alert(`Error: ${err.message}`);
-  }
-}
-
-async function togglePolicyEnabled(id, enabled) {
-  await fetch(`/api/policies/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ enabled })
-  });
-  loadPolicies();
-}
-
-async function deletePolicyRule(id) {
-  if (!confirm("Delete this policy?")) return;
-  await fetch(`/api/policies/${id}`, { method: "DELETE" });
-  loadPolicies();
-}
-
-document.getElementById("addPolicyBtn").addEventListener("click", showPolicyForm);
-document.getElementById("cancelPolicyBtn").addEventListener("click", hidePolicyForm);
-document.getElementById("savePolicyBtn").addEventListener("click", savePolicy);
-document.getElementById("policyActionType").addEventListener("change", updatePolicyFormFields);
-
-// --- Audit Log ---
-
-async function loadAuditLog() {
-  try {
-    const res = await fetch("/api/audit?limit=50");
-    const data = await res.json();
-    renderAuditLog(data.entries || []);
-  } catch {
-    document.getElementById("auditLog").innerHTML = `<p class="subtle">Error loading audit log.</p>`;
-  }
-}
-
-function renderAuditLog(entries) {
-  const el = document.getElementById("auditLog");
-  if (entries.length === 0) {
-    el.innerHTML = `<p class="subtle">No audit entries yet.</p>`;
+  if (filtered.length === 0) {
+    obligationsTabList.innerHTML = `<p class="subtle">${allObligationsData.length === 0
+      ? 'No obligations found. Process a contract in the Documents tab and click "Obligations" to extract them.'
+      : 'No obligations match the current filter.'}</p>`;
     return;
   }
 
-  el.innerHTML = `<div class="audit-entries">${entries.map(e => {
-    const date = new Date(e.created_at).toLocaleString();
-    return `<div class="audit-entry">
-      <span class="audit-action">${escapeHtml(e.action)}</span>
-      <span class="subtle">${e.entity_type}${e.entity_id ? `#${e.entity_id}` : ""} — ${date}</span>
-    </div>`;
-  }).join("")}</div>`;
-}
-
-document.getElementById("refreshAuditBtn").addEventListener("click", loadAuditLog);
-
-// --- Maintenance ---
-
-async function loadMaintenanceStatus() {
-  try {
-    const res = await fetch("/api/maintenance/status");
-    const data = await res.json();
-    const statusEl = document.getElementById("maintenanceStatus");
-    if (data.lastRun) {
-      statusEl.textContent = `Last run: ${new Date(data.lastRun).toLocaleString()}`;
-    }
-  } catch { /* ignore */ }
-}
-
-async function runMaintenance() {
-  const btn = document.getElementById("runMaintenanceBtn");
-  const statusEl = document.getElementById("maintenanceStatus");
-  const resultEl = document.getElementById("maintenanceResult");
-
-  btn.disabled = true;
-  statusEl.textContent = "Running...";
-
-  try {
-    const res = await fetch("/api/maintenance/run", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ force: true })
+  // Sort
+  const sorted = [...filtered];
+  if (sortBy === "deadline") {
+    sorted.sort((a, b) => {
+      if (!a.due_date && !b.due_date) return 0;
+      if (!a.due_date) return 1;
+      if (!b.due_date) return -1;
+      return new Date(a.due_date) - new Date(b.due_date);
     });
-
-    const data = await res.json();
-
-    if (data.skipped) {
-      statusEl.textContent = data.reason;
-    } else {
-      statusEl.textContent = `Completed at ${new Date(data.completedAt).toLocaleTimeString()}`;
-      resultEl.style.display = "";
-      resultEl.innerHTML = `<div class="card">
-        <p><strong>Results:</strong></p>
-        ${data.gdrive ? `<p>Google Drive: ${data.gdrive.skipped ? data.gdrive.reason : `Added ${data.gdrive.added}, Updated ${data.gdrive.updated}`}</p>` : ""}
-        ${data.retention ? `<p>Retention: ${data.retention.tasksCreated} new disposal tasks</p>` : ""}
-        ${data.unconfirmedTags ? `<p>Unconfirmed tags: ${data.unconfirmedTags.flagged} flagged</p>` : ""}
-        ${data.tasks ? `<p>Open tasks: ${data.tasks.open}</p>` : ""}
-      </div>`;
-    }
-
-    // Refresh task count
-    loadTasks();
-  } catch (err) {
-    statusEl.textContent = `Error: ${err.message}`;
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-document.getElementById("runMaintenanceBtn").addEventListener("click", runMaintenance);
-
-// --- Legal Holds ---
-
-async function loadLegalHolds() {
-  try {
-    const res = await fetch("/api/legal-holds");
-    const data = await res.json();
-    renderLegalHolds(data.holds || []);
-  } catch {
-    document.getElementById("legalHoldsList").innerHTML = `<p class="subtle">Error loading legal holds.</p>`;
-  }
-}
-
-function renderLegalHolds(holds) {
-  const el = document.getElementById("legalHoldsList");
-  if (holds.length === 0) {
-    el.innerHTML = `<p class="subtle">No legal holds.</p>`;
-    return;
-  }
-
-  el.innerHTML = holds.map(h => {
-    const statusBadge = h.status === "active"
-      ? `<span class="meta-badge" style="background:#f85149">ACTIVE</span>`
-      : `<span class="meta-badge" style="background:#888">released</span>`;
-    const date = new Date(h.created_at).toLocaleDateString();
-    let scopeStr = "";
-    try { const s = JSON.parse(h.scope_json); scopeStr = Object.entries(s).map(([k,v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`).join(" | "); } catch { scopeStr = "invalid"; }
-
-    return `
-      <div class="hold-item">
-        <div>
-          <strong>${escapeHtml(h.matter_name)}</strong> ${statusBadge}
-          <span class="subtle">${date}</span>
-          <p class="subtle">${escapeHtml(scopeStr)}</p>
-        </div>
-        ${h.status === "active" ? `<button class="btn-secondary btn-sm" onclick="releaseLegalHold(${h.id})">Release</button>` : ""}
-      </div>
-    `;
-  }).join("");
-}
-
-function showLegalHoldForm() {
-  document.getElementById("legalHoldForm").style.display = "";
-}
-
-function hideLegalHoldForm() {
-  document.getElementById("legalHoldForm").style.display = "none";
-  document.getElementById("holdMatterName").value = "";
-  document.getElementById("holdScopeKeywords").value = "";
-  document.getElementById("holdScopeClients").value = "";
-}
-
-async function saveLegalHold() {
-  const matterName = document.getElementById("holdMatterName").value.trim();
-  const keywords = document.getElementById("holdScopeKeywords").value.split(",").map(s => s.trim()).filter(Boolean);
-  const clients = document.getElementById("holdScopeClients").value.split(",").map(s => s.trim()).filter(Boolean);
-
-  if (!matterName) { alert("Matter name is required."); return; }
-
-  const scope = {};
-  if (keywords.length) scope.keywords = keywords;
-  if (clients.length) scope.clients = clients;
-
-  try {
-    const res = await fetch("/api/legal-holds", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ matterName, scope })
+  } else if (sortBy === "type") {
+    sorted.sort((a, b) => a.obligation_type.localeCompare(b.obligation_type));
+  } else {
+    // contract — group by document_id
+    sorted.sort((a, b) => {
+      const nameCompare = (a.document_name || "").localeCompare(b.document_name || "");
+      if (nameCompare !== 0) return nameCompare;
+      if (!a.due_date && !b.due_date) return 0;
+      if (!a.due_date) return 1;
+      if (!b.due_date) return -1;
+      return new Date(a.due_date) - new Date(b.due_date);
     });
-
-    if (res.ok) {
-      hideLegalHoldForm();
-      loadLegalHolds();
-    } else {
-      const data = await res.json();
-      alert(data.error || "Failed to create legal hold");
-    }
-  } catch (err) {
-    alert(`Error: ${err.message}`);
-  }
-}
-
-async function releaseLegalHold(id) {
-  if (!confirm("Release this legal hold? Documents will no longer be frozen.")) return;
-
-  await fetch(`/api/legal-holds/${id}/release`, { method: "POST" });
-  loadLegalHolds();
-}
-
-document.getElementById("addLegalHoldBtn").addEventListener("click", showLegalHoldForm);
-document.getElementById("cancelLegalHoldBtn").addEventListener("click", hideLegalHoldForm);
-document.getElementById("saveLegalHoldBtn").addEventListener("click", saveLegalHold);
-
-// ============================================
-// Contract Analysis Functions
-// ============================================
-
-async function analyzeContract(docId) {
-  const doc = documents.find(d => d.id === docId);
-  if (!doc) return;
-
-  // Check if obligations already exist
-  try {
-    const res = await fetch(`/api/documents/${docId}/obligations`);
-    const data = await res.json();
-    if (data.obligations && data.obligations.length > 0) {
-      currentContractDocId = docId;
-      renderContractObligations(doc, data.obligations);
-      contractObligationsCard.style.display = "";
-      contractObligationsCard.scrollIntoView({ behavior: "smooth" });
-      return;
-    }
-  } catch { /* ignore, proceed with analysis */ }
-
-  // No existing obligations — run extraction
-  const btn = documentListEl.querySelector(`.btn-contract[data-id="${docId}"]`);
-  if (btn) { btn.disabled = true; btn.textContent = "Analyzing..."; }
-
-  setStatusElement(libraryStatusEl, "Analyzing contract obligations...", "warn");
-
-  try {
-    const res = await fetch(`/api/documents/${docId}/analyze-contract`, { method: "POST" });
-    const data = await res.json();
-
-    if (!res.ok) {
-      setStatusElement(libraryStatusEl, data.error || "Contract analysis failed", "bad");
-      return;
-    }
-
-    currentContractDocId = docId;
-    renderContractObligations(doc, data.obligations, data);
-    contractObligationsCard.style.display = "";
-    contractObligationsCard.scrollIntoView({ behavior: "smooth" });
-
-    setStatusElement(libraryStatusEl, `Extracted ${data.obligations.length} obligations, created ${data.tasksCreated} tasks`, "good");
-
-    // Update statistics
-    if (data.tokenUsage) {
-      lastStatistics = {
-        actionType: "Contract Analysis",
-        timestamp: new Date().toISOString(),
-        tokenUsage: data.tokenUsage,
-      };
-    }
-  } catch (err) {
-    setStatusElement(libraryStatusEl, `Error: ${err.message}`, "bad");
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = "Obligations"; }
-  }
-}
-
-function renderContractObligations(doc, obligations, analysisData = null) {
-  // Contract info header
-  let infoHtml = `<p class="subtle"><strong>${escapeHtml(doc.name)}</strong>`;
-  if (analysisData?.parties?.length > 0) {
-    infoHtml += ` — Parties: ${analysisData.parties.map(p => escapeHtml(p)).join(", ")}`;
-  }
-  if (analysisData?.effective_date) infoHtml += ` | Effective: ${analysisData.effective_date}`;
-  if (analysisData?.expiry_date) infoHtml += ` | Expires: ${analysisData.expiry_date}`;
-  infoHtml += `</p>`;
-  contractInfo.innerHTML = infoHtml;
-
-  if (!obligations || obligations.length === 0) {
-    obligationsList.innerHTML = `<p class="subtle">No obligations extracted.</p>`;
-    return;
   }
 
+  // Render
   const typeColors = {
     renewal: "#4f46e5",
     termination_notice: "#dc2626",
@@ -2512,15 +2186,35 @@ function renderContractObligations(doc, obligations, analysisData = null) {
     payment: "#7c3aed",
   };
 
-  obligationsList.innerHTML = obligations.map(ob => {
+  let html = "";
+  let currentGroup = null;
+
+  for (const ob of sorted) {
+    // Group headers for contract sort
+    if (sortBy === "contract") {
+      const groupKey = ob.document_name || "Unknown Contract";
+      if (groupKey !== currentGroup) {
+        currentGroup = groupKey;
+        html += `<div class="ob-group-header">${escapeHtml(groupKey)}</div>`;
+      }
+    } else if (sortBy === "type") {
+      const groupKey = ob.obligation_type.replace(/_/g, " ");
+      if (groupKey !== currentGroup) {
+        currentGroup = groupKey;
+        html += `<div class="ob-group-header">${escapeHtml(groupKey.charAt(0).toUpperCase() + groupKey.slice(1))}</div>`;
+      }
+    }
+
     const evidence = JSON.parse(ob.evidence_json || "[]");
     const dueDateClass = getDueDateClass(ob.due_date);
-    const statusBadge = ob.status === "active"
-      ? `<span class="ob-status-badge ob-status-active">Active</span>`
-      : ob.status === "met"
-        ? `<span class="ob-status-badge ob-status-met">Met</span>`
-        : ob.status === "overdue"
-          ? `<span class="ob-status-badge ob-status-overdue">Overdue</span>`
+    const isOverdue = ob.status === "active" && ob.due_date && new Date(ob.due_date) < new Date();
+
+    const statusBadge = isOverdue
+      ? `<span class="ob-status-badge ob-status-overdue">Overdue</span>`
+      : ob.status === "active"
+        ? `<span class="ob-status-badge ob-status-active">Active</span>`
+        : ob.status === "met"
+          ? `<span class="ob-status-badge ob-status-met">Met</span>`
           : `<span class="ob-status-badge ob-status-waived">Waived</span>`;
 
     const typeBadge = `<span class="ob-type-badge" style="background:${typeColors[ob.obligation_type] || '#6b7280'}">${ob.obligation_type.replace(/_/g, " ")}</span>`;
@@ -2534,13 +2228,19 @@ function renderContractObligations(doc, obligations, analysisData = null) {
           </div>`).join("")
       : `<p class="subtle">No evidence linked yet.</p>`;
 
-    return `
+    // Show contract name if not grouping by contract
+    const contractLabel = sortBy !== "contract"
+      ? `<span class="ob-contract-label" title="${escapeHtml(ob.document_name || "")}">${escapeHtml(ob.document_name || "Unknown")}</span>`
+      : "";
+
+    html += `
       <div class="obligation-card" data-id="${ob.id}">
         <div class="ob-header">
           <div class="ob-title-row">
             ${typeBadge}
             <strong>${escapeHtml(ob.title)}</strong>
             ${statusBadge}
+            ${contractLabel}
           </div>
           <div class="ob-meta-row">
             ${ob.clause_reference ? `<span class="ob-clause">${escapeHtml(ob.clause_reference)}</span>` : ""}
@@ -2569,7 +2269,7 @@ function renderContractObligations(doc, obligations, analysisData = null) {
         </div>
         <div class="ob-actions">
           <button class="btn-secondary btn-sm" onclick="checkCompliance(${ob.id})">Check Compliance</button>
-          <select class="ob-status-select" onchange="updateObligationField(${ob.id}, 'status', this.value)">
+          <select class="ob-status-select" onchange="updateObligationField(${ob.id}, 'status', this.value); setTimeout(loadObligationsTab, 300);">
             <option value="active" ${ob.status === "active" ? "selected" : ""}>Active</option>
             <option value="met" ${ob.status === "met" ? "selected" : ""}>Met</option>
             <option value="waived" ${ob.status === "waived" ? "selected" : ""}>Waived</option>
@@ -2578,7 +2278,70 @@ function renderContractObligations(doc, obligations, analysisData = null) {
         <div class="ob-compliance-result" id="compliance-${ob.id}" style="display: none;"></div>
       </div>
     `;
-  }).join("");
+  }
+
+  obligationsTabList.innerHTML = html;
+}
+
+// Sort/filter change listeners
+obligationSortBy.addEventListener("change", renderObligationsTab);
+obligationFilterStatus.addEventListener("change", renderObligationsTab);
+
+// ============================================
+// Contract Analysis Functions
+// ============================================
+
+async function analyzeContract(docId) {
+  const doc = documents.find(d => d.id === docId);
+  if (!doc) return;
+
+  // Check if obligations already exist
+  try {
+    const res = await fetch(`/api/documents/${docId}/obligations`);
+    const data = await res.json();
+    if (data.obligations && data.obligations.length > 0) {
+      currentContractDocId = docId;
+      // Navigate to Obligations tab
+      switchTab("obligations");
+      return;
+    }
+  } catch { /* ignore, proceed with analysis */ }
+
+  // No existing obligations — run extraction
+  const btn = documentListEl.querySelector(`.btn-contract[data-id="${docId}"]`);
+  if (btn) { btn.disabled = true; btn.textContent = "Analyzing..."; }
+
+  setStatusElement(libraryStatusEl, "Analyzing contract obligations...", "warn");
+
+  try {
+    const res = await fetch(`/api/documents/${docId}/analyze-contract`, { method: "POST" });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setStatusElement(libraryStatusEl, data.error || "Contract analysis failed", "bad");
+      return;
+    }
+
+    currentContractDocId = docId;
+
+    setStatusElement(libraryStatusEl, `Extracted ${data.obligations.length} obligations, created ${data.tasksCreated} tasks`, "good");
+
+    // Update statistics
+    if (data.tokenUsage) {
+      lastStatistics = {
+        actionType: "Contract Analysis",
+        timestamp: new Date().toISOString(),
+        tokenUsage: data.tokenUsage,
+      };
+    }
+
+    // Navigate to Obligations tab to show results
+    switchTab("obligations");
+  } catch (err) {
+    setStatusElement(libraryStatusEl, `Error: ${err.message}`, "bad");
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Obligations"; }
+  }
 }
 
 function getDueDateClass(dueDate) {
@@ -2658,13 +2421,8 @@ async function selectEvidence(documentId, el) {
 
     if (res.ok) {
       evidenceModal.style.display = "none";
-      // Refresh obligations
-      if (currentContractDocId) {
-        const obRes = await fetch(`/api/documents/${currentContractDocId}/obligations`);
-        const obData = await obRes.json();
-        const doc = documents.find(d => d.id === currentContractDocId);
-        if (doc) renderContractObligations(doc, obData.obligations);
-      }
+      // Refresh obligations tab
+      loadObligationsTab();
     } else {
       const data = await res.json();
       alert(data.error || "Failed to add evidence");
@@ -2679,11 +2437,8 @@ async function removeEvidence(obligationId, evidenceIndex) {
 
   try {
     const res = await fetch(`/api/obligations/${obligationId}/evidence/${evidenceIndex}`, { method: "DELETE" });
-    if (res.ok && currentContractDocId) {
-      const obRes = await fetch(`/api/documents/${currentContractDocId}/obligations`);
-      const obData = await obRes.json();
-      const doc = documents.find(d => d.id === currentContractDocId);
-      if (doc) renderContractObligations(doc, obData.obligations);
+    if (res.ok) {
+      loadObligationsTab();
     }
   } catch (err) {
     alert(`Error: ${err.message}`);
@@ -2724,12 +2479,6 @@ async function checkCompliance(obligationId) {
     resultEl.innerHTML = `<p class="bad">Error: ${escapeHtml(err.message)}</p>`;
   }
 }
-
-// Close obligations panel
-document.getElementById("closeObligationsBtn").addEventListener("click", () => {
-  contractObligationsCard.style.display = "none";
-  currentContractDocId = null;
-});
 
 // Close evidence modal
 document.getElementById("cancelEvidenceBtn").addEventListener("click", () => {
@@ -3021,7 +2770,7 @@ checkGDriveStatus();
 loadDocuments();
 loadSettings(); // Load settings on startup
 
-// Load open task count for badge
-fetch("/api/tasks?status=open").then(r => r.json()).then(data => {
-  updateTaskBadge(data.openCount || 0);
+// Load obligation overdue count for badge
+fetch("/api/obligations").then(r => r.json()).then(data => {
+  updateObligationBadge(data.stats?.overdue || 0);
 }).catch(() => {});

@@ -17,7 +17,7 @@
     <nav class="tab-nav">
       <button class="tab-btn active" data-tab="library">Documents</button>
       <button class="tab-btn" data-tab="analyze">Analyze & Ask</button>
-      <button class="tab-btn" data-tab="governance">Governance <span id="taskBadge" class="tab-badge" style="display:none;">0</span></button>
+      <button class="tab-btn" data-tab="obligations">Obligations <span id="obligationBadge" class="tab-badge" style="display:none;">0</span></button>
       <button class="tab-btn" data-tab="settings">Settings</button>
     </nav>
 
@@ -69,15 +69,6 @@
         </div>
       </div>
 
-      <!-- Contract Obligations Panel (shown when analyzing a contract) -->
-      <div class="card" id="contractObligationsCard" style="display: none;">
-        <div class="field-header">
-          <h3>Contract Obligations</h3>
-          <button id="closeObligationsBtn" type="button" class="btn-secondary">Close</button>
-        </div>
-        <div id="contractInfo" class="contract-info"></div>
-        <div id="obligationsList" class="obligations-list"></div>
-      </div>
     </section>
 
     <!-- ============================================
@@ -371,131 +362,47 @@
     </section>
 
     <!-- ============================================
-         Tab 3: Governance
+         Tab 3: Obligations
          ============================================ -->
-    <section class="tab-content" id="tab-governance">
+    <section class="tab-content" id="tab-obligations">
       <div class="card">
-        <h2 class="section-title">Governance</h2>
-        <p class="subtle" style="margin-bottom: 1rem;">Manage compliance, policies, tasks, audit trail, and legal holds.</p>
+        <h2 class="section-title">Contract Obligations</h2>
+        <p class="subtle" style="margin-bottom: 1rem;">Track all obligations across your contracts. Add evidence and check compliance.</p>
 
-        <!-- Compliance: Legal Holds + Policy Rules -->
-        <div class="desk-section">
-          <div class="field-header">
-            <h3>Legal Holds</h3>
-            <button id="addLegalHoldBtn" type="button" class="btn-secondary">Add Hold</button>
-          </div>
-          <div id="legalHoldsList" class="legal-holds-list">
-            <p class="subtle">No legal holds.</p>
-          </div>
+        <!-- Stats bar -->
+        <div id="obligationsStats" class="obligations-stats-bar">
+          <span class="ob-stat ob-stat-total">Total: <strong>0</strong></span>
+          <span class="ob-stat ob-stat-active">Active: <strong>0</strong></span>
+          <span class="ob-stat ob-stat-overdue">Overdue: <strong>0</strong></span>
+          <span class="ob-stat ob-stat-upcoming">Due soon: <strong>0</strong></span>
+          <span class="ob-stat ob-stat-met">Met: <strong>0</strong></span>
         </div>
 
-        <!-- Add Legal Hold Form (hidden by default) -->
-        <div id="legalHoldForm" class="card" style="display: none;">
-          <h3>Create Legal Hold</h3>
-          <div class="field">
-            <label for="holdMatterName">Matter Name</label>
-            <input type="text" id="holdMatterName" placeholder="e.g. Acme Corp Investigation" />
-          </div>
-          <div class="field">
-            <label for="holdScopeKeywords">Keywords (comma-separated)</label>
-            <input type="text" id="holdScopeKeywords" placeholder="e.g. merger, acquisition, acme" />
-          </div>
-          <div class="field">
-            <label for="holdScopeClients">Clients (comma-separated)</label>
-            <input type="text" id="holdScopeClients" placeholder="e.g. Acme Corp, Beta Inc" />
-          </div>
-          <div class="actions">
-            <button id="saveLegalHoldBtn" type="button" class="btn-primary">Create Hold</button>
-            <button id="cancelLegalHoldBtn" type="button" class="btn-secondary">Cancel</button>
-          </div>
-        </div>
-
-        <div class="library-divider"></div>
-
-        <!-- Policy Rules Section -->
-        <div class="desk-section">
-          <div class="field-header">
-            <h3>Policy Rules</h3>
-            <button id="addPolicyBtn" type="button" class="btn-secondary">Add Policy</button>
-          </div>
-          <div id="policiesList" class="policies-list">
-            <p class="subtle">No policies defined.</p>
-          </div>
-        </div>
-
-        <!-- Add/Edit Policy Form (hidden by default) -->
-        <div id="policyForm" class="card policy-form" style="display: none;">
-          <h3 id="policyFormTitle">Add Policy Rule</h3>
-          <input type="hidden" id="policyEditId" value="" />
-          <div class="field">
-            <label for="policyName">Policy Name</label>
-            <input type="text" id="policyName" placeholder="e.g. EU Contract Retention" />
-          </div>
-          <div class="field">
-            <label for="policyConditionField">Condition Field</label>
-            <select id="policyConditionField">
-              <option value="doc_type">Document Type</option>
-              <option value="jurisdiction">Jurisdiction</option>
-              <option value="category">Department</option>
-              <option value="client">Client</option>
+        <!-- Sort & Filter controls -->
+        <div class="obligations-controls">
+          <div class="obligations-sort">
+            <label>Sort by:</label>
+            <select id="obligationSortBy">
+              <option value="contract">Contract</option>
+              <option value="deadline">Deadline</option>
+              <option value="type">Obligation Type</option>
             </select>
           </div>
-          <div class="field">
-            <label for="policyConditionValue">Condition Value</label>
-            <input type="text" id="policyConditionValue" placeholder="e.g. contract, EU, Finance" />
-          </div>
-          <div class="field">
-            <label for="policyActionType">Action</label>
-            <select id="policyActionType">
-              <option value="set_retention">Set Retention</option>
-              <option value="require_approval">Require Approval</option>
-              <option value="add_tag">Add Tag</option>
-              <option value="flag_review">Flag for Review</option>
-            </select>
-          </div>
-          <div class="field" id="policyRetentionField">
-            <label for="policyRetentionYears">Retention Years</label>
-            <input type="number" id="policyRetentionYears" min="1" max="99" value="5" />
-          </div>
-          <div class="field" id="policyTagField" style="display: none;">
-            <label for="policyTagValue">Tag to Add</label>
-            <input type="text" id="policyTagValue" placeholder="e.g. regulated" />
-          </div>
-          <div class="actions">
-            <button id="savePolicyBtn" type="button" class="btn-primary">Save Policy</button>
-            <button id="cancelPolicyBtn" type="button" class="btn-secondary">Cancel</button>
-          </div>
-        </div>
-
-        <div class="library-divider"></div>
-
-        <!-- Tasks Section -->
-        <div class="desk-section">
-          <div class="field-header">
-            <h3>Tasks <span id="openTaskCount" class="task-count"></span></h3>
-            <select id="taskStatusFilter" class="category-input" style="width: auto;">
-              <option value="open">Open</option>
-              <option value="resolved">Resolved</option>
-              <option value="dismissed">Dismissed</option>
+          <div class="obligations-filter">
+            <label>Status:</label>
+            <select id="obligationFilterStatus">
               <option value="">All</option>
+              <option value="active" selected>Active</option>
+              <option value="met">Met</option>
+              <option value="waived">Waived</option>
+              <option value="overdue">Overdue</option>
             </select>
-          </div>
-          <div id="tasksList" class="tasks-list">
-            <p class="subtle">No tasks.</p>
           </div>
         </div>
 
-        <div class="library-divider"></div>
-
-        <!-- Audit Log Section -->
-        <div class="desk-section">
-          <div class="field-header">
-            <h3>Audit Log</h3>
-            <button id="refreshAuditBtn" type="button" class="btn-secondary">Refresh</button>
-          </div>
-          <div id="auditLog" class="audit-log">
-            <p class="subtle">No audit entries.</p>
-          </div>
+        <!-- Obligations list -->
+        <div id="obligationsTabList" class="obligations-tab-list">
+          <p class="subtle">No obligations found. Process a contract in the Documents tab and click "Obligations" to extract them.</p>
         </div>
       </div>
     </section>
