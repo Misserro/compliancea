@@ -2096,209 +2096,72 @@ code {
 }
 
 /* ============================================
-   Citation Styles (Analyze & Ask Tab)
+   Source Card Styles (Analyze & Ask Tab)
    ============================================ */
 
-/* Inline citation markers in the answer text */
-.citation-ref {
-  display: inline;
-  color: #93c5fd;
-  font-weight: 600;
-  font-size: 0.8em;
-  cursor: pointer;
-  padding: 0 2px;
-  border-radius: 3px;
-  transition: all 0.15s ease;
-  vertical-align: super;
-  line-height: 1;
-}
-
-.citation-ref:hover {
-  background: rgba(76, 111, 255, 0.2);
-  color: #bfdbfe;
-  text-decoration: underline;
-}
-
-/* Citation panel items (footnotes) */
-.citation-item {
-  padding: 1rem 1.25rem;
+.source-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 10px;
   background: rgba(255,255,255,0.02);
-  margin-bottom: 0.75rem;
-  transition: all 0.2s ease;
+  margin-bottom: 0.5rem;
+  transition: all 0.15s ease;
 }
 
-.citation-item:hover {
+.source-card:hover {
   border-color: rgba(76, 111, 255, 0.3);
   background: rgba(255,255,255,0.04);
 }
 
-.citation-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.5rem;
-}
-
-.citation-number {
-  font-weight: 700;
-  color: #93c5fd;
-  font-size: 0.95rem;
-  cursor: pointer;
-  min-width: 1.5rem;
-}
-
-.citation-doc-link {
+.source-doc-link {
   color: #93c5fd;
   font-weight: 500;
+  font-size: 0.9rem;
   text-decoration: none;
-  border-bottom: 1px solid rgba(147, 197, 253, 0.4);
+  border-bottom: 1px solid rgba(147, 197, 253, 0.3);
   transition: all 0.15s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
 }
 
-.citation-doc-link:hover {
+.source-doc-link:hover {
   color: #bfdbfe;
   border-bottom-color: #bfdbfe;
-  background: rgba(76, 111, 255, 0.1);
-  border-radius: 4px;
-  padding: 0 0.25rem;
-  margin: 0 -0.25rem;
 }
 
-.citation-link-icon {
-  font-size: 0.9rem;
-}
-
-.citation-position {
-  font-size: 0.8rem;
-  color: var(--muted);
-  padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--border);
-}
-
-.citation-relevance {
-  font-size: 0.8rem;
-  color: var(--good);
-  font-weight: 500;
-  margin-left: auto;
-}
-
-.citation-preview {
-  font-size: 0.85rem;
-  color: var(--muted);
-  line-height: 1.5;
-  padding: 0.75rem;
-  background: rgba(0,0,0,0.2);
-  border-radius: 8px;
-  max-height: 120px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-/* Highlight state when hovering over a citation reference */
-.citation-highlight {
-  border-color: rgba(76, 111, 255, 0.5) !important;
-  background: rgba(76, 111, 255, 0.1) !important;
-  box-shadow: 0 0 0 2px rgba(76, 111, 255, 0.15);
-}
-
-/* Flash animation for click-to-scroll */
-.citation-flash {
-  animation: citationFlash 1.5s ease;
-}
-
-@keyframes citationFlash {
-  0%   { background: rgba(76, 111, 255, 0.25); }
-  100% { background: rgba(255,255,255,0.02); }
-}
-
-.citation-ref.citation-flash {
-  animation: citationRefFlash 1.5s ease;
-}
-
-@keyframes citationRefFlash {
-  0%   { background: rgba(76, 111, 255, 0.4); color: #fff; }
-  100% { background: transparent; }
-}
-
-/* Citation tooltip (floating popover on hover) */
-.citation-tooltip {
-  position: absolute;
-  z-index: 1000;
-  max-width: 420px;
-  min-width: 280px;
-  padding: 1rem;
-  background: #1a1a2e;
-  border: 1px solid rgba(76, 111, 255, 0.4);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(76, 111, 255, 0.1);
-  pointer-events: none;
-  animation: tooltipFadeIn 0.15s ease;
-}
-
-@keyframes tooltipFadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.citation-tooltip-header {
+.source-card-meta {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
-  margin-bottom: 0.5rem;
 }
 
-.citation-tooltip-header strong {
-  color: #93c5fd;
-  font-size: 0.9rem;
-}
-
-.citation-tooltip-pos {
-  font-size: 0.75rem;
-  color: var(--muted);
-  background: rgba(255,255,255,0.05);
-  padding: 0.1rem 0.4rem;
+.source-badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
   border-radius: 9999px;
-  border: 1px solid var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.citation-tooltip-preview {
+.source-badge-type {
+  background: rgba(76, 111, 255, 0.12);
+  color: #93c5fd;
+  border: 1px solid rgba(76, 111, 255, 0.2);
+}
+
+.source-badge-category {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--good);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.source-relevance {
   font-size: 0.8rem;
   color: var(--muted);
-  line-height: 1.5;
-  padding: 0.6rem;
-  background: rgba(0,0,0,0.25);
-  border-radius: 8px;
-  max-height: 100px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-  margin-bottom: 0.5rem;
-}
-
-.citation-tooltip-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.citation-tooltip-relevance {
-  font-size: 0.75rem;
-  color: var(--good);
   font-weight: 500;
-}
-
-.citation-tooltip-hint {
-  font-size: 0.7rem;
-  color: rgba(255,255,255,0.3);
-  font-style: italic;
 }

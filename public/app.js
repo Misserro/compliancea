@@ -1402,165 +1402,38 @@ async function askQuestion() {
   }
 }
 
-// Shared citation data for tooltips
-let currentCitations = [];
+function renderSourceCards(sources) {
+  if (!sources || sources.length === 0) return "";
 
-function renderAnswerWithCitations(answerText, citations) {
-  let html = escapeHtml(answerText).replace(/\n/g, "<br>");
+  return sources.map(s => {
+    const badges = [];
+    if (s.docType) badges.push(`<span class="source-badge source-badge-type">${escapeHtml(s.docType)}</span>`);
+    if (s.category) badges.push(`<span class="source-badge source-badge-category">${escapeHtml(s.category)}</span>`);
 
-  // Replace [N] markers with interactive citation spans
-  html = html.replace(/\[(\d+)\]/g, (match, num) => {
-    const index = parseInt(num, 10);
-    const citation = citations.find(c => c.index === index);
-    if (!citation) return match; // Leave as-is if no matching citation
-    return `<span class="citation-ref" data-citation="${index}">[${index}]</span>`;
-  });
-
-  return html;
-}
-
-function renderCitationPanel(citations) {
-  if (!citations || citations.length === 0) return "";
-
-  return citations.map(c => {
-    const position = `Section ${c.chunkIndex + 1}${c.totalChunks ? ` of ${c.totalChunks}` : ""}`;
     return `
-      <div class="citation-item" data-citation="${c.index}">
-        <div class="citation-header">
-          <span class="citation-number">[${c.index}]</span>
-          <a href="/api/documents/${c.documentId}/download" target="_blank" class="citation-doc-link" title="Open document">
-            <span class="citation-link-icon">&#128196;</span> ${escapeHtml(c.documentName)}
-          </a>
-          <span class="citation-position">${escapeHtml(position)}</span>
-          <span class="citation-relevance">${c.relevance}%</span>
+      <div class="source-card">
+        <a href="/api/documents/${s.documentId}/download" target="_blank" class="source-doc-link" title="Open document">
+          ${escapeHtml(s.documentName)}
+        </a>
+        <div class="source-card-meta">
+          ${badges.join("")}
+          <span class="source-relevance">${s.relevance}% match</span>
         </div>
-        <div class="citation-preview">${escapeHtml(c.contentPreview)}</div>
       </div>
     `;
   }).join("");
 }
 
-function ensureCitationTooltip() {
-  let tooltip = document.getElementById("citationTooltip");
-  if (!tooltip) {
-    tooltip = document.createElement("div");
-    tooltip.id = "citationTooltip";
-    tooltip.className = "citation-tooltip";
-    tooltip.style.display = "none";
-    document.body.appendChild(tooltip);
-  }
-  return tooltip;
-}
-
-function showCitationTooltip(ref, citation) {
-  const tooltip = ensureCitationTooltip();
-  const position = citation.chunkIndex + 1;
-  const total = citation.totalChunks || "?";
-  const preview = citation.contentPreview.length > 200
-    ? citation.contentPreview.substring(0, 200) + "..."
-    : citation.contentPreview;
-
-  tooltip.innerHTML = `
-    <div class="citation-tooltip-header">
-      <strong>${escapeHtml(citation.documentName)}</strong>
-      <span class="citation-tooltip-pos">Section ${position} of ${total}</span>
-    </div>
-    <div class="citation-tooltip-preview">${escapeHtml(preview)}</div>
-    <div class="citation-tooltip-footer">
-      <span class="citation-tooltip-relevance">${citation.relevance}% relevance</span>
-      <span class="citation-tooltip-hint">Click to scroll to details</span>
-    </div>
-  `;
-
-  // Position the tooltip near the reference
-  const rect = ref.getBoundingClientRect();
-  tooltip.style.display = "block";
-
-  // Calculate position — try below first, then above if no space
-  const tooltipRect = tooltip.getBoundingClientRect();
-  let top = rect.bottom + window.scrollY + 8;
-  let left = rect.left + window.scrollX - 20;
-
-  // Keep within viewport
-  if (left + tooltipRect.width > window.innerWidth - 16) {
-    left = window.innerWidth - tooltipRect.width - 16;
-  }
-  if (left < 16) left = 16;
-
-  // If no room below, show above
-  if (rect.bottom + tooltipRect.height + 8 > window.innerHeight) {
-    top = rect.top + window.scrollY - tooltipRect.height - 8;
-  }
-
-  tooltip.style.top = `${top}px`;
-  tooltip.style.left = `${left}px`;
-}
-
-function hideCitationTooltip() {
-  const tooltip = document.getElementById("citationTooltip");
-  if (tooltip) tooltip.style.display = "none";
-}
-
-function setupCitationInteractivity() {
-  // Hovering over [N] in the answer shows tooltip and highlights the corresponding footnote
-  document.querySelectorAll(".citation-ref").forEach(ref => {
-    const citNum = ref.dataset.citation;
-
-    ref.addEventListener("mouseenter", () => {
-      // Highlight footnote
-      const item = document.querySelector(`.citation-item[data-citation="${citNum}"]`);
-      if (item) item.classList.add("citation-highlight");
-
-      // Show tooltip
-      const citation = currentCitations.find(c => c.index === parseInt(citNum, 10));
-      if (citation) showCitationTooltip(ref, citation);
-    });
-
-    ref.addEventListener("mouseleave", () => {
-      const item = document.querySelector(`.citation-item[data-citation="${citNum}"]`);
-      if (item) item.classList.remove("citation-highlight");
-      hideCitationTooltip();
-    });
-
-    // Click scrolls to the footnote
-    ref.addEventListener("click", () => {
-      hideCitationTooltip();
-      const item = document.querySelector(`.citation-item[data-citation="${citNum}"]`);
-      if (item) {
-        item.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        item.classList.add("citation-flash");
-        setTimeout(() => item.classList.remove("citation-flash"), 1500);
-      }
-    });
-  });
-
-  // Clicking a footnote number highlights all matching [N] refs in the answer
-  document.querySelectorAll(".citation-number").forEach(num => {
-    num.addEventListener("click", () => {
-      const citNum = num.closest(".citation-item")?.dataset.citation;
-      document.querySelectorAll(`.citation-ref[data-citation="${citNum}"]`).forEach(ref => {
-        ref.classList.add("citation-flash");
-        setTimeout(() => ref.classList.remove("citation-flash"), 1500);
-      });
-    });
-  });
-}
-
 function renderAnswer(data) {
   answerSection.style.display = "block";
 
-  const citations = data.citations || [];
-  currentCitations = citations;
+  // Render clean answer text — no citation markers
+  answerContent.innerHTML = `<p>${escapeHtml(data.answer).replace(/\n/g, "<br>")}</p>`;
 
-  // Render answer with inline citation markers
-  const answerHtml = renderAnswerWithCitations(data.answer, citations);
-  answerContent.innerHTML = `<p>${answerHtml}</p>`;
-
-  // Render citation panel (footnotes)
-  if (citations.length > 0) {
+  // Render source document cards
+  if (data.sources && data.sources.length > 0) {
     sourcesSection.style.display = "block";
-    sourcesList.innerHTML = renderCitationPanel(citations);
-    setupCitationInteractivity();
+    sourcesList.innerHTML = renderSourceCards(data.sources);
   } else {
     sourcesSection.style.display = "none";
   }

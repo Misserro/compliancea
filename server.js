@@ -37,7 +37,6 @@ import {
   getAppSetting,
   setAppSetting,
   getChunksByDocumentId,
-  getChunkCountsByDocumentIds,
 } from "./lib/db.js";
 import {
   getEmbedding,
@@ -1310,7 +1309,6 @@ app.post("/api/ask", async (req, res) => {
     if (searchResults.length === 0) {
       return res.json({
         answer: "I couldn't find any relevant information in the selected documents to answer your question.",
-        citations: [],
         sources: [],
         tokenUsage: {
           claude: { input: 0, output: 0, total: 0 },
@@ -1319,12 +1317,8 @@ app.post("/api/ask", async (req, res) => {
       });
     }
 
-    // Get chunk counts for citation position info ("section X of Y")
-    const uniqueDocIds = [...new Set(searchResults.map(r => r.documentId))];
-    const chunkCounts = getChunkCountsByDocumentIds(uniqueDocIds);
-
-    // Format context with numbered citations for Claude
-    const contextText = formatSearchResultsForCitations(searchResults, chunkCounts);
+    // Format context for Claude — document names as headers
+    const contextText = formatSearchResultsForCitations(searchResults);
 
     const sources = getSourceDocuments(searchResults);
 
@@ -1335,15 +1329,8 @@ app.post("/api/ask", async (req, res) => {
 
     const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
 
-    // System prompt with citation instructions
-    const systemPrompt = `You are a document analysis assistant. Answer questions using ONLY the provided numbered excerpts.
-Rules:
-- Cite every excerpt you use with its number in brackets: [1], [2], etc.
-- Use information from MULTIPLE excerpts when available — do not rely on just one.
-- Each numbered excerpt [1], [2], [3]... is a different source section. Cite the specific one(s) you draw from.
-- If two excerpts discuss related aspects of the topic, reference both, e.g. "According to [1], ... while [3] further clarifies..."
-- Be concise but thorough.
-- If context is insufficient, say so.`;
+    // System prompt — natural answers with document name references
+    const systemPrompt = `You are a document analysis assistant. Answer questions using ONLY the provided document excerpts. When referring to information, mention the document name naturally in your answer (e.g. "The Sanction Screening Policy states that..." or "According to the AML Procedures Manual..."). Be concise but thorough. If context is insufficient, say so.`;
 
     const userPrompt = `Context:\n${contextText}\n\nQuestion: ${question}`;
 
@@ -1371,20 +1358,16 @@ Rules:
     res.json({
       answer,
       tagPreFilterUsed,
-      citations: searchResults.map((r, i) => ({
-        index: i + 1,
-        documentId: r.documentId,
-        documentName: r.documentName,
-        chunkIndex: r.chunkIndex,
-        totalChunks: chunkCounts.get(r.documentId) || null,
-        relevance: Math.round(r.score * 100),
-        contentPreview: extractCleanPreview(r.content, 300),
-      })),
-      sources: sources.map(s => ({
-        documentId: s.documentId,
-        documentName: s.documentName,
-        relevance: Math.round(s.maxScore * 100)
-      })),
+      sources: sources.map(s => {
+        const doc = getDocumentById(s.documentId);
+        return {
+          documentId: s.documentId,
+          documentName: s.documentName,
+          relevance: Math.round(s.maxScore * 100),
+          docType: doc?.doc_type || null,
+          category: doc?.category || null,
+        };
+      }),
       tokenUsage: {
         claude: {
           input: inputTokens,
@@ -1402,44 +1385,6 @@ Rules:
     res.status(500).json({ error: err.message });
   }
 });
-
-/**
- * Extract a clean, readable preview from chunk content.
- * Trims leading fragments, finds sentence boundaries, avoids mid-word cuts.
- */
-function extractCleanPreview(content, maxLen = 300) {
-  if (!content) return "";
-
-  let text = content.trim();
-
-  // Skip leading lowercase fragment (likely overlap from previous chunk)
-  // If text starts with lowercase and first sentence ends within 80 chars, skip it
-  if (/^[a-z]/.test(text)) {
-    const firstSentenceEnd = text.search(/[.!?]\s+[A-Z]/);
-    if (firstSentenceEnd > 0 && firstSentenceEnd < 80) {
-      text = text.substring(firstSentenceEnd + 2).trim();
-    }
-  }
-
-  if (text.length <= maxLen) return text;
-
-  // Try to cut at a sentence boundary within maxLen
-  const truncated = text.substring(0, maxLen);
-  const lastSentence = truncated.search(/[.!?]\s+[A-Z][^.]*$/);
-  if (lastSentence > maxLen * 0.4) {
-    // Find the actual period/question/exclamation position
-    const sentenceEnd = truncated.indexOf(truncated.charAt(lastSentence), lastSentence);
-    return truncated.substring(0, sentenceEnd + 1);
-  }
-
-  // Fallback: cut at last word boundary
-  const lastSpace = truncated.lastIndexOf(" ");
-  if (lastSpace > maxLen * 0.5) {
-    return truncated.substring(0, lastSpace) + "...";
-  }
-
-  return truncated + "...";
-}
 
 /**
  * Optimized context formatting - removes metadata, keeps only essential info
