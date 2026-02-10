@@ -37,9 +37,23 @@ import {
   getAppSetting,
   setAppSetting,
   getChunksByDocumentId,
+  insertQaCard,
+  getAllQaCards,
+  getQaCardById,
+  updateQaCard,
+  deleteQaCard,
+  insertObligation,
+  getObligationsByDocumentId,
+  getObligationById,
+  updateObligation,
+  deleteObligation,
+  getUpcomingObligations,
+  getOverdueObligations,
+  createTaskForObligation,
 } from "./lib/db.js";
 import {
   getEmbedding,
+  getEmbeddings,
   embeddingToBuffer,
   checkEmbeddingStatus,
 } from "./lib/embeddings.js";
@@ -57,6 +71,8 @@ import { extractMetadata } from "./lib/autoTagger.js";
 import { evaluateDocument, applyActions, getAllPolicies, getPolicyById, createPolicy, updatePolicy, deletePolicy, testPolicy } from "./lib/policies.js";
 import { scanGDrive, getGDriveStatus } from "./lib/gdrive.js";
 import { runMaintenanceCycle, getLastRunTime } from "./lib/maintenance.js";
+import { extractContractTerms, checkObligationCompliance } from "./lib/contracts.js";
+import { parseQuestionnaire, matchExistingCards, draftAnswers } from "./lib/questionnaire.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1891,6 +1907,479 @@ app.post("/api/analyze", async (req, res) => {
     console.error("Error processing request:", err);
     const status = err?.statusCode || 500;
     return res.status(status).json({ error: err?.message || "Server error" });
+  }
+});
+
+// ============================================
+// Contract Analysis Endpoints
+// ============================================
+
+// POST /api/documents/:id/analyze-contract - Extract obligations from a contract
+app.post("/api/documents/:id/analyze-contract", async (req, res) => {
+  const docId = parseInt(req.params.id, 10);
+  try {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set." });
+    }
+
+    const doc = getDocumentById(docId);
+    if (!doc) return res.status(404).json({ error: "Document not found" });
+    if (!doc.processed) return res.status(400).json({ error: "Document must be processed first" });
+
+    // Reconstruct text from chunks
+    const chunks = getChunksByDocumentId(docId);
+    if (!chunks || chunks.length === 0) {
+      return res.status(400).json({ error: "No text chunks found. Process the document first." });
+    }
+    const fullText = chunks.map(c => c.content).join("\n\n");
+
+    // Extract contract terms via Claude
+    const result = await extractContractTerms(fullText);
+
+    // Create obligation records
+    const createdObligations = [];
+    let tasksCreated = 0;
+
+    for (const ob of result.obligations) {
+      const obligationId = insertObligation({
+        documentId: docId,
+        obligationType: ob.type,
+        title: ob.title,
+        description: ob.description,
+        clauseReference: ob.clause_reference,
+        dueDate: ob.due_date,
+        recurrence: ob.recurrence,
+        noticePeriodDays: ob.notice_period_days,
+        owner: ob.suggested_owner,
+        escalationTo: null,
+        proofDescription: ob.proof_description,
+        evidenceJson: "[]",
+      });
+
+      const created = getObligationById(obligationId);
+      createdObligations.push(created);
+
+      // Create task for date-based obligations
+      if (ob.due_date) {
+        createTaskForObligation(obligationId, {
+          title: `${ob.title} — ${doc.name}`,
+          description: ob.description,
+          dueDate: ob.due_date,
+          owner: ob.suggested_owner,
+          escalationTo: null,
+        });
+        tasksCreated++;
+      }
+    }
+
+    logAction("document", docId, "contract_analyzed", {
+      obligationsCount: createdObligations.length,
+      tasksCreated,
+    });
+
+    res.json({
+      parties: result.parties,
+      effective_date: result.effective_date,
+      expiry_date: result.expiry_date,
+      obligations: createdObligations,
+      tasksCreated,
+      tokenUsage: { claude: result.tokenUsage },
+    });
+  } catch (err) {
+    console.error("Error analyzing contract:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/documents/:id/obligations - List obligations for a contract
+app.get("/api/documents/:id/obligations", (req, res) => {
+  const docId = parseInt(req.params.id, 10);
+  try {
+    const doc = getDocumentById(docId);
+    if (!doc) return res.status(404).json({ error: "Document not found" });
+
+    const obligations = getObligationsByDocumentId(docId);
+    res.json({ obligations });
+  } catch (err) {
+    console.error("Error fetching obligations:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/obligations/:id - Update obligation
+app.patch("/api/obligations/:id", (req, res) => {
+  const obId = parseInt(req.params.id, 10);
+  try {
+    const ob = getObligationById(obId);
+    if (!ob) return res.status(404).json({ error: "Obligation not found" });
+
+    const allowed = ["owner", "escalation_to", "status", "proof_description", "due_date", "title", "description"];
+    const updates = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) {
+        updates[key] = req.body[key];
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: "No valid fields to update" });
+    }
+
+    updateObligation(obId, updates);
+    logAction("obligation", obId, "updated", updates);
+
+    const updated = getObligationById(obId);
+    res.json({ message: "Obligation updated", obligation: updated });
+  } catch (err) {
+    console.error("Error updating obligation:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/obligations/:id/evidence - Add evidence to obligation
+app.post("/api/obligations/:id/evidence", (req, res) => {
+  const obId = parseInt(req.params.id, 10);
+  try {
+    const ob = getObligationById(obId);
+    if (!ob) return res.status(404).json({ error: "Obligation not found" });
+
+    const { documentId, note } = req.body;
+    if (!documentId) return res.status(400).json({ error: "documentId is required" });
+
+    const evidenceDoc = getDocumentById(documentId);
+    if (!evidenceDoc) return res.status(404).json({ error: "Evidence document not found" });
+
+    const evidence = JSON.parse(ob.evidence_json || "[]");
+    evidence.push({
+      documentId,
+      documentName: evidenceDoc.name,
+      note: note || null,
+      addedAt: new Date().toISOString(),
+    });
+
+    updateObligation(obId, { evidence_json: JSON.stringify(evidence) });
+    logAction("obligation", obId, "evidence_added", { documentId, documentName: evidenceDoc.name });
+
+    const updated = getObligationById(obId);
+    res.json({ message: "Evidence added", obligation: updated });
+  } catch (err) {
+    console.error("Error adding evidence:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/obligations/:id/evidence/:index - Remove evidence from obligation
+app.delete("/api/obligations/:id/evidence/:index", (req, res) => {
+  const obId = parseInt(req.params.id, 10);
+  const evidenceIndex = parseInt(req.params.index, 10);
+  try {
+    const ob = getObligationById(obId);
+    if (!ob) return res.status(404).json({ error: "Obligation not found" });
+
+    const evidence = JSON.parse(ob.evidence_json || "[]");
+    if (evidenceIndex < 0 || evidenceIndex >= evidence.length) {
+      return res.status(400).json({ error: "Invalid evidence index" });
+    }
+
+    const removed = evidence.splice(evidenceIndex, 1)[0];
+    updateObligation(obId, { evidence_json: JSON.stringify(evidence) });
+    logAction("obligation", obId, "evidence_removed", removed);
+
+    const updated = getObligationById(obId);
+    res.json({ message: "Evidence removed", obligation: updated });
+  } catch (err) {
+    console.error("Error removing evidence:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/obligations/:id/check-compliance - AI compliance check
+app.post("/api/obligations/:id/check-compliance", async (req, res) => {
+  const obId = parseInt(req.params.id, 10);
+  try {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set." });
+    }
+
+    const ob = getObligationById(obId);
+    if (!ob) return res.status(404).json({ error: "Obligation not found" });
+
+    const evidence = JSON.parse(ob.evidence_json || "[]");
+
+    // Gather evidence document content
+    const evidenceDocs = [];
+    for (const ev of evidence) {
+      const chunks = getChunksByDocumentId(ev.documentId);
+      if (chunks && chunks.length > 0) {
+        const content = chunks.map(c => c.content).join("\n\n").substring(0, 3000);
+        evidenceDocs.push({ documentName: ev.documentName, content });
+      }
+    }
+
+    const result = await checkObligationCompliance(ob, evidenceDocs);
+
+    logAction("obligation", obId, "compliance_checked", {
+      met: result.met,
+      confidence: result.confidence,
+    });
+
+    res.json({
+      met: result.met,
+      assessment: result.assessment,
+      confidence: result.confidence,
+      tokenUsage: { claude: result.tokenUsage },
+    });
+  } catch (err) {
+    console.error("Error checking compliance:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// Questionnaire Processing Endpoints
+// ============================================
+
+// POST /api/desk/questionnaire - Process questionnaire
+app.post("/api/desk/questionnaire", async (req, res) => {
+  try {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set." });
+    }
+
+    const { fields, files } = await parseMultipart(req);
+
+    // Get file or pasted text
+    const uploaded = files?.file;
+    const mainFile = Array.isArray(uploaded) ? uploaded[0] : uploaded;
+    const pastedText = String(first(fields?.pastedText || "")).trim();
+
+    if (!mainFile && !pastedText) {
+      return res.status(400).json({ error: "Upload a file or paste questionnaire text" });
+    }
+
+    // Get library document IDs
+    let libraryDocumentIds = [];
+    try {
+      const idsStr = String(first(fields?.libraryDocumentIds || "")).trim();
+      if (idsStr) {
+        libraryDocumentIds = JSON.parse(idsStr);
+      }
+    } catch {
+      return res.status(400).json({ error: "Invalid libraryDocumentIds format" });
+    }
+
+    let totalTokenUsage = { claudeInput: 0, claudeOutput: 0, voyageTokens: 0 };
+
+    // Step 1: Parse questionnaire into questions
+    let questions;
+    let parseTokens;
+
+    if (mainFile) {
+      const ext = (mainFile.originalFilename || mainFile.newFilename || "").toLowerCase();
+      const isExcel = ext.endsWith(".xlsx") || ext.endsWith(".xls") || ext.endsWith(".csv") ||
+        (mainFile.mimetype && mainFile.mimetype.includes("spreadsheet"));
+
+      if (isExcel) {
+        const fileBuffer = await fs.readFile(mainFile.filepath);
+        const result = await parseQuestionnaire(null, "excel", fileBuffer);
+        questions = result.questions;
+        parseTokens = result.tokenUsage;
+      } else {
+        // PDF or DOCX
+        const text = await extractText(mainFile);
+        if (!text) return res.status(400).json({ error: "Could not extract text from file" });
+        const result = await parseQuestionnaire(text, "text");
+        questions = result.questions;
+        parseTokens = result.tokenUsage;
+      }
+    } else {
+      // Pasted text
+      const result = await parseQuestionnaire(pastedText, "text");
+      questions = result.questions;
+      parseTokens = result.tokenUsage;
+    }
+
+    if (!questions || questions.length === 0) {
+      return res.status(400).json({ error: "No questions could be extracted from the input" });
+    }
+
+    totalTokenUsage.claudeInput += parseTokens.input || 0;
+    totalTokenUsage.claudeOutput += parseTokens.output || 0;
+
+    // Step 2: Match against existing QA cards
+    const { matches, voyageTokens: matchVoyageTokens } = await matchExistingCards(questions);
+    totalTokenUsage.voyageTokens += matchVoyageTokens;
+
+    // Step 3: Draft answers for unmatched questions
+    const unmatchedQuestions = questions.filter((q, i) => !matches[i]);
+    const unmatchedIndices = questions.map((q, i) => !matches[i] ? i : -1).filter(i => i >= 0);
+
+    let draftResults = { drafts: [], tokenUsage: { input: 0, output: 0, voyageTokens: 0 } };
+    if (unmatchedQuestions.length > 0) {
+      draftResults = await draftAnswers(unmatchedQuestions, libraryDocumentIds);
+      totalTokenUsage.claudeInput += draftResults.tokenUsage.input || 0;
+      totalTokenUsage.claudeOutput += draftResults.tokenUsage.output || 0;
+      totalTokenUsage.voyageTokens += draftResults.tokenUsage.voyageTokens || 0;
+    }
+
+    // Step 4: Merge results
+    const responseQuestions = questions.map((q, i) => {
+      const match = matches[i];
+      if (match) {
+        return {
+          number: q.number,
+          text: q.text,
+          source: "auto-filled",
+          answer: match.card.approvedAnswer,
+          evidence: JSON.parse(match.card.evidenceJson || "[]"),
+          confidence: "high",
+          matchedCardId: match.cardId,
+          similarity: match.similarity,
+        };
+      }
+
+      // Find the draft for this unmatched question
+      const unmatchedIdx = unmatchedIndices.indexOf(i);
+      const draft = draftResults.drafts[unmatchedIdx];
+
+      return {
+        number: q.number,
+        text: q.text,
+        source: "drafted",
+        answer: draft?.answer || "Unable to draft answer",
+        evidence: draft?.evidence || [],
+        confidence: draft?.confidence || "low",
+        matchedCardId: null,
+        similarity: null,
+      };
+    });
+
+    const autoFilledCount = responseQuestions.filter(q => q.source === "auto-filled").length;
+
+    logAction("questionnaire", null, "processed", {
+      total: questions.length,
+      autoFilled: autoFilledCount,
+      drafted: questions.length - autoFilledCount,
+    });
+
+    res.json({
+      questions: responseQuestions,
+      stats: {
+        total: questions.length,
+        autoFilled: autoFilledCount,
+        drafted: questions.length - autoFilledCount,
+      },
+      tokenUsage: {
+        claude: {
+          input: totalTokenUsage.claudeInput,
+          output: totalTokenUsage.claudeOutput,
+          total: totalTokenUsage.claudeInput + totalTokenUsage.claudeOutput,
+          model: "sonnet",
+        },
+        voyage: { tokens: totalTokenUsage.voyageTokens },
+      },
+    });
+  } catch (err) {
+    console.error("Error processing questionnaire:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/desk/questionnaire/approve - Save approved Q&As as reusable cards
+app.post("/api/desk/questionnaire/approve", async (req, res) => {
+  try {
+    const { items, sourceQuestionnaire } = req.body;
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: "items array is required" });
+    }
+
+    // Generate embeddings for all questions
+    const questionTexts = items.map(item => item.questionText);
+    let embeddings = [];
+    try {
+      embeddings = await getEmbeddings(questionTexts);
+    } catch (embErr) {
+      console.warn("Failed to generate question embeddings:", embErr.message);
+      // Continue without embeddings — cards will work but won't auto-match
+    }
+
+    let saved = 0;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const embedding = embeddings[i] ? embeddingToBuffer(embeddings[i]) : null;
+
+      insertQaCard({
+        questionText: item.questionText,
+        approvedAnswer: item.approvedAnswer,
+        evidenceJson: JSON.stringify(item.evidence || []),
+        sourceQuestionnaire: sourceQuestionnaire || item.sourceQuestionnaire || null,
+        questionEmbedding: embedding,
+      });
+      saved++;
+    }
+
+    logAction("qa_cards", null, "batch_approved", { saved, sourceQuestionnaire });
+
+    res.json({ saved, message: `${saved} Q&A card(s) saved successfully` });
+  } catch (err) {
+    console.error("Error approving questionnaire items:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/qa-cards - List all saved Q&A cards
+app.get("/api/qa-cards", (req, res) => {
+  try {
+    const status = req.query.status || null;
+    const cards = getAllQaCards(status);
+    res.json({ cards });
+  } catch (err) {
+    console.error("Error fetching QA cards:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/qa-cards/:id - Update a Q&A card
+app.patch("/api/qa-cards/:id", (req, res) => {
+  const cardId = parseInt(req.params.id, 10);
+  try {
+    const card = getQaCardById(cardId);
+    if (!card) return res.status(404).json({ error: "QA card not found" });
+
+    const allowed = ["approved_answer", "evidence_json", "status"];
+    const updates = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) {
+        updates[key] = req.body[key];
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: "No valid fields to update" });
+    }
+
+    updateQaCard(cardId, updates);
+    const updated = getQaCardById(cardId);
+    res.json({ message: "QA card updated", card: updated });
+  } catch (err) {
+    console.error("Error updating QA card:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/qa-cards/:id - Delete a Q&A card
+app.delete("/api/qa-cards/:id", (req, res) => {
+  const cardId = parseInt(req.params.id, 10);
+  try {
+    const card = getQaCardById(cardId);
+    if (!card) return res.status(404).json({ error: "QA card not found" });
+
+    deleteQaCard(cardId);
+    logAction("qa_cards", cardId, "deleted", { questionText: card.question_text });
+    res.json({ message: "QA card deleted" });
+  } catch (err) {
+    console.error("Error deleting QA card:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 

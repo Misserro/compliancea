@@ -2165,3 +2165,416 @@ code {
   color: var(--muted);
   font-weight: 500;
 }
+
+/* ============================================
+   Contract Obligations
+   ============================================ */
+
+.contract-info {
+  margin-bottom: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.obligation-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  background: rgba(255,255,255,0.02);
+  border-left: 3px solid var(--border);
+  transition: all 0.15s ease;
+}
+
+.obligation-card:hover {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(76, 111, 255, 0.3);
+}
+
+.ob-header {
+  margin-bottom: 0.5rem;
+}
+
+.ob-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.25rem;
+}
+
+.ob-type-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.1rem 0.5rem;
+  border-radius: 9999px;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ob-status-badge {
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.ob-status-active { background: rgba(217, 119, 6, 0.15); color: #fbbf24; border: 1px solid rgba(217, 119, 6, 0.3); }
+.ob-status-met { background: rgba(16, 185, 129, 0.15); color: var(--good); border: 1px solid rgba(16, 185, 129, 0.3); }
+.ob-status-overdue { background: rgba(239, 68, 68, 0.15); color: var(--bad); border: 1px solid rgba(239, 68, 68, 0.3); }
+.ob-status-waived { background: rgba(107, 114, 128, 0.15); color: var(--muted); border: 1px solid rgba(107, 114, 128, 0.3); }
+
+.ob-meta-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+}
+
+.ob-clause {
+  color: var(--muted);
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+.ob-due-date {
+  font-weight: 500;
+}
+
+.ob-overdue { color: var(--bad); font-weight: 600; }
+.ob-upcoming { color: #fbbf24; font-weight: 600; }
+.ob-future { color: var(--muted); }
+
+.ob-recurrence {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+.ob-description {
+  font-size: 0.85rem;
+  color: var(--text);
+  opacity: 0.8;
+  margin: 0.5rem 0;
+  line-height: 1.5;
+}
+
+.ob-details {
+  display: flex;
+  gap: 1rem;
+  margin: 0.5rem 0;
+  flex-wrap: wrap;
+}
+
+.ob-field {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ob-field label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.ob-inline-input {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  width: 140px;
+}
+
+.ob-inline-input:focus {
+  outline: none;
+  border-color: var(--btn-primary);
+}
+
+.ob-proof {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  background: rgba(76, 111, 255, 0.05);
+  border-radius: 6px;
+  border: 1px dashed rgba(76, 111, 255, 0.2);
+}
+
+.ob-evidence {
+  margin-top: 0.5rem;
+}
+
+.ob-evidence-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.ob-evidence-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  font-size: 0.8rem;
+}
+
+.ob-evidence-link {
+  color: #93c5fd;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(147, 197, 253, 0.3);
+}
+
+.ob-evidence-link:hover {
+  color: #bfdbfe;
+  border-bottom-color: #bfdbfe;
+}
+
+.btn-remove-evidence {
+  background: none;
+  border: none;
+  color: var(--bad);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0 0.25rem;
+  opacity: 0.5;
+}
+
+.btn-remove-evidence:hover {
+  opacity: 1;
+}
+
+.ob-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.ob-status-select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.8rem;
+}
+
+.ob-compliance-result {
+  margin-top: 0.5rem;
+}
+
+.compliance-result {
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.compliance-met {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--good);
+}
+
+.compliance-not-met {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--bad);
+}
+
+.compliance-result p {
+  color: var(--text);
+  opacity: 0.85;
+  margin-top: 0.25rem;
+}
+
+.btn-contract {
+  background: rgba(76, 111, 255, 0.15);
+  color: #93c5fd;
+  border: 1px solid rgba(76, 111, 255, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  transition: all 0.15s ease;
+}
+
+.btn-contract:hover {
+  background: rgba(76, 111, 255, 0.25);
+}
+
+/* Evidence Modal */
+.evidence-doc-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  transition: background 0.1s;
+}
+
+.evidence-doc-item:hover {
+  background: rgba(76, 111, 255, 0.1);
+}
+
+/* ============================================
+   Questionnaire Review
+   ============================================ */
+
+.qa-review-stats {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.qa-stat {
+  font-size: 0.8rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+}
+
+.qa-stat-good {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--good);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.qa-stat-draft {
+  background: rgba(217, 119, 6, 0.1);
+  color: #fbbf24;
+  border-color: rgba(217, 119, 6, 0.3);
+}
+
+.qa-review-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+  flex-wrap: wrap;
+}
+
+.qa-review-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  background: rgba(255,255,255,0.02);
+  border-left: 3px solid var(--border);
+}
+
+.qa-review-card.qa-conf-high {
+  border-left-color: var(--good);
+}
+
+.qa-review-card.qa-conf-med {
+  border-left-color: #fbbf24;
+}
+
+.qa-review-card.qa-conf-low {
+  border-left-color: var(--bad);
+}
+
+.qa-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.qa-q-number {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.qa-confidence-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.qa-confidence-badge.qa-conf-high { background: rgba(16, 185, 129, 0.15); color: var(--good); }
+.qa-confidence-badge.qa-conf-med { background: rgba(217, 119, 6, 0.15); color: #fbbf24; }
+.qa-confidence-badge.qa-conf-low { background: rgba(239, 68, 68, 0.15); color: var(--bad); }
+
+.qa-autofill-badge {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: rgba(76, 111, 255, 0.15);
+  color: #93c5fd;
+}
+
+.qa-question {
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.qa-answer-section {
+  margin-bottom: 0.5rem;
+}
+
+.qa-answer-section label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.qa-answer-edit {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.qa-answer-edit:focus {
+  outline: none;
+  border-color: var(--btn-primary);
+}
+
+.qa-evidence-section label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.qa-evidence-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+}
+
+.qa-evidence-link {
+  color: #93c5fd;
+  text-decoration: none;
+  font-size: 0.8rem;
+  border-bottom: 1px solid rgba(147, 197, 253, 0.3);
+}
+
+.qa-evidence-link:hover {
+  color: #bfdbfe;
+  border-bottom-color: #bfdbfe;
+}

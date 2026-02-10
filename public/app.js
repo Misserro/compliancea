@@ -15,6 +15,7 @@ function switchTab(tabId) {
   // Refresh document selects when switching to Analyze & Ask tab
   if (tabId === "analyze") {
     renderDeskDocumentSelects();
+    renderQuestionnaireLibraryDocs();
   }
 
   // Load settings, stats, and maintenance when switching to Settings tab
@@ -141,6 +142,30 @@ const saveGdriveSettingsBtn = document.getElementById("saveGdriveSettingsBtn");
 const gdriveSettingsStatusEl = document.getElementById("gdriveSettingsStatus");
 
 // ============================================
+// Questionnaire Elements (Tab 2 Section C)
+// ============================================
+const questionnaireSection = document.getElementById("questionnaireSection");
+const regulatorQuerySection = document.getElementById("regulatorQuerySection");
+const qaUploadFile = document.getElementById("qaUploadFile");
+const qaPastedText = document.getElementById("qaPastedText");
+const qaLibraryDocSelect = document.getElementById("qaLibraryDocSelect");
+const processQuestionnaireBtn = document.getElementById("processQuestionnaireBtn");
+const qaClearBtn = document.getElementById("qaClearBtn");
+const qaProcessStatus = document.getElementById("qaProcessStatus");
+const questionnaireResultsCard = document.getElementById("questionnaireResultsCard");
+const qaReviewList = document.getElementById("qaReviewList");
+const qaReviewStats = document.getElementById("qaReviewStats");
+
+// Contract Obligations Elements (Tab 1)
+const contractObligationsCard = document.getElementById("contractObligationsCard");
+const obligationsList = document.getElementById("obligationsList");
+const contractInfo = document.getElementById("contractInfo");
+
+// Evidence Modal
+const evidenceModal = document.getElementById("evidenceModal");
+const evidenceDocList = document.getElementById("evidenceDocList");
+
+// ============================================
 // Shared State
 // ============================================
 const DEPARTMENTS = ["Finance", "Compliance", "Operations", "HR", "Board", "IT"];
@@ -148,6 +173,8 @@ let documents = [];
 let analyzerLastResult = null;
 let deskLastResult = null;
 let deskTemplateText = "";
+let currentQuestionnaireData = null;
+let currentContractDocId = null;
 
 // Statistics tracking
 let lastStatistics = null;
@@ -572,6 +599,7 @@ function renderDocumentList() {
         <div class="doc-actions">
           <button class="btn-metadata" data-id="${doc.id}" title="Edit metadata">Edit</button>
           ${!doc.processed ? `<button class="btn-process" data-id="${doc.id}">Process</button>` : ""}
+          ${doc.processed && (doc.doc_type === "contract" || doc.doc_type === "agreement") ? `<button class="btn-contract" data-id="${doc.id}" title="Analyze contract obligations">Obligations</button>` : ""}
           <button class="btn-delete" data-id="${doc.id}">Delete</button>
         </div>
       </div>
@@ -631,6 +659,11 @@ function renderDocumentList() {
         btn.title = isVisible ? "Show details" : "Hide details";
       }
     });
+  });
+
+  // Contract analysis buttons
+  documentListEl.querySelectorAll(".btn-contract").forEach(btn => {
+    btn.addEventListener("click", () => analyzeContract(parseInt(btn.dataset.id, 10)));
   });
 }
 
@@ -2395,6 +2428,590 @@ async function releaseLegalHold(id) {
 document.getElementById("addLegalHoldBtn").addEventListener("click", showLegalHoldForm);
 document.getElementById("cancelLegalHoldBtn").addEventListener("click", hideLegalHoldForm);
 document.getElementById("saveLegalHoldBtn").addEventListener("click", saveLegalHold);
+
+// ============================================
+// Contract Analysis Functions
+// ============================================
+
+async function analyzeContract(docId) {
+  const doc = documents.find(d => d.id === docId);
+  if (!doc) return;
+
+  // Check if obligations already exist
+  try {
+    const res = await fetch(`/api/documents/${docId}/obligations`);
+    const data = await res.json();
+    if (data.obligations && data.obligations.length > 0) {
+      currentContractDocId = docId;
+      renderContractObligations(doc, data.obligations);
+      contractObligationsCard.style.display = "";
+      contractObligationsCard.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+  } catch { /* ignore, proceed with analysis */ }
+
+  // No existing obligations — run extraction
+  const btn = documentListEl.querySelector(`.btn-contract[data-id="${docId}"]`);
+  if (btn) { btn.disabled = true; btn.textContent = "Analyzing..."; }
+
+  setStatusElement(libraryStatusEl, "Analyzing contract obligations...", "warn");
+
+  try {
+    const res = await fetch(`/api/documents/${docId}/analyze-contract`, { method: "POST" });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setStatusElement(libraryStatusEl, data.error || "Contract analysis failed", "bad");
+      return;
+    }
+
+    currentContractDocId = docId;
+    renderContractObligations(doc, data.obligations, data);
+    contractObligationsCard.style.display = "";
+    contractObligationsCard.scrollIntoView({ behavior: "smooth" });
+
+    setStatusElement(libraryStatusEl, `Extracted ${data.obligations.length} obligations, created ${data.tasksCreated} tasks`, "good");
+
+    // Update statistics
+    if (data.tokenUsage) {
+      lastStatistics = {
+        actionType: "Contract Analysis",
+        timestamp: new Date().toISOString(),
+        tokenUsage: data.tokenUsage,
+      };
+    }
+  } catch (err) {
+    setStatusElement(libraryStatusEl, `Error: ${err.message}`, "bad");
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Obligations"; }
+  }
+}
+
+function renderContractObligations(doc, obligations, analysisData = null) {
+  // Contract info header
+  let infoHtml = `<p class="subtle"><strong>${escapeHtml(doc.name)}</strong>`;
+  if (analysisData?.parties?.length > 0) {
+    infoHtml += ` — Parties: ${analysisData.parties.map(p => escapeHtml(p)).join(", ")}`;
+  }
+  if (analysisData?.effective_date) infoHtml += ` | Effective: ${analysisData.effective_date}`;
+  if (analysisData?.expiry_date) infoHtml += ` | Expires: ${analysisData.expiry_date}`;
+  infoHtml += `</p>`;
+  contractInfo.innerHTML = infoHtml;
+
+  if (!obligations || obligations.length === 0) {
+    obligationsList.innerHTML = `<p class="subtle">No obligations extracted.</p>`;
+    return;
+  }
+
+  const typeColors = {
+    renewal: "#4f46e5",
+    termination_notice: "#dc2626",
+    duty: "#059669",
+    penalty: "#dc2626",
+    reporting: "#d97706",
+    payment: "#7c3aed",
+  };
+
+  obligationsList.innerHTML = obligations.map(ob => {
+    const evidence = JSON.parse(ob.evidence_json || "[]");
+    const dueDateClass = getDueDateClass(ob.due_date);
+    const statusBadge = ob.status === "active"
+      ? `<span class="ob-status-badge ob-status-active">Active</span>`
+      : ob.status === "met"
+        ? `<span class="ob-status-badge ob-status-met">Met</span>`
+        : ob.status === "overdue"
+          ? `<span class="ob-status-badge ob-status-overdue">Overdue</span>`
+          : `<span class="ob-status-badge ob-status-waived">Waived</span>`;
+
+    const typeBadge = `<span class="ob-type-badge" style="background:${typeColors[ob.obligation_type] || '#6b7280'}">${ob.obligation_type.replace(/_/g, " ")}</span>`;
+
+    const evidenceHtml = evidence.length > 0
+      ? evidence.map((ev, idx) => `
+          <div class="ob-evidence-item">
+            <a href="/api/documents/${ev.documentId}/download" target="_blank" class="ob-evidence-link">${escapeHtml(ev.documentName)}</a>
+            ${ev.note ? `<span class="subtle">${escapeHtml(ev.note)}</span>` : ""}
+            <button class="btn-sm btn-remove-evidence" onclick="removeEvidence(${ob.id}, ${idx})">×</button>
+          </div>`).join("")
+      : `<p class="subtle">No evidence linked yet.</p>`;
+
+    return `
+      <div class="obligation-card" data-id="${ob.id}">
+        <div class="ob-header">
+          <div class="ob-title-row">
+            ${typeBadge}
+            <strong>${escapeHtml(ob.title)}</strong>
+            ${statusBadge}
+          </div>
+          <div class="ob-meta-row">
+            ${ob.clause_reference ? `<span class="ob-clause">${escapeHtml(ob.clause_reference)}</span>` : ""}
+            ${ob.due_date ? `<span class="ob-due-date ${dueDateClass}">${ob.due_date}</span>` : `<span class="ob-due-date">Ongoing</span>`}
+            ${ob.recurrence && ob.recurrence !== "one_time" ? `<span class="ob-recurrence">${ob.recurrence}</span>` : ""}
+          </div>
+        </div>
+        ${ob.description ? `<p class="ob-description">${escapeHtml(ob.description)}</p>` : ""}
+        <div class="ob-details">
+          <div class="ob-field">
+            <label>Owner:</label>
+            <input type="text" value="${escapeHtml(ob.owner || "")}" class="ob-inline-input" data-id="${ob.id}" data-field="owner" placeholder="Assign owner..." onchange="updateObligationField(${ob.id}, 'owner', this.value)" />
+          </div>
+          <div class="ob-field">
+            <label>Escalation:</label>
+            <input type="text" value="${escapeHtml(ob.escalation_to || "")}" class="ob-inline-input" data-id="${ob.id}" data-field="escalation_to" placeholder="Escalation contact..." onchange="updateObligationField(${ob.id}, 'escalation_to', this.value)" />
+          </div>
+        </div>
+        ${ob.proof_description ? `<div class="ob-proof"><strong>Required proof:</strong> ${escapeHtml(ob.proof_description)}</div>` : ""}
+        <div class="ob-evidence">
+          <div class="ob-evidence-header">
+            <strong>Evidence</strong>
+            <button class="btn-secondary btn-sm" onclick="openAddEvidenceModal(${ob.id})">Add Evidence</button>
+          </div>
+          ${evidenceHtml}
+        </div>
+        <div class="ob-actions">
+          <button class="btn-secondary btn-sm" onclick="checkCompliance(${ob.id})">Check Compliance</button>
+          <select class="ob-status-select" onchange="updateObligationField(${ob.id}, 'status', this.value)">
+            <option value="active" ${ob.status === "active" ? "selected" : ""}>Active</option>
+            <option value="met" ${ob.status === "met" ? "selected" : ""}>Met</option>
+            <option value="waived" ${ob.status === "waived" ? "selected" : ""}>Waived</option>
+          </select>
+        </div>
+        <div class="ob-compliance-result" id="compliance-${ob.id}" style="display: none;"></div>
+      </div>
+    `;
+  }).join("");
+}
+
+function getDueDateClass(dueDate) {
+  if (!dueDate) return "";
+  const now = new Date();
+  const due = new Date(dueDate);
+  const daysUntil = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
+  if (daysUntil < 0) return "ob-overdue";
+  if (daysUntil <= 30) return "ob-upcoming";
+  return "ob-future";
+}
+
+async function updateObligationField(obId, field, value) {
+  try {
+    await fetch(`/api/obligations/${obId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [field]: value }),
+    });
+  } catch (err) {
+    console.error("Error updating obligation:", err);
+  }
+}
+
+function openAddEvidenceModal(obligationId) {
+  document.getElementById("evidenceObligationId").value = obligationId;
+  document.getElementById("evidenceNote").value = "";
+
+  // Render processed library documents for selection
+  const processed = documents.filter(d => d.processed);
+  const grouped = {};
+  const uncategorized = [];
+
+  for (const doc of processed) {
+    const cat = doc.category || null;
+    if (cat) {
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(doc);
+    } else {
+      uncategorized.push(doc);
+    }
+  }
+
+  let html = "";
+  for (const dept of DEPARTMENTS) {
+    if (grouped[dept] && grouped[dept].length > 0) {
+      html += `<div class="doc-category-header" style="margin-top: 0.5rem;">${dept}</div>`;
+      html += grouped[dept].map(d => `
+        <div class="evidence-doc-item" data-doc-id="${d.id}" onclick="selectEvidence(${d.id}, this)">
+          <span>${escapeHtml(d.name)}</span>
+          ${d.source === "gdrive" ? `<span class="meta-badge" style="background:#1a73e8; font-size: 0.6rem;">Drive</span>` : ""}
+        </div>`).join("");
+    }
+  }
+  if (uncategorized.length > 0) {
+    html += `<div class="doc-category-header" style="margin-top: 0.5rem;">Uncategorized</div>`;
+    html += uncategorized.map(d => `
+      <div class="evidence-doc-item" data-doc-id="${d.id}" onclick="selectEvidence(${d.id}, this)">
+        <span>${escapeHtml(d.name)}</span>
+      </div>`).join("");
+  }
+
+  evidenceDocList.innerHTML = html || `<p class="subtle">No processed documents available.</p>`;
+  evidenceModal.style.display = "flex";
+}
+
+async function selectEvidence(documentId, el) {
+  const obligationId = parseInt(document.getElementById("evidenceObligationId").value, 10);
+  const note = document.getElementById("evidenceNote").value.trim();
+
+  try {
+    const res = await fetch(`/api/obligations/${obligationId}/evidence`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ documentId, note: note || null }),
+    });
+
+    if (res.ok) {
+      evidenceModal.style.display = "none";
+      // Refresh obligations
+      if (currentContractDocId) {
+        const obRes = await fetch(`/api/documents/${currentContractDocId}/obligations`);
+        const obData = await obRes.json();
+        const doc = documents.find(d => d.id === currentContractDocId);
+        if (doc) renderContractObligations(doc, obData.obligations);
+      }
+    } else {
+      const data = await res.json();
+      alert(data.error || "Failed to add evidence");
+    }
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+}
+
+async function removeEvidence(obligationId, evidenceIndex) {
+  if (!confirm("Remove this evidence link?")) return;
+
+  try {
+    const res = await fetch(`/api/obligations/${obligationId}/evidence/${evidenceIndex}`, { method: "DELETE" });
+    if (res.ok && currentContractDocId) {
+      const obRes = await fetch(`/api/documents/${currentContractDocId}/obligations`);
+      const obData = await obRes.json();
+      const doc = documents.find(d => d.id === currentContractDocId);
+      if (doc) renderContractObligations(doc, obData.obligations);
+    }
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+}
+
+async function checkCompliance(obligationId) {
+  const resultEl = document.getElementById(`compliance-${obligationId}`);
+  resultEl.innerHTML = `<p class="subtle">Checking compliance...</p>`;
+  resultEl.style.display = "";
+
+  try {
+    const res = await fetch(`/api/obligations/${obligationId}/check-compliance`, { method: "POST" });
+    const data = await res.json();
+
+    if (!res.ok) {
+      resultEl.innerHTML = `<p class="bad">${escapeHtml(data.error || "Failed")}</p>`;
+      return;
+    }
+
+    const metClass = data.met ? "compliance-met" : "compliance-not-met";
+    const metText = data.met ? "OBLIGATION MET" : "OBLIGATION NOT MET";
+    resultEl.innerHTML = `
+      <div class="compliance-result ${metClass}">
+        <strong>${metText}</strong> (${data.confidence} confidence)
+        <p>${escapeHtml(data.assessment)}</p>
+      </div>
+    `;
+
+    if (data.tokenUsage) {
+      lastStatistics = {
+        actionType: "Compliance Check",
+        timestamp: new Date().toISOString(),
+        tokenUsage: data.tokenUsage,
+      };
+    }
+  } catch (err) {
+    resultEl.innerHTML = `<p class="bad">Error: ${escapeHtml(err.message)}</p>`;
+  }
+}
+
+// Close obligations panel
+document.getElementById("closeObligationsBtn").addEventListener("click", () => {
+  contractObligationsCard.style.display = "none";
+  currentContractDocId = null;
+});
+
+// Close evidence modal
+document.getElementById("cancelEvidenceBtn").addEventListener("click", () => {
+  evidenceModal.style.display = "none";
+});
+evidenceModal.addEventListener("click", (e) => {
+  if (e.target === evidenceModal) evidenceModal.style.display = "none";
+});
+
+// ============================================
+// Questionnaire Processing Functions
+// ============================================
+
+// Document type switching
+document.querySelectorAll('input[name="deskDocType"]').forEach(radio => {
+  radio.addEventListener("change", () => {
+    const type = radio.value;
+    if (type === "questionnaire") {
+      regulatorQuerySection.style.display = "none";
+      questionnaireSection.style.display = "";
+      deskResultsCard.style.display = "none";
+      renderQuestionnaireLibraryDocs();
+    } else {
+      regulatorQuerySection.style.display = "";
+      questionnaireSection.style.display = "none";
+      questionnaireResultsCard.style.display = "none";
+    }
+  });
+});
+
+function renderQuestionnaireLibraryDocs() {
+  const processed = documents.filter(d => d.processed);
+  const grouped = {};
+  const uncategorized = [];
+
+  for (const doc of processed) {
+    const cat = doc.category || null;
+    if (cat) {
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(doc);
+    } else {
+      uncategorized.push(doc);
+    }
+  }
+
+  let html = "";
+  for (const dept of DEPARTMENTS) {
+    if (grouped[dept] && grouped[dept].length > 0) {
+      html += `<div class="doc-category-header">${dept}
+        <label class="category-select-label"><input type="checkbox" class="qa-lib-cat-cb" data-category="${dept}" onchange="toggleQaLibCategory(this)"/> Select all</label>
+      </div>`;
+      html += grouped[dept].map(d => `
+        <label class="doc-select-item">
+          <input type="checkbox" class="qa-lib-doc-cb" value="${d.id}" data-category="${dept}" />
+          <span>${escapeHtml(d.name)}</span>
+          <span class="subtle">${d.word_count ? `${d.word_count} words` : ""}</span>
+        </label>`).join("");
+    }
+  }
+  if (uncategorized.length > 0) {
+    html += `<div class="doc-category-header">Uncategorized</div>`;
+    html += uncategorized.map(d => `
+      <label class="doc-select-item">
+        <input type="checkbox" class="qa-lib-doc-cb" value="${d.id}" />
+        <span>${escapeHtml(d.name)}</span>
+      </label>`).join("");
+  }
+
+  qaLibraryDocSelect.innerHTML = html || `<p class="subtle">No processed documents.</p>`;
+}
+
+function toggleQaLibCategory(cb) {
+  const cat = cb.dataset.category;
+  const checked = cb.checked;
+  qaLibraryDocSelect.querySelectorAll(`.qa-lib-doc-cb[data-category="${cat}"]`).forEach(el => {
+    el.checked = checked;
+  });
+  updateProcessQuestionnaireState();
+}
+
+// Select All for questionnaire library docs
+document.getElementById("qaLibSelectAllBtn").addEventListener("click", () => {
+  const cbs = qaLibraryDocSelect.querySelectorAll(".qa-lib-doc-cb");
+  const allChecked = Array.from(cbs).every(cb => cb.checked);
+  cbs.forEach(cb => cb.checked = !allChecked);
+  qaLibraryDocSelect.querySelectorAll(".qa-lib-cat-cb").forEach(cb => cb.checked = !allChecked);
+  updateProcessQuestionnaireState();
+});
+
+// Update process button state
+function updateProcessQuestionnaireState() {
+  const hasFile = qaUploadFile.files.length > 0;
+  const hasText = qaPastedText.value.trim().length > 10;
+  processQuestionnaireBtn.disabled = !(hasFile || hasText);
+}
+
+qaUploadFile.addEventListener("change", updateProcessQuestionnaireState);
+qaPastedText.addEventListener("input", updateProcessQuestionnaireState);
+qaLibraryDocSelect.addEventListener("change", updateProcessQuestionnaireState);
+
+// Clear questionnaire
+qaClearBtn.addEventListener("click", () => {
+  qaUploadFile.value = "";
+  qaPastedText.value = "";
+  qaProcessStatus.style.display = "none";
+  questionnaireResultsCard.style.display = "none";
+  currentQuestionnaireData = null;
+  updateProcessQuestionnaireState();
+});
+
+// Process questionnaire
+processQuestionnaireBtn.addEventListener("click", async () => {
+  processQuestionnaireBtn.disabled = true;
+  processQuestionnaireBtn.textContent = "Processing...";
+  setStatusElement(qaProcessStatus, "Extracting questions and searching library...", "warn");
+
+  try {
+    const formData = new FormData();
+
+    if (qaUploadFile.files.length > 0) {
+      formData.append("file", qaUploadFile.files[0]);
+    } else {
+      formData.append("pastedText", qaPastedText.value.trim());
+    }
+
+    // Get selected library doc IDs
+    const selectedIds = Array.from(qaLibraryDocSelect.querySelectorAll(".qa-lib-doc-cb:checked")).map(cb => parseInt(cb.value, 10));
+    formData.append("libraryDocumentIds", JSON.stringify(selectedIds));
+
+    const res = await fetch("/api/desk/questionnaire", { method: "POST", body: formData });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setStatusElement(qaProcessStatus, data.error || "Processing failed", "bad");
+      return;
+    }
+
+    currentQuestionnaireData = data;
+    renderQuestionnaireReview(data);
+    questionnaireResultsCard.style.display = "";
+    questionnaireResultsCard.scrollIntoView({ behavior: "smooth" });
+
+    setStatusElement(qaProcessStatus, `Extracted ${data.stats.total} questions (${data.stats.autoFilled} auto-filled, ${data.stats.drafted} drafted)`, "good");
+
+    if (data.tokenUsage) {
+      lastStatistics = {
+        actionType: "Questionnaire Processing",
+        timestamp: new Date().toISOString(),
+        tokenUsage: data.tokenUsage,
+      };
+    }
+  } catch (err) {
+    setStatusElement(qaProcessStatus, `Error: ${err.message}`, "bad");
+  } finally {
+    processQuestionnaireBtn.disabled = false;
+    processQuestionnaireBtn.textContent = "Process Questionnaire";
+  }
+});
+
+function renderQuestionnaireReview(data) {
+  // Stats
+  qaReviewStats.innerHTML = `
+    <span class="qa-stat">${data.stats.total} questions</span>
+    <span class="qa-stat qa-stat-good">${data.stats.autoFilled} auto-filled</span>
+    <span class="qa-stat qa-stat-draft">${data.stats.drafted} drafted</span>
+  `;
+
+  // Review cards
+  qaReviewList.innerHTML = data.questions.map((q, i) => {
+    const confClass = q.confidence === "high" ? "qa-conf-high" : q.confidence === "medium" ? "qa-conf-med" : "qa-conf-low";
+    const sourceLabel = q.source === "auto-filled" ? `<span class="qa-autofill-badge">Auto-filled</span>` : "";
+
+    const evidenceHtml = q.evidence && q.evidence.length > 0
+      ? q.evidence.map(ev => `
+          <a href="/api/documents/${ev.documentId}/download" target="_blank" class="qa-evidence-link">
+            ${escapeHtml(ev.documentName)} <span class="subtle">(${ev.relevance}%)</span>
+          </a>`).join("")
+      : `<span class="subtle">No evidence found</span>`;
+
+    return `
+      <div class="qa-review-card ${confClass}" data-index="${i}">
+        <div class="qa-card-header">
+          <span class="qa-q-number">Q${q.number}</span>
+          <span class="qa-confidence-badge ${confClass}">${q.confidence}</span>
+          ${sourceLabel}
+        </div>
+        <div class="qa-question">${escapeHtml(q.text)}</div>
+        <div class="qa-answer-section">
+          <label>Proposed Answer:</label>
+          <textarea class="qa-answer-edit" data-index="${i}" rows="3">${escapeHtml(q.answer)}</textarea>
+        </div>
+        <div class="qa-evidence-section">
+          <label>Evidence:</label>
+          <div class="qa-evidence-list">${evidenceHtml}</div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+// Approve All High Confidence
+document.getElementById("qaApproveAllHighBtn").addEventListener("click", () => approveQuestionnaireItems("high"));
+
+// Approve All
+document.getElementById("qaApproveAllBtn").addEventListener("click", () => approveQuestionnaireItems("all"));
+
+async function approveQuestionnaireItems(filter = "all") {
+  if (!currentQuestionnaireData) return;
+
+  const items = [];
+  currentQuestionnaireData.questions.forEach((q, i) => {
+    if (filter === "all" || q.confidence === filter) {
+      // Get potentially edited answer from textarea
+      const textarea = qaReviewList.querySelector(`.qa-answer-edit[data-index="${i}"]`);
+      const answer = textarea ? textarea.value : q.answer;
+
+      items.push({
+        questionText: q.text,
+        approvedAnswer: answer,
+        evidence: q.evidence || [],
+        sourceQuestionnaire: qaUploadFile.files[0]?.name || "Pasted text",
+      });
+    }
+  });
+
+  if (items.length === 0) {
+    alert("No items to approve.");
+    return;
+  }
+
+  const btn = filter === "high"
+    ? document.getElementById("qaApproveAllHighBtn")
+    : document.getElementById("qaApproveAllBtn");
+  btn.disabled = true;
+  btn.textContent = "Saving...";
+
+  try {
+    const res = await fetch("/api/desk/questionnaire/approve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items,
+        sourceQuestionnaire: qaUploadFile.files[0]?.name || "Pasted text",
+      }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      setStatusElement(qaProcessStatus, `${data.saved} Q&A cards saved successfully!`, "good");
+    } else {
+      setStatusElement(qaProcessStatus, data.error || "Failed to save", "bad");
+    }
+  } catch (err) {
+    setStatusElement(qaProcessStatus, `Error: ${err.message}`, "bad");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = filter === "high" ? "Approve All High Confidence" : "Approve All";
+  }
+}
+
+// Export questionnaire as CSV
+document.getElementById("qaExportBtn").addEventListener("click", () => {
+  if (!currentQuestionnaireData) return;
+
+  const rows = [["Number", "Question", "Answer", "Confidence", "Source", "Evidence Documents"]];
+  currentQuestionnaireData.questions.forEach((q, i) => {
+    const textarea = qaReviewList.querySelector(`.qa-answer-edit[data-index="${i}"]`);
+    const answer = textarea ? textarea.value : q.answer;
+    const evidenceDocs = (q.evidence || []).map(e => e.documentName).join("; ");
+    rows.push([q.number, q.text, answer, q.confidence, q.source, evidenceDocs]);
+  });
+
+  const csv = rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "questionnaire_answers.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+});
 
 // ============================================
 // Initialize on Page Load
