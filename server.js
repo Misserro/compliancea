@@ -51,6 +51,9 @@ import {
   getOverdueObligations,
   getAllObligations,
   createTaskForObligation,
+  activateObligationsByContract,
+  activateAllObligations,
+  getContractSummary,
 } from "./lib/db.js";
 import {
   getEmbedding,
@@ -1936,6 +1939,69 @@ app.get("/api/obligations", (req, res) => {
     });
   } catch (err) {
     console.error("Error fetching all obligations:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/documents/:id/contract-summary - Contract summary for Action Hub
+app.get("/api/documents/:id/contract-summary", (req, res) => {
+  const docId = parseInt(req.params.id, 10);
+  try {
+    const summary = getContractSummary(docId);
+    if (!summary) return res.status(404).json({ error: "Document not found" });
+    res.json(summary);
+  } catch (err) {
+    console.error("Error fetching contract summary:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/documents/:id/contract-action - Execute contract lifecycle action
+app.post("/api/documents/:id/contract-action", (req, res) => {
+  const docId = parseInt(req.params.id, 10);
+  const { action } = req.body;
+
+  if (!["sign", "activate", "terminate"].includes(action)) {
+    return res.status(400).json({ error: "Invalid action. Must be: sign, activate, or terminate" });
+  }
+
+  try {
+    const doc = getDocumentById(docId);
+    if (!doc) return res.status(404).json({ error: "Document not found" });
+
+    const actionToStatus = { sign: "signed", activate: "active", terminate: "terminated" };
+    const newStatus = actionToStatus[action];
+
+    const statusResult = updateDocumentStatus(docId, newStatus);
+    if (!statusResult.success) {
+      return res.status(400).json({ error: statusResult.error });
+    }
+
+    let activatedObligations = [];
+
+    if (action === "sign") {
+      activatedObligations = activateObligationsByContract(docId, ["compliance", "confidentiality"]);
+    } else if (action === "activate") {
+      activatedObligations = activateAllObligations(docId);
+    } else if (action === "terminate") {
+      activatedObligations = activateObligationsByContract(docId, ["termination"]);
+    }
+
+    logAction("document", docId, `contract_${action}`, {
+      from: statusResult.from,
+      to: statusResult.to,
+      activatedCount: activatedObligations.length,
+    });
+
+    res.json({
+      success: true,
+      newStatus,
+      from: statusResult.from,
+      activatedObligations: activatedObligations.map(o => ({ id: o.id, title: o.title, category: o.category })),
+      message: `Contract ${action === "sign" ? "signed" : action === "activate" ? "activated" : "terminated"} successfully.`,
+    });
+  } catch (err) {
+    console.error("Error executing contract action:", err);
     res.status(500).json({ error: err.message });
   }
 });

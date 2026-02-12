@@ -2396,7 +2396,7 @@ code {
   margin-top: 0.25rem;
 }
 
-.btn-contract {
+.btn-contract-hub {
   background: rgba(76, 111, 255, 0.15);
   color: #93c5fd;
   border: 1px solid rgba(76, 111, 255, 0.3);
@@ -2407,7 +2407,7 @@ code {
   transition: all 0.15s ease;
 }
 
-.btn-contract:hover {
+.btn-contract-hub:hover {
   background: rgba(76, 111, 255, 0.25);
 }
 
@@ -2696,6 +2696,203 @@ code {
 
 .btn-dormant-toggle:hover {
   background: rgba(107, 114, 128, 0.2);
+}
+
+/* ============================================
+   Contract Section Headers (Obligations Tab)
+   ============================================ */
+
+.contract-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.contract-section-header:first-child {
+  margin-top: 0;
+}
+
+.contract-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.contract-section-title strong {
+  font-size: 0.95rem;
+}
+
+.contract-section-status {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.contract-section-overdue {
+  font-size: 0.75rem;
+  color: var(--bad);
+  font-weight: 600;
+}
+
+/* Obligation title styling */
+.ob-title-text {
+  font-size: 0.9rem;
+}
+
+/* Meta line (clause, recurrence, deadline inline) */
+.ob-meta-line {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0.25rem 0 0.5rem 0;
+}
+
+.ob-meta-line .ob-overdue { color: var(--bad); font-weight: 600; }
+.ob-meta-line .ob-upcoming { color: #fbbf24; font-weight: 600; }
+.ob-meta-line .ob-future { color: var(--muted); }
+
+/* ============================================
+   Contract Action Hub Modal
+   ============================================ */
+
+.modal-action-hub {
+  max-width: 600px;
+}
+
+.action-hub-header h3 {
+  margin: 0 0 0.5rem 0;
+}
+
+.action-hub-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.action-hub-obligations-summary {
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.action-hub-obligations-summary p {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+}
+
+.action-hub-obligations-summary p:last-child {
+  margin-bottom: 0;
+}
+
+.action-hub-cat-list {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+  font-size: 0.8rem;
+  color: var(--text);
+  opacity: 0.85;
+}
+
+.action-hub-cat-list li {
+  margin-bottom: 0.25rem;
+  text-transform: capitalize;
+}
+
+.action-hub-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.action-hub-card {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+}
+
+.action-hub-card h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.action-hub-card p {
+  font-size: 0.85rem;
+  color: var(--text);
+  opacity: 0.8;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.5;
+}
+
+.action-hub-card-secondary {
+  border-style: dashed;
+  opacity: 0.7;
+}
+
+.action-hub-card-secondary:hover {
+  opacity: 1;
+}
+
+.action-hub-card-danger {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.action-hub-card-info {
+  border-color: rgba(107, 114, 128, 0.3);
+  opacity: 0.7;
+}
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.35);
+}
+
+.action-hub-success {
+  padding: 0.75rem 1rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--good);
+}
+
+.action-hub-success ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  color: var(--text);
+  opacity: 0.85;
+}
+
+.action-hub-error {
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--bad);
 }
 
 /* ============================================

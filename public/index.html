@@ -367,48 +367,27 @@
     <section class="tab-content" id="tab-obligations">
       <div class="card">
         <h2 class="section-title">Contract Obligations</h2>
-        <p class="subtle" style="margin-bottom: 1rem;">Track recurring duties, payments, and deadlines. Dormant obligations activate only when you need them.</p>
+        <p class="subtle" style="margin-bottom: 1rem;">Active obligations across all contracts, grouped by contract.</p>
 
         <!-- Stats bar -->
         <div id="obligationsStats" class="obligations-stats-bar"></div>
 
-        <!-- Sort & Filter controls -->
+        <!-- Filter controls -->
         <div class="obligations-controls">
-          <div class="obligations-sort">
-            <label>Group by:</label>
-            <select id="obligationSortBy">
-              <option value="category">Category</option>
-              <option value="contract">Contract</option>
-              <option value="deadline">Deadline</option>
-            </select>
-          </div>
           <div class="obligations-filter">
             <label>Show:</label>
             <select id="obligationFilterStatus">
-              <option value="active" selected>Active obligations</option>
-              <option value="">All</option>
+              <option value="active" selected>Active</option>
+              <option value="overdue">Overdue</option>
               <option value="met">Met</option>
-              <option value="waived">Waived</option>
+              <option value="">All</option>
             </select>
           </div>
         </div>
 
-        <!-- Active obligations -->
+        <!-- Obligations list grouped by contract -->
         <div id="obligationsActiveList" class="obligations-tab-list">
-          <p class="subtle">No obligations found. Process a contract in the Documents tab and click "Obligations" to extract them.</p>
-        </div>
-
-        <!-- Dormant obligations section -->
-        <div class="library-divider" style="margin: 1.5rem 0;"></div>
-        <div class="dormant-section">
-          <div class="dormant-header" id="dormantToggle">
-            <h3>Dormant Obligations</h3>
-            <span class="subtle dormant-hint">Activated only when needed (termination, indemnification, etc.)</span>
-            <span id="dormantCount" class="dormant-count">0</span>
-          </div>
-          <div id="obligationsDormantList" class="obligations-tab-list dormant-list">
-            <p class="subtle">No dormant obligations.</p>
-          </div>
+          <p class="subtle">No obligations found. Process a contract in the Documents tab and use the Action Hub to manage it.</p>
         </div>
       </div>
     </section>
@@ -717,6 +696,26 @@
       <div class="actions">
         <button id="saveMetadataBtn" type="button" class="btn-primary">Save</button>
         <button id="cancelMetadataBtn" type="button" class="btn-secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contract Action Hub Modal -->
+  <div id="contractActionModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-action-hub">
+      <input type="hidden" id="actionHubDocId" />
+
+      <div id="actionHubHeader" class="action-hub-header"></div>
+
+      <div id="actionHubSummary" class="action-hub-summary"></div>
+
+      <div id="actionHubCards" class="action-hub-cards"></div>
+
+      <div id="actionHubResult" class="action-hub-result" style="display: none;"></div>
+
+      <div class="actions" style="margin-top: 1rem;">
+        <button id="actionHubObligationsBtn" type="button" class="btn-secondary">View All Obligations</button>
+        <button id="closeActionHubBtn" type="button" class="btn-secondary">Close</button>
       </div>
     </div>
   </div>

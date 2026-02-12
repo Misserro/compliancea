@@ -159,8 +159,6 @@ const qaReviewStats = document.getElementById("qaReviewStats");
 
 // Obligations Tab Elements (Tab 3)
 const obligationsActiveList = document.getElementById("obligationsActiveList");
-const obligationsDormantList = document.getElementById("obligationsDormantList");
-const obligationSortBy = document.getElementById("obligationSortBy");
 const obligationFilterStatus = document.getElementById("obligationFilterStatus");
 
 // Evidence Modal
@@ -496,8 +494,11 @@ function renderDocumentList() {
     const dateStr = new Date(doc.added_at).toLocaleDateString();
 
     // === ESSENTIAL BADGES (always visible) ===
-    const docStatus = doc.status || "draft";
-    const statusColors = { draft: "#888", in_review: "#e6a817", approved: "#2ea043", archived: "#666", disposed: "#f85149" };
+    const isContract = doc.doc_type === "contract" || doc.doc_type === "agreement";
+    const docStatus = doc.status || (isContract ? "unsigned" : "draft");
+    const statusColors = isContract
+      ? { unsigned: "#6b7280", signed: "#0891b2", active: "#10b981", terminated: "#ef4444" }
+      : { draft: "#888", in_review: "#e6a817", approved: "#2ea043", archived: "#666", disposed: "#f85149" };
     const statusBadge = `<span class="meta-badge" style="background:${statusColors[docStatus] || '#888'}">${docStatus.replace("_", " ")}</span>`;
 
     const typeBadge = doc.doc_type ? `<span class="meta-badge" style="background:#6e40c9">${escapeHtml(doc.doc_type)}</span>` : "";
@@ -602,7 +603,7 @@ function renderDocumentList() {
         <div class="doc-actions">
           <button class="btn-metadata" data-id="${doc.id}" title="Edit metadata">Edit</button>
           ${!doc.processed ? `<button class="btn-process" data-id="${doc.id}">Process</button>` : ""}
-          ${doc.processed && (doc.doc_type === "contract" || doc.doc_type === "agreement") ? `<button class="btn-contract" data-id="${doc.id}" title="Analyze contract obligations">Obligations</button>` : ""}
+          ${doc.processed && isContract ? `<button class="btn-contract-hub" data-id="${doc.id}" title="Contract Action Hub">Manage</button>` : ""}
           <button class="btn-delete" data-id="${doc.id}">Delete</button>
         </div>
       </div>
@@ -664,9 +665,9 @@ function renderDocumentList() {
     });
   });
 
-  // Contract analysis buttons
-  documentListEl.querySelectorAll(".btn-contract").forEach(btn => {
-    btn.addEventListener("click", () => analyzeContract(parseInt(btn.dataset.id, 10)));
+  // Contract Action Hub buttons
+  documentListEl.querySelectorAll(".btn-contract-hub").forEach(btn => {
+    btn.addEventListener("click", () => openContractActionHub(parseInt(btn.dataset.id, 10)));
   });
 }
 
@@ -2001,7 +2002,26 @@ function openMetadataModal(docId) {
   document.getElementById("metaClient").value = doc.client || "";
   document.getElementById("metaJurisdiction").value = doc.jurisdiction || "";
   document.getElementById("metaSensitivity").value = doc.sensitivity || "internal";
-  document.getElementById("metaStatus").value = doc.status || "draft";
+  // Update status dropdown based on document type
+  const statusSelect = document.getElementById("metaStatus");
+  const isContractDoc = doc.doc_type === "contract" || doc.doc_type === "agreement";
+  if (isContractDoc) {
+    statusSelect.innerHTML = `
+      <option value="unsigned">Unsigned</option>
+      <option value="signed">Signed</option>
+      <option value="active">Active</option>
+      <option value="terminated">Terminated</option>
+    `;
+    statusSelect.value = doc.status || "unsigned";
+  } else {
+    statusSelect.innerHTML = `
+      <option value="draft">Draft</option>
+      <option value="in_review">In Review</option>
+      <option value="approved">Approved</option>
+      <option value="archived">Archived</option>
+    `;
+    statusSelect.value = doc.status || "draft";
+  }
   document.getElementById("metaInForce").value = doc.in_force || "unknown";
   document.getElementById("metaLanguage").value = doc.language || "";
 
@@ -2093,6 +2113,8 @@ document.getElementById("metadataModal").addEventListener("click", (e) => {
 // Obligations Tab Functions (Tab 3)
 // ============================================
 
+const CONTRACT_STATUS_COLORS = { unsigned: "#6b7280", signed: "#0891b2", active: "#10b981", terminated: "#ef4444" };
+
 async function loadObligationsTab() {
   try {
     const res = await fetch("/api/obligations");
@@ -2115,7 +2137,6 @@ function updateObligationsStats(stats) {
     <span class="ob-stat ob-stat-overdue">Overdue: <strong>${stats.overdue || 0}</strong></span>
     <span class="ob-stat ob-stat-upcoming">Due soon: <strong>${stats.upcoming || 0}</strong></span>
     <span class="ob-stat ob-stat-met">Met: <strong>${stats.met || 0}</strong></span>
-    <span class="ob-stat ob-stat-dormant">Dormant: <strong>${stats.dormant || 0}</strong></span>
   `;
 }
 
@@ -2142,48 +2163,39 @@ const CATEGORY_COLORS = {
   other: "#6b7280",
 };
 
-const CATEGORY_ICONS = {
-  payment: "$",
-  reporting: "\u{1f4cb}",
-  termination: "\u{1f6d1}",
-  renewal: "\u{1f504}",
-  delivery: "\u{1f4e6}",
-  compliance: "\u2705",
-  confidentiality: "\u{1f512}",
-  insurance: "\u{1f6e1}",
-  indemnification: "\u2696",
-  other: "\u2022",
-};
-
-function renderObligationCard(ob, isDormant = false) {
+function renderObligationCard(ob) {
   const evidence = JSON.parse(ob.evidence_json || "[]");
   const details = JSON.parse(ob.details_json || "{}");
   const dueDates = details.due_dates || [];
-  const keyValues = details.key_values || {};
   const cat = ob.category || ob.obligation_type || "other";
   const catColor = CATEGORY_COLORS[cat] || "#6b7280";
-  const catIcon = CATEGORY_ICONS[cat] || "\u2022";
   const isOverdue = ob.status === "active" && ob.due_date && new Date(ob.due_date) < new Date();
 
-  const statusBadge = isDormant
-    ? `<span class="ob-status-badge ob-status-dormant">Dormant</span>`
-    : isOverdue
-      ? `<span class="ob-status-badge ob-status-overdue">Overdue</span>`
-      : ob.status === "active"
-        ? `<span class="ob-status-badge ob-status-active">Active</span>`
-        : ob.status === "met"
-          ? `<span class="ob-status-badge ob-status-met">Met</span>`
-          : `<span class="ob-status-badge ob-status-waived">Waived</span>`;
+  const statusBadge = isOverdue
+    ? `<span class="ob-status-badge ob-status-overdue">Overdue</span>`
+    : ob.status === "active"
+      ? `<span class="ob-status-badge ob-status-active">Active</span>`
+      : ob.status === "met"
+        ? `<span class="ob-status-badge ob-status-met">Met</span>`
+        : `<span class="ob-status-badge ob-status-waived">Waived</span>`;
 
-  // Key values at-a-glance
-  const allKv = [...(keyValues.amounts || []), ...(keyValues.deadlines || []), ...(keyValues.conditions || [])];
-  const kvHtml = allKv.length > 0
-    ? `<div class="ob-key-values">${allKv.map(v => `<span class="ob-kv-chip">${escapeHtml(v)}</span>`).join("")}</div>`
+  // Build summary text with clause reference and recurrence inline
+  let summaryText = ob.summary || ob.description || "";
+  const metaParts = [];
+  if (ob.clause_reference) metaParts.push(`Clause: ${ob.clause_reference}`);
+  if (ob.recurrence && ob.recurrence !== "one_time" && ob.recurrence !== "on_trigger") metaParts.push(`Recurrence: ${ob.recurrence}`);
+  if (ob.due_date) {
+    const dueDateClass = getDueDateClass(ob.due_date);
+    metaParts.push(`Next deadline: <span class="${dueDateClass}">${ob.due_date}</span>`);
+  }
+  if (ob.notice_period_days) metaParts.push(`Notice period: ${ob.notice_period_days} days`);
+  const metaLine = metaParts.length > 0
+    ? `<p class="ob-meta-line">${metaParts.join(" &middot; ")}</p>`
     : "";
 
-  // Schedule / due dates table
+  // Schedule / due dates table (for payments)
   let scheduleHtml = "";
-  if (dueDates.length > 0 && !isDormant) {
+  if (dueDates.length > 0) {
     const visibleDates = dueDates.slice(0, 6);
     const hasMore = dueDates.length > 6;
     scheduleHtml = `<div class="ob-schedule">
@@ -2219,30 +2231,19 @@ function renderObligationCard(ob, isDormant = false) {
         </div>`).join("")
     : `<p class="subtle">No evidence linked yet.</p>`;
 
-  // Contract label
-  const contractLabel = `<span class="ob-contract-label" title="${escapeHtml(ob.document_name || "")}">${escapeHtml(ob.document_name || "Unknown")}</span>`;
-
   return `
-    <div class="obligation-card ${isDormant ? "ob-dormant" : ""}" data-id="${ob.id}" style="border-left-color: ${catColor};">
+    <div class="obligation-card" data-id="${ob.id}" style="border-left-color: ${catColor};">
       <div class="ob-header">
         <div class="ob-title-row">
-          <span class="ob-cat-icon" style="color:${catColor}">${catIcon}</span>
-          <span class="ob-type-badge" style="background:${catColor}">${(cat).replace(/_/g, " ")}</span>
-          <strong>${escapeHtml(ob.title)}</strong>
+          <strong class="ob-title-text">${escapeHtml(ob.title)}</strong>
           ${statusBadge}
-          ${contractLabel}
-        </div>
-        <div class="ob-meta-row">
-          ${ob.clause_reference ? `<span class="ob-clause">${escapeHtml(ob.clause_reference)}</span>` : ""}
-          ${ob.recurrence && ob.recurrence !== "one_time" && ob.recurrence !== "on_trigger" ? `<span class="ob-recurrence">${ob.recurrence}</span>` : ""}
-          ${!isDormant && ob.due_date ? `<span class="ob-due-date ${getDueDateClass(ob.due_date)}">Next: ${ob.due_date}</span>` : ""}
-          ${isDormant && ob.notice_period_days ? `<span class="ob-notice">Notice: ${ob.notice_period_days} days</span>` : ""}
         </div>
       </div>
 
-      ${ob.summary ? `<p class="ob-description">${escapeHtml(ob.summary)}</p>` : (ob.description ? `<p class="ob-description">${escapeHtml(ob.description)}</p>` : "")}
+      ${metaLine}
 
-      ${kvHtml}
+      ${summaryText ? `<p class="ob-description">${escapeHtml(summaryText)}</p>` : ""}
+
       ${scheduleHtml}
       ${penaltiesHtml}
 
@@ -2269,10 +2270,6 @@ function renderObligationCard(ob, isDormant = false) {
 
       <div class="ob-actions">
         <button class="btn-secondary btn-sm" onclick="checkCompliance(${ob.id})">Check Compliance</button>
-        ${isDormant
-          ? `<button class="btn-activate btn-sm" onclick="toggleObligationActivation(${ob.id}, 'active')">Activate</button>`
-          : `<button class="btn-dormant-toggle btn-sm" onclick="toggleObligationActivation(${ob.id}, 'dormant')">Make Dormant</button>`
-        }
         <select class="ob-status-select" onchange="updateObligationField(${ob.id}, 'status', this.value); setTimeout(loadObligationsTab, 300);">
           <option value="active" ${ob.status === "active" ? "selected" : ""}>Active</option>
           <option value="met" ${ob.status === "met" ? "selected" : ""}>Met</option>
@@ -2285,14 +2282,12 @@ function renderObligationCard(ob, isDormant = false) {
 }
 
 function renderObligationsTab() {
-  const sortBy = obligationSortBy.value;
   const filterStatus = obligationFilterStatus.value;
 
-  // Split active vs dormant
+  // Only show active (non-dormant) obligations
   const activeObs = allObligationsData.filter(ob => ob.activation !== "dormant");
-  const dormantObs = allObligationsData.filter(ob => ob.activation === "dormant");
 
-  // Filter active
+  // Filter
   let filtered = activeObs;
   if (filterStatus) {
     if (filterStatus === "overdue") {
@@ -2302,171 +2297,257 @@ function renderObligationsTab() {
     }
   }
 
-  // Sort
-  const sorted = [...filtered];
-  if (sortBy === "deadline") {
-    sorted.sort((a, b) => {
-      if (!a.due_date && !b.due_date) return 0;
-      if (!a.due_date) return 1;
-      if (!b.due_date) return -1;
-      return new Date(a.due_date) - new Date(b.due_date);
-    });
-  } else if (sortBy === "category") {
-    sorted.sort((a, b) => {
-      const catA = a.category || a.obligation_type || "other";
-      const catB = b.category || b.obligation_type || "other";
-      const catCompare = catA.localeCompare(catB);
-      if (catCompare !== 0) return catCompare;
-      if (!a.due_date && !b.due_date) return 0;
-      if (!a.due_date) return 1;
-      if (!b.due_date) return -1;
-      return new Date(a.due_date) - new Date(b.due_date);
-    });
-  } else {
-    // contract
-    sorted.sort((a, b) => {
-      const nameCompare = (a.document_name || "").localeCompare(b.document_name || "");
-      if (nameCompare !== 0) return nameCompare;
-      const catA = a.category || "other";
-      const catB = b.category || "other";
-      return catA.localeCompare(catB);
-    });
-  }
+  // Sort by contract, then by due date
+  const sorted = [...filtered].sort((a, b) => {
+    const nameCompare = (a.document_name || "").localeCompare(b.document_name || "");
+    if (nameCompare !== 0) return nameCompare;
+    if (!a.due_date && !b.due_date) return 0;
+    if (!a.due_date) return 1;
+    if (!b.due_date) return -1;
+    return new Date(a.due_date) - new Date(b.due_date);
+  });
 
-  // Render active
   if (sorted.length === 0) {
     obligationsActiveList.innerHTML = `<p class="subtle">${allObligationsData.length === 0
-      ? 'No obligations found. Process a contract in the Documents tab and click "Obligations" to extract them.'
+      ? 'No obligations found. Process a contract in the Documents tab and use the Action Hub to manage it.'
       : 'No obligations match the current filter.'}</p>`;
-  } else {
-    let html = "";
-    let currentGroup = null;
+    return;
+  }
 
-    for (const ob of sorted) {
-      const cat = ob.category || ob.obligation_type || "other";
-      let groupKey;
-      if (sortBy === "category") {
-        groupKey = cat.replace(/_/g, " ");
-        groupKey = groupKey.charAt(0).toUpperCase() + groupKey.slice(1);
-      } else if (sortBy === "contract") {
-        groupKey = ob.document_name || "Unknown Contract";
-      } else {
-        groupKey = null;
-      }
+  // Group by contract
+  let html = "";
+  let currentContract = null;
 
-      if (groupKey && groupKey !== currentGroup) {
-        currentGroup = groupKey;
-        const color = sortBy === "category" ? (CATEGORY_COLORS[cat] || "#6b7280") : "";
-        html += `<div class="ob-group-header" ${color ? `style="border-left: 3px solid ${color}; padding-left: 0.5rem;"` : ""}>${escapeHtml(groupKey)}</div>`;
-      }
+  for (const ob of sorted) {
+    const contractName = ob.document_name || "Unknown Contract";
+    if (contractName !== currentContract) {
+      currentContract = contractName;
+      const docStatus = ob.document_status || "unsigned";
+      const statusColor = CONTRACT_STATUS_COLORS[docStatus] || "#6b7280";
+      const contractObs = sorted.filter(o => o.document_name === contractName);
+      const overdueCount = contractObs.filter(o => o.status === "active" && o.due_date && new Date(o.due_date) < new Date()).length;
+      const overdueHint = overdueCount > 0 ? `<span class="contract-section-overdue">${overdueCount} overdue</span>` : "";
 
-      html += renderObligationCard(ob, false);
+      html += `<div class="contract-section-header">
+        <div class="contract-section-title">
+          <strong>${escapeHtml(contractName)}</strong>
+          <span class="contract-section-status" style="background:${statusColor}">${docStatus}</span>
+          ${overdueHint}
+        </div>
+        <button class="btn-secondary btn-sm" onclick="openContractActionHub(${ob.document_id})">Manage</button>
+      </div>`;
     }
 
-    obligationsActiveList.innerHTML = html;
+    html += renderObligationCard(ob);
   }
 
-  // Render dormant
-  document.getElementById("dormantCount").textContent = dormantObs.length;
-  if (dormantObs.length === 0) {
-    obligationsDormantList.innerHTML = `<p class="subtle">No dormant obligations.</p>`;
-  } else {
-    // Group dormant by contract
-    const dormantSorted = [...dormantObs].sort((a, b) => (a.document_name || "").localeCompare(b.document_name || ""));
-    let dHtml = "";
-    let dGroup = null;
-    for (const ob of dormantSorted) {
-      const gKey = ob.document_name || "Unknown Contract";
-      if (gKey !== dGroup) {
-        dGroup = gKey;
-        dHtml += `<div class="ob-group-header ob-group-dormant">${escapeHtml(gKey)}</div>`;
-      }
-      dHtml += renderObligationCard(ob, true);
-    }
-    obligationsDormantList.innerHTML = dHtml;
-  }
+  obligationsActiveList.innerHTML = html;
 }
 
-async function toggleObligationActivation(obId, newActivation) {
-  try {
-    await fetch(`/api/obligations/${obId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ activation: newActivation }),
-    });
-    loadObligationsTab();
-  } catch (err) {
-    console.error("Error toggling activation:", err);
-  }
-}
-
-// Sort/filter change listeners
-obligationSortBy.addEventListener("change", renderObligationsTab);
+// Filter change listener
 obligationFilterStatus.addEventListener("change", renderObligationsTab);
 
-// Dormant section toggle
-document.getElementById("dormantToggle").addEventListener("click", () => {
-  const list = obligationsDormantList;
-  const isHidden = list.style.display === "none";
-  list.style.display = isHidden ? "" : "none";
-});
-
 // ============================================
-// Contract Analysis Functions
+// Contract Action Hub Functions
 // ============================================
 
-async function analyzeContract(docId) {
-  const doc = documents.find(d => d.id === docId);
-  if (!doc) return;
+const contractActionModal = document.getElementById("contractActionModal");
 
-  // Check if obligations already exist
+async function openContractActionHub(docId) {
+  document.getElementById("actionHubDocId").value = docId;
+  const resultEl = document.getElementById("actionHubResult");
+  resultEl.style.display = "none";
+
+  // Check if obligations exist, if not, run extraction first
   try {
-    const res = await fetch(`/api/documents/${docId}/obligations`);
-    const data = await res.json();
-    if (data.obligations && data.obligations.length > 0) {
-      currentContractDocId = docId;
-      // Navigate to Obligations tab
-      switchTab("obligations");
-      return;
+    const obRes = await fetch(`/api/documents/${docId}/obligations`);
+    const obData = await obRes.json();
+    if (!obData.obligations || obData.obligations.length === 0) {
+      // Extract obligations first
+      document.getElementById("actionHubHeader").innerHTML = `<p class="subtle">Analyzing contract and extracting obligations...</p>`;
+      document.getElementById("actionHubSummary").innerHTML = "";
+      document.getElementById("actionHubCards").innerHTML = "";
+      contractActionModal.style.display = "flex";
+
+      const analyzeRes = await fetch(`/api/documents/${docId}/analyze-contract`, { method: "POST" });
+      const analyzeData = await analyzeRes.json();
+
+      if (!analyzeRes.ok) {
+        document.getElementById("actionHubHeader").innerHTML = `<p class="bad">${escapeHtml(analyzeData.error || "Analysis failed")}</p>`;
+        return;
+      }
+
+      if (analyzeData.tokenUsage) {
+        lastStatistics = { actionType: "Contract Analysis", timestamp: new Date().toISOString(), tokenUsage: analyzeData.tokenUsage };
+      }
     }
-  } catch { /* ignore, proceed with analysis */ }
+  } catch { /* proceed to show hub */ }
 
-  // No existing obligations — run extraction
-  const btn = documentListEl.querySelector(`.btn-contract[data-id="${docId}"]`);
-  if (btn) { btn.disabled = true; btn.textContent = "Analyzing..."; }
+  // Fetch contract summary
+  try {
+    const res = await fetch(`/api/documents/${docId}/contract-summary`);
+    const summary = await res.json();
+    renderActionHub(summary);
+    contractActionModal.style.display = "flex";
+  } catch (err) {
+    document.getElementById("actionHubHeader").innerHTML = `<p class="bad">Error loading contract: ${escapeHtml(err.message)}</p>`;
+    contractActionModal.style.display = "flex";
+  }
+}
 
-  setStatusElement(libraryStatusEl, "Analyzing contract obligations...", "warn");
+function renderActionHub(summary) {
+  const status = summary.status || "unsigned";
+  const statusColor = CONTRACT_STATUS_COLORS[status] || "#6b7280";
+
+  // Header
+  document.getElementById("actionHubHeader").innerHTML = `
+    <h3>${escapeHtml(summary.name)}</h3>
+    <div class="action-hub-status">
+      <span class="contract-section-status" style="background:${statusColor}">${status}</span>
+      ${summary.client ? `<span class="subtle">Client: ${escapeHtml(summary.client)}</span>` : ""}
+    </div>
+  `;
+
+  // Summary stats
+  const counts = summary.categoryCounts || {};
+  const catNames = Object.keys(counts);
+  let summaryHtml = "";
+  if (catNames.length > 0) {
+    summaryHtml = `<div class="action-hub-obligations-summary">
+      <p><strong>${summary.totalObligations}</strong> obligations extracted</p>
+      <ul class="action-hub-cat-list">
+        ${catNames.map(cat => {
+          const c = counts[cat];
+          return `<li>${cat}: ${c.active} active${c.dormant > 0 ? `, ${c.dormant} dormant` : ""}${c.overdue > 0 ? `, <span class="bad">${c.overdue} overdue</span>` : ""}</li>`;
+        }).join("")}
+      </ul>
+      ${summary.nextDeadline ? `<p>Next deadline: <strong>${summary.nextDeadline}</strong></p>` : ""}
+    </div>`;
+  } else {
+    summaryHtml = `<p class="subtle">No obligations extracted yet.</p>`;
+  }
+  document.getElementById("actionHubSummary").innerHTML = summaryHtml;
+
+  // Action cards based on current status
+  let cardsHtml = "";
+
+  if (status === "unsigned") {
+    cardsHtml = `
+      <div class="action-hub-card">
+        <h4>Sign Contract</h4>
+        <p>Mark this contract as signed. This will activate signing-related obligations such as compliance reviews and confidentiality requirements.</p>
+        <button class="btn-primary" onclick="executeContractAction('sign')">Sign Contract</button>
+      </div>
+    `;
+  } else if (status === "signed") {
+    cardsHtml = `
+      <div class="action-hub-card">
+        <h4>Make Active</h4>
+        <p>Activate the contract. All ongoing obligations become active and tracked — payments, reporting deadlines, deliveries, insurance requirements, and more.</p>
+        <button class="btn-primary" onclick="executeContractAction('activate')">Activate Contract</button>
+      </div>
+      <div class="action-hub-card action-hub-card-secondary">
+        <h4>Revert to Unsigned</h4>
+        <p>Roll back to unsigned status if the contract was marked as signed in error.</p>
+        <button class="btn-secondary" onclick="executeContractAction('revert_unsigned')">Revert</button>
+      </div>
+    `;
+  } else if (status === "active") {
+    cardsHtml = `
+      <div class="action-hub-card action-hub-card-danger">
+        <h4>Terminate Contract</h4>
+        <p>Begin the termination process. Payment obligations remain active until the contract is fully terminated. Termination-related obligations (notice periods, exit procedures) become active.</p>
+        <button class="btn-danger" onclick="executeContractAction('terminate')">Terminate Contract</button>
+      </div>
+    `;
+  } else if (status === "terminated") {
+    cardsHtml = `
+      <div class="action-hub-card action-hub-card-info">
+        <h4>Contract Terminated</h4>
+        <p>This contract has been terminated. Review any remaining obligations in the Obligations tab.</p>
+      </div>
+    `;
+  }
+
+  document.getElementById("actionHubCards").innerHTML = cardsHtml;
+}
+
+async function executeContractAction(action) {
+  const docId = parseInt(document.getElementById("actionHubDocId").value, 10);
+  const resultEl = document.getElementById("actionHubResult");
+
+  // Handle revert as a special case
+  if (action === "revert_unsigned") {
+    try {
+      const res = await fetch(`/api/documents/${docId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "unsigned" }),
+      });
+      if (res.ok) {
+        resultEl.innerHTML = `<div class="action-hub-success">Contract reverted to unsigned.</div>`;
+        resultEl.style.display = "";
+        // Refresh
+        const summaryRes = await fetch(`/api/documents/${docId}/contract-summary`);
+        const summary = await summaryRes.json();
+        renderActionHub(summary);
+        loadDocuments();
+      } else {
+        const data = await res.json();
+        resultEl.innerHTML = `<div class="action-hub-error">${escapeHtml(data.error || "Failed")}</div>`;
+        resultEl.style.display = "";
+      }
+    } catch (err) {
+      resultEl.innerHTML = `<div class="action-hub-error">${escapeHtml(err.message)}</div>`;
+      resultEl.style.display = "";
+    }
+    return;
+  }
 
   try {
-    const res = await fetch(`/api/documents/${docId}/analyze-contract`, { method: "POST" });
+    const res = await fetch(`/api/documents/${docId}/contract-action`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    });
     const data = await res.json();
 
     if (!res.ok) {
-      setStatusElement(libraryStatusEl, data.error || "Contract analysis failed", "bad");
+      resultEl.innerHTML = `<div class="action-hub-error">${escapeHtml(data.error || "Action failed")}</div>`;
+      resultEl.style.display = "";
       return;
     }
 
-    currentContractDocId = docId;
-
-    setStatusElement(libraryStatusEl, `Extracted ${data.obligations.length} obligations, created ${data.tasksCreated} tasks`, "good");
-
-    // Update statistics
-    if (data.tokenUsage) {
-      lastStatistics = {
-        actionType: "Contract Analysis",
-        timestamp: new Date().toISOString(),
-        tokenUsage: data.tokenUsage,
-      };
+    let activatedList = "";
+    if (data.activatedObligations && data.activatedObligations.length > 0) {
+      activatedList = `<p>Activated obligations:</p><ul>${data.activatedObligations.map(o => `<li>${escapeHtml(o.title)} (${o.category})</li>`).join("")}</ul>`;
     }
 
-    // Navigate to Obligations tab to show results
-    switchTab("obligations");
+    resultEl.innerHTML = `<div class="action-hub-success">${escapeHtml(data.message)}${activatedList}</div>`;
+    resultEl.style.display = "";
+
+    // Refresh hub and document list
+    const summaryRes = await fetch(`/api/documents/${docId}/contract-summary`);
+    const summary = await summaryRes.json();
+    renderActionHub(summary);
+    loadDocuments();
   } catch (err) {
-    setStatusElement(libraryStatusEl, `Error: ${err.message}`, "bad");
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = "Obligations"; }
+    resultEl.innerHTML = `<div class="action-hub-error">${escapeHtml(err.message)}</div>`;
+    resultEl.style.display = "";
   }
 }
+
+// Action Hub modal close handlers
+document.getElementById("closeActionHubBtn").addEventListener("click", () => {
+  contractActionModal.style.display = "none";
+});
+document.getElementById("actionHubObligationsBtn").addEventListener("click", () => {
+  contractActionModal.style.display = "none";
+  switchTab("obligations");
+});
+contractActionModal.addEventListener("click", (e) => {
+  if (e.target === contractActionModal) contractActionModal.style.display = "none";
+});
 
 function getDueDateClass(dueDate) {
   if (!dueDate) return "";
