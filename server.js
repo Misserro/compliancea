@@ -520,9 +520,15 @@ app.post("/api/documents/:id/process", async (req, res) => {
         metadataUpdate.category = autoTagResult.category;
       }
 
-      // Set AI-suggested status (only if document is still in 'draft')
+      // Set status based on document type
       const currentDoc = getDocumentById(documentId);
-      if (autoTagResult.suggested_status && (!currentDoc.status || currentDoc.status === "draft")) {
+      const isContractType = autoTagResult.doc_type === "contract" || autoTagResult.doc_type === "agreement";
+      if (isContractType) {
+        // Contracts always get "unsigned" status when first processed
+        if (!currentDoc.status || currentDoc.status === "draft") {
+          metadataUpdate.status = "unsigned";
+        }
+      } else if (autoTagResult.suggested_status && (!currentDoc.status || currentDoc.status === "draft")) {
         metadataUpdate.status = autoTagResult.suggested_status;
       }
 
@@ -884,6 +890,12 @@ app.post("/api/documents/retag-all", async (req, res) => {
 
         if (autoTagResult.category) {
           metadataUpdate.category = autoTagResult.category;
+        }
+
+        // Set contract-specific status
+        const isContractType = autoTagResult.doc_type === "contract" || autoTagResult.doc_type === "agreement";
+        if (isContractType && (!doc.status || doc.status === "draft")) {
+          metadataUpdate.status = "unsigned";
         }
 
         const existingMeta = doc.metadata_json ? JSON.parse(doc.metadata_json) : {};

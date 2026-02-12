@@ -495,7 +495,10 @@ function renderDocumentList() {
 
     // === ESSENTIAL BADGES (always visible) ===
     const isContract = doc.doc_type === "contract" || doc.doc_type === "agreement";
-    const docStatus = doc.status || (isContract ? "unsigned" : "draft");
+    const contractValidStatuses = ["unsigned", "signed", "active", "terminated"];
+    let docStatus = doc.status || (isContract ? "unsigned" : "draft");
+    // Normalize: contracts with legacy document statuses get treated as "unsigned"
+    if (isContract && !contractValidStatuses.includes(docStatus)) docStatus = "unsigned";
     const statusColors = isContract
       ? { unsigned: "#6b7280", signed: "#0891b2", active: "#10b981", terminated: "#ef4444" }
       : { draft: "#888", in_review: "#e6a817", approved: "#2ea043", archived: "#666", disposed: "#f85149" };
@@ -2089,7 +2092,9 @@ async function saveMetadata() {
   // Handle status change separately (uses state machine endpoint)
   const newStatus = document.getElementById("metaStatus").value;
   const doc = documents.find(d => d.id === docId);
-  if (doc && newStatus !== (doc.status || "draft")) {
+  const isContractDoc = doc && (doc.doc_type === "contract" || doc.doc_type === "agreement");
+  const currentDocStatus = doc ? (doc.status || (isContractDoc ? "unsigned" : "draft")) : "draft";
+  if (doc && newStatus !== currentDocStatus) {
     try {
       await fetch(`/api/documents/${docId}/status`, {
         method: "PATCH",
@@ -2322,8 +2327,10 @@ function renderObligationsTab() {
     const contractName = ob.document_name || "Unknown Contract";
     if (contractName !== currentContract) {
       currentContract = contractName;
-      const docStatus = ob.document_status || "unsigned";
-      const statusColor = CONTRACT_STATUS_COLORS[docStatus] || "#6b7280";
+      let docStatus = ob.document_status || "unsigned";
+      // Normalize legacy statuses for contracts
+      if (!CONTRACT_STATUS_COLORS[docStatus]) docStatus = "unsigned";
+      const statusColor = CONTRACT_STATUS_COLORS[docStatus];
       const contractObs = sorted.filter(o => o.document_name === contractName);
       const overdueCount = contractObs.filter(o => o.status === "active" && o.due_date && new Date(o.due_date) < new Date()).length;
       const overdueHint = overdueCount > 0 ? `<span class="contract-section-overdue">${overdueCount} overdue</span>` : "";
