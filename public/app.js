@@ -2122,7 +2122,8 @@ const CONTRACT_STATUS_COLORS = { unsigned: "#6b7280", signed: "#0891b2", active:
 
 async function loadObligationsTab() {
   try {
-    const res = await fetch("/api/obligations");
+    const filter = obligationFilterStatus.value || "active";
+    const res = await fetch(`/api/obligations?filter=${filter}`);
     const data = await res.json();
     allObligationsData = data.obligations || [];
 
@@ -2139,8 +2140,8 @@ function updateObligationsStats(stats) {
   el.innerHTML = `
     <span class="ob-stat ob-stat-total">Total: <strong>${stats.total || 0}</strong></span>
     <span class="ob-stat ob-stat-active">Active: <strong>${stats.active || 0}</strong></span>
+    <span class="ob-stat ob-stat-finalized">Finalized: <strong>${stats.finalized || 0}</strong></span>
     <span class="ob-stat ob-stat-overdue">Overdue: <strong>${stats.overdue || 0}</strong></span>
-    <span class="ob-stat ob-stat-upcoming">Due soon: <strong>${stats.upcoming || 0}</strong></span>
     <span class="ob-stat ob-stat-met">Met: <strong>${stats.met || 0}</strong></span>
   `;
 }
@@ -2172,38 +2173,106 @@ function renderObligationCard(ob) {
   const evidence = JSON.parse(ob.evidence_json || "[]");
   const details = JSON.parse(ob.details_json || "{}");
   const dueDates = details.due_dates || [];
+  const keyValues = details.key_values || {};
   const cat = ob.category || ob.obligation_type || "other";
   const catColor = CATEGORY_COLORS[cat] || "#6b7280";
   const isOverdue = ob.status === "active" && ob.due_date && new Date(ob.due_date) < new Date();
 
-  const statusBadge = isOverdue
-    ? `<span class="ob-status-badge ob-status-overdue">Overdue</span>`
-    : ob.status === "active"
-      ? `<span class="ob-status-badge ob-status-active">Active</span>`
-      : ob.status === "met"
-        ? `<span class="ob-status-badge ob-status-met">Met</span>`
-        : `<span class="ob-status-badge ob-status-waived">Waived</span>`;
-
-  // Build summary text with clause reference and recurrence inline
-  let summaryText = ob.summary || ob.description || "";
-  const metaParts = [];
-  if (ob.clause_reference) metaParts.push(`Clause: ${ob.clause_reference}`);
-  if (ob.recurrence && ob.recurrence !== "one_time" && ob.recurrence !== "on_trigger") metaParts.push(`Recurrence: ${ob.recurrence}`);
-  if (ob.due_date) {
-    const dueDateClass = getDueDateClass(ob.due_date);
-    metaParts.push(`Next deadline: <span class="${dueDateClass}">${ob.due_date}</span>`);
+  // Status badge
+  let statusBadge;
+  if (ob.status === "finalized") {
+    statusBadge = `<span class="ob-status-badge ob-status-finalized">Finalized</span>`;
+  } else if (isOverdue) {
+    statusBadge = `<span class="ob-status-badge ob-status-overdue">Overdue</span>`;
+  } else if (ob.status === "active") {
+    statusBadge = `<span class="ob-status-badge ob-status-active">Active</span>`;
+  } else if (ob.status === "met") {
+    statusBadge = `<span class="ob-status-badge ob-status-met">Met</span>`;
+  } else {
+    statusBadge = `<span class="ob-status-badge ob-status-waived">Waived</span>`;
   }
-  if (ob.notice_period_days) metaParts.push(`Notice period: ${ob.notice_period_days} days`);
-  const metaLine = metaParts.length > 0
-    ? `<p class="ob-meta-line">${metaParts.join(" &middot; ")}</p>`
-    : "";
 
-  // Schedule / due dates table (for payments)
-  let scheduleHtml = "";
+  // Compact info line — first amount, first deadline, next due date
+  const compactInfo = buildCompactInfo(ob, keyValues, dueDates);
+
+  // Expanded content
+  const expandedHtml = renderExpandedContent(ob, dueDates, keyValues, evidence);
+
+  return `
+    <div class="obligation-card ob-compact" data-id="${ob.id}" style="border-left-color: ${catColor};">
+      <div class="ob-compact-header" onclick="toggleObligationExpand(${ob.id})">
+        <div class="ob-compact-main">
+          <span class="ob-category-label">${escapeHtml(cat)}:</span>
+          <strong class="ob-title-text">${escapeHtml(ob.title)}</strong>
+          ${statusBadge}
+        </div>
+        <span class="ob-chevron">&#9662;</span>
+      </div>
+      ${compactInfo ? `<div class="ob-compact-info" onclick="toggleObligationExpand(${ob.id})">${compactInfo}</div>` : ""}
+      <div class="ob-expanded-content" id="ob-expand-${ob.id}" style="display: none;">
+        ${expandedHtml}
+      </div>
+      <div class="ob-compliance-result" id="compliance-${ob.id}" style="display: none;"></div>
+    </div>
+  `;
+}
+
+function toggleObligationExpand(obId) {
+  const card = document.querySelector(`.obligation-card[data-id="${obId}"]`);
+  const content = document.getElementById(`ob-expand-${obId}`);
+  if (!card || !content) return;
+
+  const isExpanded = content.style.display !== "none";
+  content.style.display = isExpanded ? "none" : "block";
+  card.classList.toggle("ob-expanded", !isExpanded);
+  card.classList.toggle("ob-compact", isExpanded);
+
+  const chevron = card.querySelector(".ob-chevron");
+  if (chevron) chevron.innerHTML = isExpanded ? "&#9662;" : "&#9652;";
+}
+
+function buildCompactInfo(ob, keyValues, dueDates) {
+  const parts = [];
+
+  // First amount
+  if (keyValues.amounts && keyValues.amounts.length > 0) {
+    parts.push(escapeHtml(keyValues.amounts[0]));
+  }
+
+  // First deadline
+  if (keyValues.deadlines && keyValues.deadlines.length > 0) {
+    parts.push(escapeHtml(keyValues.deadlines[0]));
+  }
+
+  // Next due date
+  if (ob.due_date) {
+    const ddClass = getDueDateClass(ob.due_date);
+    parts.push(`Next: <span class="${ddClass}">${ob.due_date}</span>`);
+  } else if (dueDates.length > 0 && dueDates[0].date) {
+    const ddClass = getDueDateClass(dueDates[0].date);
+    parts.push(`Next: <span class="${ddClass}">${dueDates[0].date}</span>`);
+  }
+
+  return parts.length > 0 ? parts.join(" &middot; ") : "";
+}
+
+function renderExpandedContent(ob, dueDates, keyValues, evidence) {
+  let html = "";
+
+  // Summary
+  const summaryText = ob.summary || ob.description || "";
+  if (summaryText) {
+    html += `<div class="ob-expanded-section">
+      <p class="ob-expanded-summary">${escapeHtml(summaryText)}</p>
+    </div>`;
+  }
+
+  // Schedule table
   if (dueDates.length > 0) {
-    const visibleDates = dueDates.slice(0, 6);
-    const hasMore = dueDates.length > 6;
-    scheduleHtml = `<div class="ob-schedule">
+    const visibleDates = dueDates.slice(0, 8);
+    const hasMore = dueDates.length > 8;
+    html += `<div class="ob-expanded-section">
+      <h5>Payment Schedule</h5>
       <table class="ob-schedule-table">
         <thead><tr><th>What</th><th>When</th><th>Amount</th></tr></thead>
         <tbody>
@@ -2217,14 +2286,37 @@ function renderObligationCard(ob) {
           }).join("")}
         </tbody>
       </table>
-      ${hasMore ? `<p class="subtle" style="font-size:0.7rem; margin-top:0.25rem;">+ ${dueDates.length - 6} more entries</p>` : ""}
+      ${hasMore ? `<p class="subtle" style="font-size:0.7rem; margin-top:0.25rem;">+ ${dueDates.length - 8} more entries</p>` : ""}
     </div>`;
   }
 
   // Penalties
-  const penaltiesHtml = ob.penalties
-    ? `<div class="ob-penalties"><strong>Penalties:</strong> ${escapeHtml(ob.penalties)}</div>`
-    : "";
+  if (ob.penalties) {
+    html += `<div class="ob-expanded-section">
+      <h5>Penalties</h5>
+      <p>${escapeHtml(ob.penalties)}</p>
+    </div>`;
+  }
+
+  // Owner & Escalation
+  html += `<div class="ob-expanded-section ob-details">
+    <div class="ob-field">
+      <label>Owner:</label>
+      <input type="text" value="${escapeHtml(ob.owner || "")}" class="ob-inline-input" placeholder="Assign owner..." onchange="updateObligationField(${ob.id}, 'owner', this.value)" />
+    </div>
+    <div class="ob-field">
+      <label>Escalation:</label>
+      <input type="text" value="${escapeHtml(ob.escalation_to || "")}" class="ob-inline-input" placeholder="Escalation contact..." onchange="updateObligationField(${ob.id}, 'escalation_to', this.value)" />
+    </div>
+  </div>`;
+
+  // Required proof
+  if (ob.proof_description) {
+    html += `<div class="ob-expanded-section">
+      <h5>Required Proof</h5>
+      <p>${escapeHtml(ob.proof_description)}</p>
+    </div>`;
+  }
 
   // Evidence
   const evidenceHtml = evidence.length > 0
@@ -2236,76 +2328,43 @@ function renderObligationCard(ob) {
         </div>`).join("")
     : `<p class="subtle">No evidence linked yet.</p>`;
 
-  return `
-    <div class="obligation-card" data-id="${ob.id}" style="border-left-color: ${catColor};">
-      <div class="ob-header">
-        <div class="ob-title-row">
-          <strong class="ob-title-text">${escapeHtml(ob.title)}</strong>
-          ${statusBadge}
-        </div>
+  html += `<div class="ob-expanded-section">
+    <div class="ob-evidence">
+      <div class="ob-evidence-header">
+        <h5>Evidence</h5>
+        <button class="btn-secondary btn-sm" onclick="openAddEvidenceModal(${ob.id})">Add Evidence</button>
       </div>
-
-      ${metaLine}
-
-      ${summaryText ? `<p class="ob-description">${escapeHtml(summaryText)}</p>` : ""}
-
-      ${scheduleHtml}
-      ${penaltiesHtml}
-
-      <div class="ob-details">
-        <div class="ob-field">
-          <label>Owner:</label>
-          <input type="text" value="${escapeHtml(ob.owner || "")}" class="ob-inline-input" placeholder="Assign owner..." onchange="updateObligationField(${ob.id}, 'owner', this.value)" />
-        </div>
-        <div class="ob-field">
-          <label>Escalation:</label>
-          <input type="text" value="${escapeHtml(ob.escalation_to || "")}" class="ob-inline-input" placeholder="Escalation contact..." onchange="updateObligationField(${ob.id}, 'escalation_to', this.value)" />
-        </div>
-      </div>
-
-      ${ob.proof_description ? `<div class="ob-proof"><strong>Required proof:</strong> ${escapeHtml(ob.proof_description)}</div>` : ""}
-
-      <div class="ob-evidence">
-        <div class="ob-evidence-header">
-          <strong>Evidence</strong>
-          <button class="btn-secondary btn-sm" onclick="openAddEvidenceModal(${ob.id})">Add Evidence</button>
-        </div>
-        ${evidenceHtml}
-      </div>
-
-      <div class="ob-actions">
-        <button class="btn-secondary btn-sm" onclick="checkCompliance(${ob.id})">Check Compliance</button>
-        <select class="ob-status-select" onchange="updateObligationField(${ob.id}, 'status', this.value); setTimeout(loadObligationsTab, 300);">
-          <option value="active" ${ob.status === "active" ? "selected" : ""}>Active</option>
-          <option value="met" ${ob.status === "met" ? "selected" : ""}>Met</option>
-          <option value="waived" ${ob.status === "waived" ? "selected" : ""}>Waived</option>
-        </select>
-      </div>
-      <div class="ob-compliance-result" id="compliance-${ob.id}" style="display: none;"></div>
+      ${evidenceHtml}
     </div>
-  `;
+  </div>`;
+
+  // Actions
+  html += `<div class="ob-actions">
+    <button class="btn-secondary btn-sm" onclick="checkCompliance(${ob.id})">Check Compliance</button>
+    <select class="ob-status-select" onchange="updateObligationField(${ob.id}, 'status', this.value); setTimeout(loadObligationsTab, 300);">
+      <option value="active" ${ob.status === "active" ? "selected" : ""}>Active</option>
+      <option value="met" ${ob.status === "met" ? "selected" : ""}>Met</option>
+      <option value="waived" ${ob.status === "waived" ? "selected" : ""}>Waived</option>
+      <option value="finalized" ${ob.status === "finalized" ? "selected" : ""}>Finalized</option>
+    </select>
+  </div>`;
+
+  return html;
 }
 
+const STAGE_ORDER = { not_signed: 0, signed: 1, active: 2, terminated: 3 };
+const STAGE_LABELS = { not_signed: "Not Signed", signed: "Signed", active: "Active", terminated: "Terminated" };
+
 function renderObligationsTab() {
-  const filterStatus = obligationFilterStatus.value;
+  // Data is already filtered by the API based on the filter param
+  const filtered = allObligationsData;
 
-  // Only show active (non-dormant) obligations
-  const activeObs = allObligationsData.filter(ob => ob.activation !== "dormant");
-
-  // Filter
-  let filtered = activeObs;
-  if (filterStatus) {
-    if (filterStatus === "overdue") {
-      filtered = filtered.filter(ob => ob.status === "active" && ob.due_date && new Date(ob.due_date) < new Date());
-    } else {
-      filtered = filtered.filter(ob => ob.status === filterStatus);
-    }
-  }
-
-  // Sort by contract, then by due date
+  // Sort by contract, then by stage order, then by due date
   const sorted = [...filtered].sort((a, b) => {
     const nameCompare = (a.document_name || "").localeCompare(b.document_name || "");
     if (nameCompare !== 0) return nameCompare;
+    const stageCompare = (STAGE_ORDER[a.stage] ?? 2) - (STAGE_ORDER[b.stage] ?? 2);
+    if (stageCompare !== 0) return stageCompare;
     if (!a.due_date && !b.due_date) return 0;
     if (!a.due_date) return 1;
     if (!b.due_date) return -1;
@@ -2314,7 +2373,7 @@ function renderObligationsTab() {
 
   if (sorted.length === 0) {
     obligationsActiveList.innerHTML = `<p class="subtle">${allObligationsData.length === 0
-      ? 'No obligations found. Process a contract in the Documents tab and use the Action Hub to manage it.'
+      ? 'No obligations found. Process a contract in the Documents tab to automatically extract obligations.'
       : 'No obligations match the current filter.'}</p>`;
     return;
   }
@@ -2328,7 +2387,6 @@ function renderObligationsTab() {
     if (contractName !== currentContract) {
       currentContract = contractName;
       let docStatus = ob.document_status || "unsigned";
-      // Normalize legacy statuses for contracts
       if (!CONTRACT_STATUS_COLORS[docStatus]) docStatus = "unsigned";
       const statusColor = CONTRACT_STATUS_COLORS[docStatus];
       const contractObs = sorted.filter(o => o.document_name === contractName);
@@ -2351,8 +2409,8 @@ function renderObligationsTab() {
   obligationsActiveList.innerHTML = html;
 }
 
-// Filter change listener
-obligationFilterStatus.addEventListener("change", renderObligationsTab);
+// Filter change listener — reload from API when filter changes
+obligationFilterStatus.addEventListener("change", loadObligationsTab);
 
 // ============================================
 // Contract Action Hub Functions
@@ -2365,40 +2423,19 @@ async function openContractActionHub(docId) {
   const resultEl = document.getElementById("actionHubResult");
   resultEl.style.display = "none";
 
-  // Check if obligations exist, if not, run extraction first
-  try {
-    const obRes = await fetch(`/api/documents/${docId}/obligations`);
-    const obData = await obRes.json();
-    if (!obData.obligations || obData.obligations.length === 0) {
-      // Extract obligations first
-      document.getElementById("actionHubHeader").innerHTML = `<p class="subtle">Analyzing contract and extracting obligations...</p>`;
-      document.getElementById("actionHubSummary").innerHTML = "";
-      document.getElementById("actionHubCards").innerHTML = "";
-      contractActionModal.style.display = "flex";
+  // Show loading state
+  document.getElementById("actionHubHeader").innerHTML = `<p class="subtle">Loading contract...</p>`;
+  document.getElementById("actionHubSummary").innerHTML = "";
+  document.getElementById("actionHubCards").innerHTML = "";
+  contractActionModal.style.display = "flex";
 
-      const analyzeRes = await fetch(`/api/documents/${docId}/analyze-contract`, { method: "POST" });
-      const analyzeData = await analyzeRes.json();
-
-      if (!analyzeRes.ok) {
-        document.getElementById("actionHubHeader").innerHTML = `<p class="bad">${escapeHtml(analyzeData.error || "Analysis failed")}</p>`;
-        return;
-      }
-
-      if (analyzeData.tokenUsage) {
-        lastStatistics = { actionType: "Contract Analysis", timestamp: new Date().toISOString(), tokenUsage: analyzeData.tokenUsage };
-      }
-    }
-  } catch { /* proceed to show hub */ }
-
-  // Fetch contract summary
+  // Fetch contract summary (obligations are auto-extracted during processing)
   try {
     const res = await fetch(`/api/documents/${docId}/contract-summary`);
     const summary = await res.json();
     renderActionHub(summary);
-    contractActionModal.style.display = "flex";
   } catch (err) {
     document.getElementById("actionHubHeader").innerHTML = `<p class="bad">Error loading contract: ${escapeHtml(err.message)}</p>`;
-    contractActionModal.style.display = "flex";
   }
 }
 
@@ -2415,25 +2452,34 @@ function renderActionHub(summary) {
     </div>
   `;
 
-  // Summary stats
-  const counts = summary.categoryCounts || {};
-  const catNames = Object.keys(counts);
+  // Summary stats — grouped by stage
+  const stageCounts = summary.stageCounts || {};
+  const stageNames = ["not_signed", "signed", "active", "terminated"];
   let summaryHtml = "";
-  if (catNames.length > 0) {
+  if (summary.totalObligations > 0) {
     summaryHtml = `<div class="action-hub-obligations-summary">
       <p><strong>${summary.totalObligations}</strong> obligations extracted</p>
       <ul class="action-hub-cat-list">
-        ${catNames.map(cat => {
-          const c = counts[cat];
-          return `<li>${cat}: ${c.active} active${c.dormant > 0 ? `, ${c.dormant} dormant` : ""}${c.overdue > 0 ? `, <span class="bad">${c.overdue} overdue</span>` : ""}</li>`;
-        }).join("")}
+        ${stageNames.map(stage => {
+          const count = stageCounts[stage] || 0;
+          if (count === 0) return "";
+          const isCurrentStage = stage === status;
+          return `<li${isCurrentStage ? ' class="action-hub-current-stage"' : ""}>${STAGE_LABELS[stage]}: <strong>${count}</strong> obligation${count !== 1 ? "s" : ""}${isCurrentStage ? " (current)" : ""}</li>`;
+        }).filter(Boolean).join("")}
       </ul>
+      ${summary.overdueCount > 0 ? `<p class="bad"><strong>${summary.overdueCount}</strong> overdue</p>` : ""}
       ${summary.nextDeadline ? `<p>Next deadline: <strong>${summary.nextDeadline}</strong></p>` : ""}
     </div>`;
   } else {
     summaryHtml = `<p class="subtle">No obligations extracted yet.</p>`;
   }
   document.getElementById("actionHubSummary").innerHTML = summaryHtml;
+
+  // Next stage info — what will happen when transitioning
+  const nextStageMap = { unsigned: "signed", signed: "active", active: "terminated" };
+  const nextStage = nextStageMap[status];
+  const nextStageCount = nextStage ? (stageCounts[nextStage] || 0) : 0;
+  const currentStageActive = stageCounts[status === "unsigned" ? "not_signed" : status] || 0;
 
   // Action cards based on current status
   let cardsHtml = "";
@@ -2442,7 +2488,8 @@ function renderActionHub(summary) {
     cardsHtml = `
       <div class="action-hub-card">
         <h4>Sign Contract</h4>
-        <p>Mark this contract as signed. This will activate signing-related obligations such as compliance reviews and confidentiality requirements.</p>
+        <p>Mark this contract as signed. ${nextStageCount > 0 ? `This will activate <strong>${nextStageCount}</strong> signing-related obligation${nextStageCount !== 1 ? "s" : ""} (setup, onboarding, initial filings).` : "Signing-related obligations will be activated."}</p>
+        ${currentStageActive > 0 ? `<p class="subtle">${currentStageActive} pre-signing obligation${currentStageActive !== 1 ? "s" : ""} will be finalized.</p>` : ""}
         <button class="btn-primary" onclick="executeContractAction('sign')">Sign Contract</button>
       </div>
     `;
@@ -2450,7 +2497,8 @@ function renderActionHub(summary) {
     cardsHtml = `
       <div class="action-hub-card">
         <h4>Make Active</h4>
-        <p>Activate the contract. All ongoing obligations become active and tracked — payments, reporting deadlines, deliveries, insurance requirements, and more.</p>
+        <p>Activate the contract. ${nextStageCount > 0 ? `<strong>${nextStageCount}</strong> ongoing obligation${nextStageCount !== 1 ? "s" : ""} will become active — payments, reporting, deliveries, compliance.` : "All ongoing obligations will become active and tracked."}</p>
+        ${currentStageActive > 0 ? `<p class="subtle">${currentStageActive} signing obligation${currentStageActive !== 1 ? "s" : ""} will be finalized.</p>` : ""}
         <button class="btn-primary" onclick="executeContractAction('activate')">Activate Contract</button>
       </div>
       <div class="action-hub-card action-hub-card-secondary">
@@ -2463,7 +2511,7 @@ function renderActionHub(summary) {
     cardsHtml = `
       <div class="action-hub-card action-hub-card-danger">
         <h4>Terminate Contract</h4>
-        <p>Begin the termination process. Payment obligations remain active until the contract is fully terminated. Termination-related obligations (notice periods, exit procedures) become active.</p>
+        <p>Begin termination. ${nextStageCount > 0 ? `<strong>${nextStageCount}</strong> termination obligation${nextStageCount !== 1 ? "s" : ""} will activate (exit procedures, final audits, data return).` : "Termination obligations will become active."} Payment obligations remain active.</p>
         <button class="btn-danger" onclick="executeContractAction('terminate')">Terminate Contract</button>
       </div>
     `;
@@ -2525,12 +2573,20 @@ async function executeContractAction(action) {
       return;
     }
 
-    let activatedList = "";
-    if (data.activatedObligations && data.activatedObligations.length > 0) {
-      activatedList = `<p>Activated obligations:</p><ul>${data.activatedObligations.map(o => `<li>${escapeHtml(o.title)} (${o.category})</li>`).join("")}</ul>`;
+    let detailsHtml = "";
+    if (data.activated && data.activated.length > 0) {
+      detailsHtml += `<p><strong>Activated ${data.activated.length} obligation${data.activated.length !== 1 ? "s" : ""}:</strong></p>
+        <ul>${data.activated.map(o => `<li>${escapeHtml(o.title)} (${o.category})</li>`).join("")}</ul>`;
+    }
+    if (data.finalized && data.finalized.length > 0) {
+      detailsHtml += `<p><strong>Finalized ${data.finalized.length} obligation${data.finalized.length !== 1 ? "s" : ""}:</strong></p>
+        <ul>${data.finalized.map(o => `<li>${escapeHtml(o.title)} (${o.category})</li>`).join("")}</ul>`;
+    }
+    if (data.tasksCreated > 0) {
+      detailsHtml += `<p>${data.tasksCreated} task${data.tasksCreated !== 1 ? "s" : ""} created.</p>`;
     }
 
-    resultEl.innerHTML = `<div class="action-hub-success">${escapeHtml(data.message)}${activatedList}</div>`;
+    resultEl.innerHTML = `<div class="action-hub-success">${escapeHtml(data.message)}${detailsHtml}</div>`;
     resultEl.style.display = "";
 
     // Refresh hub and document list

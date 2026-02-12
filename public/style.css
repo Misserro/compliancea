@@ -2179,16 +2179,112 @@ code {
 .obligation-card {
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 1rem 1.25rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   background: rgba(255,255,255,0.02);
   border-left: 3px solid var(--border);
   transition: all 0.15s ease;
 }
 
-.obligation-card:hover {
+/* Compact state (default) */
+.obligation-card.ob-compact {
+  padding: 0.6rem 1rem;
+}
+
+/* Expanded state */
+.obligation-card.ob-expanded {
+  padding: 0.6rem 1rem 1rem;
   background: rgba(255,255,255,0.04);
   border-color: rgba(76, 111, 255, 0.3);
+}
+
+.obligation-card:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+/* Compact header — clickable row */
+.ob-compact-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  gap: 0.5rem;
+  user-select: none;
+}
+
+.ob-compact-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.ob-category-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: capitalize;
+  font-weight: 500;
+}
+
+.ob-chevron {
+  font-size: 0.8rem;
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+/* Compact info line */
+.ob-compact-info {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+  padding-left: 0.1rem;
+  cursor: pointer;
+}
+
+/* Expanded content area */
+.ob-expanded-content {
+  border-top: 1px solid var(--border);
+  margin-top: 0.6rem;
+  padding-top: 0.75rem;
+}
+
+.ob-expanded-section {
+  margin-bottom: 0.75rem;
+}
+
+.ob-expanded-section:last-child {
+  margin-bottom: 0;
+}
+
+.ob-expanded-section h5 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0 0 0.4rem 0;
+}
+
+.ob-expanded-summary {
+  font-size: 0.85rem;
+  color: var(--text);
+  opacity: 0.85;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Finalized status badge */
+.ob-status-finalized {
+  background: rgba(107, 114, 128, 0.15);
+  color: var(--muted);
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* Action Hub current stage highlight */
+.action-hub-current-stage {
+  font-weight: 600;
+  color: #93c5fd;
 }
 
 .ob-header {
@@ -2456,6 +2552,7 @@ code {
 .ob-stat-upcoming strong { color: #fbbf24; }
 .ob-stat-met strong { color: var(--good); }
 .ob-stat-active strong { color: #93c5fd; }
+.ob-stat-finalized strong { color: var(--muted); }
 
 .obligations-controls {
   display: flex;

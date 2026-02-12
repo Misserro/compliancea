@@ -51,8 +51,7 @@ import {
   getOverdueObligations,
   getAllObligations,
   createTaskForObligation,
-  activateObligationsByContract,
-  activateAllObligations,
+  transitionObligationsByStage,
   getContractSummary,
 } from "./lib/db.js";
 import {
@@ -413,12 +412,6 @@ app.post("/api/documents/:id/process", async (req, res) => {
   const documentId = parseInt(req.params.id, 10);
 
   try {
-    // Check Voyage AI status first
-    const embeddingStatus = await checkEmbeddingStatus();
-    if (!embeddingStatus.available) {
-      return res.status(503).json({ error: embeddingStatus.error });
-    }
-
     const document = getDocumentById(documentId);
     if (!document) {
       return res.status(404).json({ error: "Document not found" });
@@ -465,38 +458,6 @@ app.post("/api/documents/:id/process", async (req, res) => {
       }
       logAction("document", documentId, "duplicate_detected", duplicateInfo);
     }
-
-    // Delete existing chunks if reprocessing
-    deleteChunksByDocumentId(documentId);
-
-    // Chunk the text
-    const chunks = chunkText(text);
-
-    if (chunks.length === 0) {
-      return res.status(400).json({ error: "Document produced no chunks" });
-    }
-
-    // Generate embeddings and store chunks
-    const chunksToInsert = [];
-
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
-      const embedding = await getEmbedding(chunk.content);
-      const embeddingBuffer = embeddingToBuffer(embedding);
-
-      chunksToInsert.push({
-        documentId,
-        content: chunk.content,
-        chunkIndex: i,
-        embedding: embeddingBuffer
-      });
-    }
-
-    // Batch insert chunks
-    addChunksBatch(chunksToInsert);
-
-    // Mark document as processed
-    updateDocumentProcessed(documentId, wordCount);
 
     // Phase 0: Auto-tag document metadata (classification, category, jurisdiction, status, etc.)
     let autoTagResult = null;
@@ -557,6 +518,169 @@ app.post("/api/documents/:id/process", async (req, res) => {
     } catch (tagErr) {
       console.warn("Auto-tagging failed:", tagErr.message);
     }
+
+    // ---- CONTRACT-SPECIFIC PIPELINE ----
+    // If document is a contract/agreement, skip chunking/embedding entirely.
+    // Store full text and auto-extract obligations.
+    const taggedDoc = getDocumentById(documentId);
+    const isContract = taggedDoc.doc_type === "contract" || taggedDoc.doc_type === "agreement";
+
+    if (isContract) {
+      // Store full text for contracts (no chunking)
+      updateDocumentMetadata(documentId, { full_text: text });
+
+      // Delete any existing chunks (if reprocessing)
+      deleteChunksByDocumentId(documentId);
+
+      // Mark document as processed
+      updateDocumentProcessed(documentId, wordCount);
+
+      // Auto-extract obligations via Claude
+      let contractResult = null;
+      let createdObligations = [];
+      let tasksCreated = 0;
+
+      try {
+        contractResult = await extractContractTerms(text);
+
+        // Store contract dates in metadata
+        const contractMeta = taggedDoc.metadata_json ? JSON.parse(taggedDoc.metadata_json) : {};
+        if (contractResult.parties && contractResult.parties.length > 0) {
+          contractMeta.parties = contractResult.parties;
+        }
+        if (contractResult.effective_date) contractMeta.effective_date = contractResult.effective_date;
+        if (contractResult.expiry_date) contractMeta.expiry_date = contractResult.expiry_date;
+        updateDocumentMetadata(documentId, { metadata_json: JSON.stringify(contractMeta) });
+
+        // Insert obligations with stage assignments
+        for (const ob of contractResult.obligations) {
+          const firstDueDate = ob.due_dates.length > 0 ? ob.due_dates[0].date : null;
+          const detailsJson = JSON.stringify({
+            due_dates: ob.due_dates,
+            key_values: ob.key_values,
+            clause_references: ob.clause_references,
+          });
+
+          const obligationId = insertObligation({
+            documentId,
+            obligationType: ob.category,
+            title: ob.title,
+            description: ob.summary,
+            clauseReference: ob.clause_references.join(", ") || null,
+            dueDate: firstDueDate,
+            recurrence: ob.recurrence,
+            noticePeriodDays: ob.notice_period_days,
+            owner: ob.suggested_owner,
+            escalationTo: null,
+            proofDescription: ob.proof_description,
+            evidenceJson: "[]",
+            category: ob.category,
+            activation: ob.activation,
+            summary: ob.summary,
+            detailsJson,
+            penalties: ob.penalties,
+            stage: ob.stage,
+          });
+
+          const created = getObligationById(obligationId);
+          createdObligations.push(created);
+
+          // Create tasks only for "not_signed" stage obligations (current stage for new contracts)
+          if (ob.stage === "not_signed" && ob.due_dates.length > 0) {
+            for (const dd of ob.due_dates) {
+              if (dd.date) {
+                createTaskForObligation(obligationId, {
+                  title: `${dd.label || ob.title}${dd.amount ? ` — ${dd.amount}` : ""} — ${taggedDoc.name}`,
+                  description: dd.details || ob.summary,
+                  dueDate: dd.date,
+                  owner: ob.suggested_owner,
+                  escalationTo: null,
+                });
+                tasksCreated++;
+              }
+            }
+          }
+        }
+
+        logAction("document", documentId, "contract_analyzed", {
+          obligationsCount: createdObligations.length,
+          tasksCreated,
+          stages: {
+            not_signed: createdObligations.filter(o => o.stage === "not_signed").length,
+            signed: createdObligations.filter(o => o.stage === "signed").length,
+            active: createdObligations.filter(o => o.stage === "active").length,
+            terminated: createdObligations.filter(o => o.stage === "terminated").length,
+          },
+        });
+      } catch (contractErr) {
+        console.warn("Contract obligation extraction failed:", contractErr.message);
+      }
+
+      logAction("document", documentId, "processed", {
+        wordCount,
+        chunks: 0,
+        isContract: true,
+        obligations: createdObligations.length,
+        duplicates: duplicateInfo ? duplicates.contentMatches.length : 0,
+      });
+
+      const updatedDocument = getDocumentById(documentId);
+
+      return res.json({
+        message: "Contract processed successfully — obligations extracted",
+        document: updatedDocument,
+        chunks: 0,
+        wordCount,
+        autoTags: autoTagResult,
+        duplicates: duplicateInfo,
+        nearDuplicates: [],
+        policyActions: null,
+        contract: {
+          obligations: createdObligations,
+          tasksCreated,
+          tokenUsage: contractResult ? contractResult.tokenUsage : null,
+        },
+      });
+    }
+
+    // ---- STANDARD DOCUMENT PIPELINE ----
+    // Check Voyage AI status (only needed for non-contract documents)
+    const embeddingStatus = await checkEmbeddingStatus();
+    if (!embeddingStatus.available) {
+      return res.status(503).json({ error: embeddingStatus.error });
+    }
+
+    // Delete existing chunks if reprocessing
+    deleteChunksByDocumentId(documentId);
+
+    // Chunk the text
+    const chunks = chunkText(text);
+
+    if (chunks.length === 0) {
+      return res.status(400).json({ error: "Document produced no chunks" });
+    }
+
+    // Generate embeddings and store chunks
+    const chunksToInsert = [];
+
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      const embedding = await getEmbedding(chunk.content);
+      const embeddingBuffer = embeddingToBuffer(embedding);
+
+      chunksToInsert.push({
+        documentId,
+        content: chunk.content,
+        chunkIndex: i,
+        embedding: embeddingBuffer
+      });
+    }
+
+    // Batch insert chunks
+    addChunksBatch(chunksToInsert);
+
+    // Mark document as processed
+    updateDocumentProcessed(documentId, wordCount);
 
     // Phase 0: Evaluate policy rules
     let policyResult = null;
@@ -1933,18 +2057,27 @@ app.post("/api/analyze", async (req, res) => {
 // GET /api/obligations - List all obligations across all contracts
 app.get("/api/obligations", (req, res) => {
   try {
-    const obligations = getAllObligations();
+    const filter = req.query.filter || "active"; // active | finalized | all
+    const allObligations = getAllObligations();
     const overdue = getOverdueObligations();
     const upcoming = getUpcomingObligations(30);
-    const activeObs = obligations.filter(o => o.activation !== "dormant" && o.status === "active");
-    const dormantObs = obligations.filter(o => o.activation === "dormant");
+
+    let obligations;
+    if (filter === "active") {
+      obligations = allObligations.filter(o => o.status === "active");
+    } else if (filter === "finalized") {
+      obligations = allObligations.filter(o => o.status === "finalized");
+    } else {
+      obligations = allObligations;
+    }
+
     res.json({
       obligations,
       stats: {
-        total: obligations.length,
-        active: activeObs.length,
-        dormant: dormantObs.length,
-        met: obligations.filter(o => o.status === "met").length,
+        total: allObligations.length,
+        active: allObligations.filter(o => o.status === "active").length,
+        finalized: allObligations.filter(o => o.status === "finalized").length,
+        met: allObligations.filter(o => o.status === "met").length,
         overdue: overdue.length,
         upcoming: upcoming.length,
       }
@@ -1982,35 +2115,60 @@ app.post("/api/documents/:id/contract-action", (req, res) => {
     if (!doc) return res.status(404).json({ error: "Document not found" });
 
     const actionToStatus = { sign: "signed", activate: "active", terminate: "terminated" };
+    const previousStageMap = { sign: "not_signed", activate: "signed", terminate: "active" };
     const newStatus = actionToStatus[action];
+    const previousStage = previousStageMap[action];
 
     const statusResult = updateDocumentStatus(docId, newStatus);
     if (!statusResult.success) {
       return res.status(400).json({ error: statusResult.error });
     }
 
-    let activatedObligations = [];
+    // Transition obligations: activate new stage, finalize previous stage
+    const updatedObligations = transitionObligationsByStage(docId, newStatus, previousStage);
 
-    if (action === "sign") {
-      activatedObligations = activateObligationsByContract(docId, ["compliance", "confidentiality"]);
-    } else if (action === "activate") {
-      activatedObligations = activateAllObligations(docId);
-    } else if (action === "terminate") {
-      activatedObligations = activateObligationsByContract(docId, ["termination"]);
+    const activated = updatedObligations.filter(o => o.stage === newStatus && o.status === "active");
+    const finalized = updatedObligations.filter(o => o.status === "finalized");
+
+    // Create tasks for newly activated obligations
+    let tasksCreated = 0;
+    for (const ob of activated) {
+      try {
+        const details = ob.details_json ? JSON.parse(ob.details_json) : {};
+        const dueDates = details.due_dates || [];
+        for (const dd of dueDates) {
+          if (dd.date) {
+            createTaskForObligation(ob.id, {
+              title: `${dd.label || ob.title}${dd.amount ? ` — ${dd.amount}` : ""} — ${doc.name}`,
+              description: dd.details || ob.summary || ob.description,
+              dueDate: dd.date,
+              owner: ob.owner,
+              escalationTo: null,
+            });
+            tasksCreated++;
+          }
+        }
+      } catch (taskErr) {
+        console.warn(`Failed to create tasks for obligation ${ob.id}:`, taskErr.message);
+      }
     }
 
     logAction("document", docId, `contract_${action}`, {
       from: statusResult.from,
       to: statusResult.to,
-      activatedCount: activatedObligations.length,
+      activatedCount: activated.length,
+      finalizedCount: finalized.length,
+      tasksCreated,
     });
 
     res.json({
       success: true,
       newStatus,
       from: statusResult.from,
-      activatedObligations: activatedObligations.map(o => ({ id: o.id, title: o.title, category: o.category })),
-      message: `Contract ${action === "sign" ? "signed" : action === "activate" ? "activated" : "terminated"} successfully.`,
+      activated: activated.map(o => ({ id: o.id, title: o.title, category: o.category, stage: o.stage })),
+      finalized: finalized.map(o => ({ id: o.id, title: o.title, category: o.category, stage: o.stage })),
+      tasksCreated,
+      message: `Contract ${action === "sign" ? "signed" : action === "activate" ? "activated" : "terminated"} successfully. ${activated.length} obligations activated, ${finalized.length} finalized.`,
     });
   } catch (err) {
     console.error("Error executing contract action:", err);
@@ -2077,6 +2235,7 @@ app.post("/api/documents/:id/analyze-contract", async (req, res) => {
         summary: ob.summary,
         detailsJson,
         penalties: ob.penalties,
+        stage: ob.stage,
       });
 
       const created = getObligationById(obligationId);
@@ -2140,7 +2299,7 @@ app.patch("/api/obligations/:id", (req, res) => {
     const ob = getObligationById(obId);
     if (!ob) return res.status(404).json({ error: "Obligation not found" });
 
-    const allowed = ["owner", "escalation_to", "status", "proof_description", "due_date", "title", "description", "activation"];
+    const allowed = ["owner", "escalation_to", "status", "proof_description", "due_date", "title", "description", "activation", "stage"];
     const updates = {};
     for (const key of allowed) {
       if (req.body[key] !== undefined) {
