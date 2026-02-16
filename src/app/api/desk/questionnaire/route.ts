@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
       if (isExcel) {
         const fileBuffer = Buffer.from(await mainFile.arrayBuffer());
-        const result = await parseQuestionnaire(null, "excel", fileBuffer);
+        const result = await parseQuestionnaire(null as unknown as string, "excel", fileBuffer);
         questions = result.questions;
         parseTokens = result.tokenUsage;
       } else {

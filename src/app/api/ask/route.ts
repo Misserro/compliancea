@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Format context for Claude
-    const contextText = formatSearchResultsForCitations(searchResults);
+    const contextText = formatSearchResultsForCitations(searchResults, new Map());
     const sources = getSourceDocuments(searchResults);
 
     // Build prompt for Claude
@@ -116,13 +116,13 @@ export async function POST(request: NextRequest) {
       answer,
       tagPreFilterUsed,
       sources: sources.map((s: { documentId: number; documentName: string; maxScore: number }) => {
-        const doc = getDocumentById(s.documentId);
+        const doc = getDocumentById(s.documentId) as Record<string, unknown> | null;
         return {
           documentId: s.documentId,
           documentName: s.documentName,
           relevance: Math.round(s.maxScore * 100),
-          docType: doc?.doc_type || null,
-          category: doc?.category || null,
+          docType: (doc?.doc_type as string) || null,
+          category: (doc?.category as string) || null,
         };
       }),
       tokenUsage: {

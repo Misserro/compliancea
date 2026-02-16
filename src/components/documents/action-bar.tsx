@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FolderScan, HardDrive, Play, Tags, ChevronDown, ChevronUp } from "lucide-react";
+import { FolderSearch, HardDrive, Play, Tags, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ActionBarProps {
@@ -37,7 +37,7 @@ export function ActionBar({
           try { await onScanServer(); } finally { setScanning(false); }
         }}
       >
-        <FolderScan className="mr-2 h-4 w-4" />
+        <FolderSearch className="mr-2 h-4 w-4" />
         {scanning ? "Scanning..." : "Scan Server Folder"}
       </Button>
 

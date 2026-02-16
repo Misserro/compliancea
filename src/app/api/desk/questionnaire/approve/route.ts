@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     let saved = 0;
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      const embedding = embeddings[i] ? embeddingToBuffer(embeddings[i]) : null;
+      const embedding = embeddings[i] ? embeddingToBuffer(embeddings[i] as number[]) : null;
 
       insertQaCard({
         questionText: item.questionText,
