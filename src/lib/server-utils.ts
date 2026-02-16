@@ -4,9 +4,7 @@ import fsSync from "fs";
 import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
 
-// @ts-expect-error - JS module without types
 import { initDb } from "../../lib/db.js";
-// @ts-expect-error - JS module without types
 import { DOCUMENTS_DIR } from "../../lib/paths.js";
 
 let dbInitialized = false;
