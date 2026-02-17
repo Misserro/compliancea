@@ -7,9 +7,10 @@ import { finalizeObligation, logAction } from "@/lib/db-imports";
  */
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await props.params;
     const id = parseInt(params.id, 10);
     if (isNaN(id)) {
       return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
