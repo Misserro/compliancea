@@ -27,8 +27,8 @@ const navItems = [
     icon: Search,
   },
   {
-    title: "Obligations",
-    href: "/obligations",
+    title: "Contracts",
+    href: "/contracts",
     icon: ClipboardCheck,
   },
   {
@@ -80,7 +80,7 @@ export function AppSidebar() {
                   <Link href={item.href}>
                     <item.icon />
                     <span>{item.title}</span>
-                    {item.href === "/obligations" && overdueCount > 0 && (
+                    {item.href === "/contracts" && overdueCount > 0 && (
                       <Badge
                         variant="destructive"
                         className="ml-auto h-5 min-w-5 px-1.5 text-xs"
