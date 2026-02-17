@@ -56,4 +56,13 @@ export {
   transitionObligationsByStage,
   getContractSummary,
   createTaskForObligation,
+  getContractsWithSummaries,
+  getUpcomingObligationsAllContracts,
+  getContractById,
+  updateContractMetadata,
+  finalizeObligation,
+  createSystemObligation,
+  deleteSystemObligation,
+  logAction,
+  getAuditLog,
 } from "../../lib/db.js";

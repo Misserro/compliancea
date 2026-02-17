@@ -32,6 +32,11 @@ export interface Document {
   canonical_id: number | null;
   superseded_by: number | null;
   source: string | null;
+  contracting_company: string | null;
+  contracting_vendor: string | null;
+  signature_date: string | null;
+  commencement_date: string | null;
+  expiry_date: string | null;
 }
 
 export interface Obligation {
@@ -55,7 +60,13 @@ export interface Obligation {
   details_json: string | null;
   penalties: string | null;
   stage: string | null;
+  department: string | null;
+  finalization_note: string | null;
+  finalization_document_id: number | null;
   document_name?: string;
+  document_status?: string;
+  contracting_company?: string;
+  contracting_vendor?: string;
 }
 
 export interface ObligationStats {
@@ -146,6 +157,29 @@ export interface ContractSummary {
   stageCounts: Record<string, number>;
   overdueCount: number;
   nextDeadline: string | null;
+}
+
+export interface Contract {
+  id: number;
+  name: string;
+  path: string;
+  status: string;
+  doc_type: string;
+  client: string | null;
+  contracting_company: string | null;
+  contracting_vendor: string | null;
+  signature_date: string | null;
+  commencement_date: string | null;
+  expiry_date: string | null;
+  totalObligations: number;
+  activeObligations: number;
+  overdueObligations: number;
+  finalizedObligations: number;
+  nextDeadline: string | null;
+}
+
+export interface ContractWithObligations extends Contract {
+  obligations: Obligation[];
 }
 
 export interface KeyPoint {
