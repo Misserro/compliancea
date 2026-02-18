@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { toast } from "sonner";
 import type { Contract, Obligation } from "@/lib/types";
-import { STATUS_COLORS, CONTRACT_STATUS_DISPLAY } from "@/lib/constants";
+import { STATUS_COLORS, CONTRACT_STATUS_DISPLAY, CATEGORY_MIGRATION_MAP } from "@/lib/constants";
 import { ContractMetadataDisplay } from "./contract-metadata-display";
 import { ObligationCard } from "../obligations/obligation-card";
 
@@ -15,30 +15,75 @@ interface ContractCardProps {
   onContractUpdate?: () => void;
 }
 
-const STATUS_ACTIONS: Record<string, { label: string; action: string; confirm?: boolean } | null> = {
-  unsigned: { label: "Mark as To Sign", action: "sign" },
-  signed: { label: "Activate", action: "activate" },
-  active: { label: "Terminate", action: "terminate", confirm: true },
-  terminated: null,
+// Bidirectional status actions: each status can have forward and/or backward actions
+const STATUS_ACTIONS: Record<string, Array<{ label: string; action: string; confirm?: boolean; variant: "forward" | "backward" }>> = {
+  unsigned: [
+    { label: "→ To Sign", action: "sign", variant: "forward" },
+  ],
+  signed: [
+    { label: "← Inactive", action: "unsign", variant: "backward" },
+    { label: "→ Activate", action: "activate", variant: "forward" },
+  ],
+  active: [
+    { label: "← To Sign", action: "deactivate", variant: "backward" },
+    { label: "→ Terminate", action: "terminate", confirm: true, variant: "forward" },
+  ],
+  terminated: [
+    { label: "← Reactivate", action: "reactivate", confirm: true, variant: "backward" },
+  ],
 };
+
+// Category sort order for obligations
+const CATEGORY_ORDER: Record<string, number> = {
+  payments: 0,
+  termination: 1,
+  legal: 2,
+  others: 3,
+};
+
+function getObligationSortKey(ob: Obligation): number {
+  const rawCategory = ob.category || "others";
+  const category = CATEGORY_MIGRATION_MAP[rawCategory] || rawCategory;
+  return CATEGORY_ORDER[category] ?? 99;
+}
 
 export function ContractCard({ contract, obligations = [], onObligationUpdate, onContractUpdate }: ContractCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("active");
 
   const statusColor = STATUS_COLORS[contract.status] || STATUS_COLORS.unsigned;
   const statusDisplay = CONTRACT_STATUS_DISPLAY[contract.status] || contract.status;
 
-  // Filter to show only active obligations
-  const activeObligations = obligations.filter((ob) => ob.status === "active");
+  // Compute counts for filter buttons
+  const activeCount = obligations.filter((ob) => ob.status === "active").length;
+  const inactiveCount = obligations.filter((ob) => ob.status === "inactive").length;
+  const finalizedCount = obligations.filter((ob) => ob.status === "finalized").length;
+  const otherCount = obligations.filter((ob) => !["active", "inactive", "finalized"].includes(ob.status)).length;
 
-  const handleStatusAction = async () => {
-    const actionConfig = STATUS_ACTIONS[contract.status];
-    if (!actionConfig) return;
+  // Filter obligations based on selected filter
+  const filteredObligations = obligations.filter((ob) => {
+    if (statusFilter === "all") return true;
+    return ob.status === statusFilter;
+  });
 
+  // Sort by category order, then by due_date
+  const sortedObligations = [...filteredObligations].sort((a, b) => {
+    const catDiff = getObligationSortKey(a) - getObligationSortKey(b);
+    if (catDiff !== 0) return catDiff;
+    // Secondary sort: due_date ascending (nulls last)
+    if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date);
+    if (a.due_date) return -1;
+    if (b.due_date) return 1;
+    return 0;
+  });
+
+  const handleStatusAction = async (actionConfig: { label: string; action: string; confirm?: boolean }) => {
     if (actionConfig.confirm) {
       const confirmed = window.confirm(
-        `Are you sure you want to terminate this contract? This will create a termination notice obligation with a 30-day deadline.`
+        actionConfig.action === "terminate"
+          ? "Are you sure you want to terminate this contract? This will create a termination notice obligation with a 30-day deadline."
+          : `Are you sure you want to ${actionConfig.label.replace(/[←→]\s*/, "")} this contract?`
       );
       if (!confirmed) return;
     }
@@ -52,7 +97,7 @@ export function ContractCard({ contract, obligations = [], onObligationUpdate, o
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success(data.message || `Contract ${actionConfig.action} successful`);
+        toast.success(data.message || `Contract action successful`);
         onObligationUpdate?.();
         onContractUpdate?.();
       } else {
@@ -84,7 +129,7 @@ export function ContractCard({ contract, obligations = [], onObligationUpdate, o
     }
   };
 
-  const actionConfig = STATUS_ACTIONS[contract.status];
+  const actions = STATUS_ACTIONS[contract.status] || [];
 
   return (
     <div className="bg-card border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
@@ -110,27 +155,30 @@ export function ContractCard({ contract, obligations = [], onObligationUpdate, o
             </button>
 
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <h3 className="font-semibold text-base">{contract.name}</h3>
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusColor}`}>
                   {statusDisplay}
                 </span>
-                {actionConfig && (
+                {actions.map((actionConfig) => (
                   <button
+                    key={actionConfig.action}
                     className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
-                      actionConfig.confirm
-                        ? "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800"
-                        : "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800"
+                      actionConfig.variant === "backward"
+                        ? "bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                        : actionConfig.confirm
+                          ? "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800"
+                          : "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800"
                     }`}
                     disabled={actionLoading}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleStatusAction();
+                      handleStatusAction(actionConfig);
                     }}
                   >
                     {actionLoading ? "..." : actionConfig.label}
                   </button>
-                )}
+                ))}
               </div>
 
               <div className="text-sm text-muted-foreground">
@@ -175,15 +223,73 @@ export function ContractCard({ contract, obligations = [], onObligationUpdate, o
 
           {/* Obligations List */}
           <div className="p-4">
-            <h4 className="text-sm font-semibold mb-3">
-              Active Obligations ({activeObligations.length})
-            </h4>
+            {/* Status filter buttons */}
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <span className="text-sm font-semibold mr-1">Obligations</span>
+              <button
+                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                  statusFilter === "active"
+                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+                onClick={() => setStatusFilter("active")}
+              >
+                Active ({activeCount})
+              </button>
+              {inactiveCount > 0 && (
+                <button
+                  className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                    statusFilter === "inactive"
+                      ? "bg-neutral-200 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                  onClick={() => setStatusFilter("inactive")}
+                >
+                  Inactive ({inactiveCount})
+                </button>
+              )}
+              {finalizedCount > 0 && (
+                <button
+                  className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                    statusFilter === "finalized"
+                      ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                  onClick={() => setStatusFilter("finalized")}
+                >
+                  Finalized ({finalizedCount})
+                </button>
+              )}
+              {otherCount > 0 && (
+                <button
+                  className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                    statusFilter === "all"
+                      ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                  onClick={() => setStatusFilter("all")}
+                >
+                  All ({obligations.length})
+                </button>
+              )}
+              {/* Always show "All" if more than one filter has items */}
+              {(activeCount > 0 && (inactiveCount > 0 || finalizedCount > 0)) && statusFilter !== "all" && otherCount === 0 && (
+                <button
+                  className="px-2.5 py-1 rounded text-xs font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                  onClick={() => setStatusFilter("all")}
+                >
+                  All ({obligations.length})
+                </button>
+              )}
+            </div>
 
-            {activeObligations.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No active obligations for this contract.</p>
+            {sortedObligations.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No {statusFilter === "all" ? "" : statusFilter + " "}obligations for this contract.
+              </p>
             ) : (
               <div className="space-y-3">
-                {activeObligations.map((ob) => (
+                {sortedObligations.map((ob) => (
                   <ObligationCard
                     key={ob.id}
                     obligation={ob}

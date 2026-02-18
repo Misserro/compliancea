@@ -16,7 +16,7 @@ export const DOCUMENT_STATUSES = ["draft", "in_review", "approved", "archived", 
 
 export const CONTRACT_STATUSES = ["unsigned", "signed", "active", "terminated"] as const;
 
-export const OBLIGATION_STATUSES = ["active", "met", "waived", "finalized", "failed"] as const;
+export const OBLIGATION_STATUSES = ["active", "inactive", "met", "waived", "finalized", "failed"] as const;
 
 export const OBLIGATION_CATEGORIES = ["payments", "termination", "legal", "others"] as const;
 
@@ -89,6 +89,7 @@ export const STATUS_COLORS: Record<string, string> = {
   active: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
   terminated: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
   // Obligation statuses
+  inactive: "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400",
   met: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
   waived: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
   finalized: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",

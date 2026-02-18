@@ -370,21 +370,28 @@ export function ObligationCard({
                   {checking ? "Checking..." : "Check Compliance"}
                 </Button>
 
-                <Select
-                  value={ob.status}
-                  onValueChange={(val) => onUpdateField(ob.id, "status", val)}
-                >
-                  <SelectTrigger className="h-7 text-xs w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {OBLIGATION_STATUSES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s.charAt(0).toUpperCase() + s.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {ob.status === "active" ? (
+                  <Select
+                    value={ob.status}
+                    onValueChange={(val) => onUpdateField(ob.id, "status", val)}
+                  >
+                    <SelectTrigger className="h-7 text-xs w-[120px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="failed">Failed</SelectItem>
+                      <SelectItem value="waived">Waived</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Badge
+                    variant="secondary"
+                    className={`text-xs ${STATUS_COLORS[ob.status] || STATUS_COLORS.active}`}
+                  >
+                    {ob.status.charAt(0).toUpperCase() + ob.status.slice(1)}
+                  </Badge>
+                )}
               </div>
             </div>
           </CollapsibleContent>
