@@ -52,6 +52,15 @@ export async function POST(
     const createdObligations = [];
     let tasksCreated = 0;
 
+    // Map contract status to the obligation stage that should be active
+    const statusToActiveStage: Record<string, string> = {
+      unsigned: "not_signed",
+      signed: "signed",
+      active: "active",
+      terminated: "terminated",
+    };
+    const currentActiveStage = statusToActiveStage[doc.status || "unsigned"] || "not_signed";
+
     for (const ob of result.obligations) {
       const firstDueDate = ob.due_dates.length > 0 ? ob.due_dates[0].date : null;
       const detailsJson = JSON.stringify({
@@ -59,6 +68,10 @@ export async function POST(
         key_values: ob.key_values,
         clause_references: ob.clause_references,
       });
+
+      // Only activate obligations whose stage matches the current contract status
+      const shouldBeActive = ob.stage === currentActiveStage;
+      const activation = shouldBeActive ? "active" : "dormant";
 
       const obligationId = insertObligation({
         documentId: docId,
@@ -74,7 +87,7 @@ export async function POST(
         proofDescription: ob.proof_description,
         evidenceJson: "[]",
         category: ob.category,
-        activation: ob.activation,
+        activation,
         summary: ob.summary,
         detailsJson,
         penalties: ob.penalties,
@@ -85,7 +98,7 @@ export async function POST(
       createdObligations.push(created);
 
       // Create tasks for each due_date in active obligations
-      if (ob.activation === "active" && ob.due_dates.length > 0) {
+      if (activation === "active" && ob.due_dates.length > 0) {
         for (const dd of ob.due_dates) {
           if (dd.date) {
             createTaskForObligation(obligationId, {

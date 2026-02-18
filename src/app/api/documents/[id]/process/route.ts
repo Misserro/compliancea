@@ -169,6 +169,15 @@ export async function POST(
         if (contractResult.expiry_date) contractMeta.expiry_date = contractResult.expiry_date;
         updateDocumentMetadata(documentId, { metadata_json: JSON.stringify(contractMeta) });
 
+        // Map contract status to the obligation stage that should be active
+        const statusToActiveStage: Record<string, string> = {
+          unsigned: "not_signed",
+          signed: "signed",
+          active: "active",
+          terminated: "terminated",
+        };
+        const currentActiveStage = statusToActiveStage[taggedDoc.status || "unsigned"] || "not_signed";
+
         // Insert obligations with stage assignments
         for (const ob of contractResult.obligations) {
           const firstDueDate = ob.due_dates.length > 0 ? ob.due_dates[0].date : null;
@@ -177,6 +186,10 @@ export async function POST(
             key_values: ob.key_values,
             clause_references: ob.clause_references,
           });
+
+          // Only activate obligations whose stage matches the current contract status
+          const shouldBeActive = ob.stage === currentActiveStage;
+          const activation = shouldBeActive ? "active" : "dormant";
 
           const obligationId = insertObligation({
             documentId,
@@ -192,7 +205,7 @@ export async function POST(
             proofDescription: ob.proof_description,
             evidenceJson: "[]",
             category: ob.category,
-            activation: ob.activation,
+            activation,
             summary: ob.summary,
             detailsJson,
             penalties: ob.penalties,
@@ -202,8 +215,8 @@ export async function POST(
           const created = getObligationById(obligationId);
           createdObligations.push(created);
 
-          // Create tasks only for "not_signed" stage obligations
-          if (ob.stage === "not_signed" && ob.due_dates.length > 0) {
+          // Create tasks only for obligations that are currently active
+          if (activation === "active" && ob.due_dates.length > 0) {
             for (const dd of ob.due_dates) {
               if (dd.date) {
                 createTaskForObligation(obligationId, {

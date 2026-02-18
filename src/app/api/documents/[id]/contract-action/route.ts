@@ -5,6 +5,7 @@ import {
   updateDocumentStatus,
   transitionObligationsByStage,
   createTaskForObligation,
+  createSystemObligation,
 } from "@/lib/db-imports";
 import { logAction } from "@/lib/audit-imports";
 
@@ -76,6 +77,13 @@ export async function POST(
         const msg = taskErr instanceof Error ? taskErr.message : "Unknown error";
         console.warn(`Failed to create tasks for obligation ${ob.id}:`, msg);
       }
+    }
+
+    // Create system obligations for lifecycle actions
+    if (action === "sign") {
+      createSystemObligation(docId, "system_sign");
+    } else if (action === "terminate") {
+      createSystemObligation(docId, "system_terminate");
     }
 
     logAction("document", docId, `contract_${action}`, {
