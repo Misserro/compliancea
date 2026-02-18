@@ -179,46 +179,53 @@ export async function POST(
         const currentActiveStage = statusToActiveStage[taggedDoc.status || "unsigned"] || "not_signed";
 
         // Insert obligations with stage assignments
+        const today = new Date().toISOString().split("T")[0];
+
         for (const ob of contractResult.obligations) {
-          const firstDueDate = ob.due_dates.length > 0 ? ob.due_dates[0].date : null;
-          const detailsJson = JSON.stringify({
-            due_dates: ob.due_dates,
-            key_values: ob.key_values,
-            clause_references: ob.clause_references,
-          });
-
-          // Only activate obligations whose stage matches the current contract status
           const shouldBeActive = ob.stage === currentActiveStage;
-          const activation = shouldBeActive ? "active" : "dormant";
 
-          const obligationId = insertObligation({
-            documentId,
-            obligationType: ob.category,
-            title: ob.title,
-            description: ob.summary,
-            clauseReference: ob.clause_references.join(", ") || null,
-            dueDate: firstDueDate,
-            recurrence: ob.recurrence,
-            noticePeriodDays: ob.notice_period_days,
-            owner: ob.suggested_owner,
-            escalationTo: null,
-            proofDescription: ob.proof_description,
-            evidenceJson: "[]",
-            category: ob.category,
-            activation,
-            summary: ob.summary,
-            detailsJson,
-            penalties: ob.penalties,
-            stage: ob.stage,
-          });
+          // For payment obligations with multiple due_dates, split into separate records
+          if (ob.category === "payments" && ob.due_dates.length > 1) {
+            const sortedDueDates = [...ob.due_dates].sort((a: { date?: string }, b: { date?: string }) => (a.date || "").localeCompare(b.date || ""));
+            const firstUpcomingIdx = sortedDueDates.findIndex((dd: { date?: string }) => dd.date && dd.date >= today);
 
-          const created = getObligationById(obligationId);
-          createdObligations.push(created);
+            for (let i = 0; i < sortedDueDates.length; i++) {
+              const dd = sortedDueDates[i];
+              const isNextUpcoming = shouldBeActive && i === firstUpcomingIdx;
+              const splitActivation = isNextUpcoming ? "active" : "inactive";
+              const splitTitle = dd.label ? `${ob.title} — ${dd.label}` : `${ob.title} — ${dd.date || "N/A"}`;
 
-          // Create tasks only for obligations that are currently active
-          if (activation === "active" && ob.due_dates.length > 0) {
-            for (const dd of ob.due_dates) {
-              if (dd.date) {
+              const splitDetailsJson = JSON.stringify({
+                due_dates: [dd],
+                key_values: ob.key_values,
+                clause_references: ob.clause_references,
+              });
+
+              const obligationId = insertObligation({
+                documentId,
+                obligationType: ob.category,
+                title: splitTitle,
+                description: ob.summary,
+                clauseReference: ob.clause_references.join(", ") || null,
+                dueDate: dd.date || null,
+                recurrence: ob.recurrence,
+                noticePeriodDays: ob.notice_period_days,
+                owner: ob.suggested_owner,
+                escalationTo: null,
+                proofDescription: ob.proof_description,
+                evidenceJson: "[]",
+                category: ob.category,
+                activation: splitActivation,
+                summary: ob.summary,
+                detailsJson: splitDetailsJson,
+                penalties: ob.penalties,
+                stage: ob.stage,
+              });
+
+              const created = getObligationById(obligationId);
+              createdObligations.push(created);
+
+              if (splitActivation === "active" && dd.date) {
                 createTaskForObligation(obligationId, {
                   title: `${dd.label || ob.title}${dd.amount ? ` — ${dd.amount}` : ""} — ${taggedDoc.name}`,
                   description: dd.details || ob.summary,
@@ -227,6 +234,55 @@ export async function POST(
                   escalationTo: null,
                 });
                 tasksCreated++;
+              }
+            }
+          } else {
+            // Non-payment obligations or single due_date: create as single record
+            const firstDueDate = ob.due_dates.length > 0 ? ob.due_dates[0].date : null;
+            const detailsJson = JSON.stringify({
+              due_dates: ob.due_dates,
+              key_values: ob.key_values,
+              clause_references: ob.clause_references,
+            });
+
+            const activation = shouldBeActive ? "active" : "inactive";
+
+            const obligationId = insertObligation({
+              documentId,
+              obligationType: ob.category,
+              title: ob.title,
+              description: ob.summary,
+              clauseReference: ob.clause_references.join(", ") || null,
+              dueDate: firstDueDate,
+              recurrence: ob.recurrence,
+              noticePeriodDays: ob.notice_period_days,
+              owner: ob.suggested_owner,
+              escalationTo: null,
+              proofDescription: ob.proof_description,
+              evidenceJson: "[]",
+              category: ob.category,
+              activation,
+              summary: ob.summary,
+              detailsJson,
+              penalties: ob.penalties,
+              stage: ob.stage,
+            });
+
+            const created = getObligationById(obligationId);
+            createdObligations.push(created);
+
+            if (activation === "active" && ob.due_dates.length > 0) {
+              for (const dd of ob.due_dates) {
+                if (dd.date) {
+                  createTaskForObligation(obligationId, {
+                    title: `${dd.label || ob.title}${dd.amount ? ` — ${dd.amount}` : ""} — ${taggedDoc.name}`,
+                    description: dd.details || ob.summary,
+                    dueDate: dd.date,
+                    owner: ob.suggested_owner,
+                    escalationTo: null,
+                  });
+                  tasksCreated++;
+                }
               }
             }
           }

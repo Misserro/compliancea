@@ -20,7 +20,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const allowed = ["owner", "escalation_to", "status", "proof_description", "due_date", "title", "description", "activation", "stage"];
+    const allowed = ["owner", "escalation_to", "status", "proof_description", "due_date", "title", "description", "activation", "stage", "department"];
     const updates: Record<string, unknown> = {};
     for (const key of allowed) {
       if (body[key] !== undefined) {
@@ -30,6 +30,14 @@ export async function PATCH(
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+    }
+
+    // Block direct status change to "finalized" — must use the /finalize endpoint
+    if (updates.status === "finalized") {
+      return NextResponse.json(
+        { error: "Use the finalize endpoint to finalize obligations" },
+        { status: 400 }
+      );
     }
 
     updateObligation(obId, updates);

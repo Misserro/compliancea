@@ -23,9 +23,10 @@ export async function POST(
     const body = await request.json();
     const { action } = body;
 
-    if (!["sign", "activate", "terminate"].includes(action)) {
+    const validActions = ["sign", "activate", "terminate", "unsign", "deactivate", "reactivate"];
+    if (!validActions.includes(action)) {
       return NextResponse.json(
-        { error: "Invalid action. Must be: sign, activate, or terminate" },
+        { error: `Invalid action. Must be one of: ${validActions.join(", ")}` },
         { status: 400 }
       );
     }
@@ -35,24 +36,47 @@ export async function POST(
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
-    const actionToStatus: Record<string, string> = { sign: "signed", activate: "active", terminate: "terminated" };
-    const previousStageMap: Record<string, string> = { sign: "not_signed", activate: "signed", terminate: "active" };
+    const actionToStatus: Record<string, string> = {
+      sign: "signed",
+      activate: "active",
+      terminate: "terminated",
+      unsign: "unsigned",
+      deactivate: "signed",
+      reactivate: "active",
+    };
+    const previousStageMap: Record<string, string> = {
+      sign: "not_signed",
+      activate: "signed",
+      terminate: "active",
+      unsign: "signed",
+      deactivate: "active",
+      reactivate: "terminated",
+    };
     const newStatus = actionToStatus[action];
     const previousStage = previousStageMap[action];
+
+    // Map contract status to obligation stage name (they differ for "unsigned" → "not_signed")
+    const statusToStage: Record<string, string> = {
+      unsigned: "not_signed",
+      signed: "signed",
+      active: "active",
+      terminated: "terminated",
+    };
+    const newStage = statusToStage[newStatus] || newStatus;
 
     const statusResult = updateDocumentStatus(docId, newStatus);
     if (!statusResult.success) {
       return NextResponse.json({ error: statusResult.error }, { status: 400 });
     }
 
-    // Transition obligations: activate new stage, finalize previous stage
-    const updatedObligations = transitionObligationsByStage(docId, newStatus, previousStage);
+    // Transition obligations: activate new stage, deactivate all others
+    const updatedObligations = transitionObligationsByStage(docId, newStage, previousStage);
 
     const activated = updatedObligations.filter(
-      (o: { stage: string; status: string }) => o.stage === newStatus && o.status === "active"
+      (o: { stage: string; status: string }) => o.stage === newStage && o.status === "active"
     );
-    const finalized = updatedObligations.filter(
-      (o: { status: string }) => o.status === "finalized"
+    const deactivated = updatedObligations.filter(
+      (o: { stage: string; status: string }) => o.stage !== newStage && o.status === "inactive"
     );
 
     // Create tasks for newly activated obligations
@@ -79,7 +103,7 @@ export async function POST(
       }
     }
 
-    // Create system obligations for lifecycle actions
+    // Create system obligations for forward lifecycle actions only
     if (action === "sign") {
       createSystemObligation(docId, "system_sign");
     } else if (action === "terminate") {
@@ -90,9 +114,18 @@ export async function POST(
       from: statusResult.from,
       to: statusResult.to,
       activatedCount: activated.length,
-      finalizedCount: finalized.length,
+      deactivatedCount: deactivated.length,
       tasksCreated,
     });
+
+    const actionLabels: Record<string, string> = {
+      sign: "signed",
+      activate: "activated",
+      terminate: "terminated",
+      unsign: "reverted to unsigned",
+      deactivate: "reverted to signed",
+      reactivate: "reactivated",
+    };
 
     return NextResponse.json({
       success: true,
@@ -104,14 +137,14 @@ export async function POST(
         category: o.category,
         stage: o.stage,
       })),
-      finalized: finalized.map((o: { id: number; title: string; category: string; stage: string }) => ({
+      deactivated: deactivated.map((o: { id: number; title: string; category: string; stage: string }) => ({
         id: o.id,
         title: o.title,
         category: o.category,
         stage: o.stage,
       })),
       tasksCreated,
-      message: `Contract ${action === "sign" ? "signed" : action === "activate" ? "activated" : "terminated"} successfully. ${activated.length} obligations activated, ${finalized.length} finalized.`,
+      message: `Contract ${actionLabels[action] || action} successfully. ${activated.length} obligations activated, ${deactivated.length} deactivated.`,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
