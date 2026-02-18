@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Plus, Trash2, ShieldCheck } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Trash2, ShieldCheck, CheckCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,8 +21,10 @@ import {
 import {
   CATEGORY_COLORS,
   CATEGORY_BORDER_COLORS,
+  CATEGORY_MIGRATION_MAP,
   STATUS_COLORS,
   OBLIGATION_STATUSES,
+  DEPARTMENTS,
 } from "@/lib/constants";
 import type { Obligation, Evidence } from "@/lib/types";
 
@@ -32,6 +34,7 @@ interface ObligationCardProps {
   onAddEvidence: (id: number) => void;
   onRemoveEvidence: (id: number, index: number) => void;
   onCheckCompliance: (id: number) => void;
+  onFinalize?: (id: number, note: string) => void;
 }
 
 export function ObligationCard({
@@ -40,13 +43,19 @@ export function ObligationCard({
   onAddEvidence,
   onRemoveEvidence,
   onCheckCompliance,
+  onFinalize,
 }: ObligationCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [showFinalize, setShowFinalize] = useState(false);
+  const [finalizeNote, setFinalizeNote] = useState("");
+  const [finalizing, setFinalizing] = useState(false);
 
-  const category = ob.category || "other";
-  const borderColor = CATEGORY_BORDER_COLORS[category] || CATEGORY_BORDER_COLORS.other;
-  const categoryColor = CATEGORY_COLORS[category] || CATEGORY_COLORS.other;
+  // Apply category migration for legacy data
+  const rawCategory = ob.category || "others";
+  const category = CATEGORY_MIGRATION_MAP[rawCategory] || rawCategory;
+  const borderColor = CATEGORY_BORDER_COLORS[category] || CATEGORY_BORDER_COLORS.others;
+  const categoryColor = CATEGORY_COLORS[category] || CATEGORY_COLORS.others;
 
   // Parse details
   let dueDates: Array<{ label?: string; date?: string; amount?: string; details?: string }> = [];
@@ -80,6 +89,18 @@ export function ObligationCard({
     compactParts.push(`Due: ${new Date(ob.due_date).toLocaleDateString()}`);
   }
 
+  const handleFinalize = async () => {
+    if (!onFinalize || !finalizeNote.trim()) return;
+    setFinalizing(true);
+    try {
+      await onFinalize(ob.id, finalizeNote.trim());
+      setShowFinalize(false);
+      setFinalizeNote("");
+    } finally {
+      setFinalizing(false);
+    }
+  };
+
   return (
     <Card className={`border-l-4 ${borderColor}`}>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -108,12 +129,17 @@ export function ObligationCard({
                 >
                   {isOverdue ? "Overdue" : ob.status}
                 </Badge>
+                {ob.department && (
+                  <Badge variant="outline" className="text-xs">
+                    {ob.department}
+                  </Badge>
+                )}
               </div>
 
               {/* Compact info */}
               {compactParts.length > 0 && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  {compactParts.join(" · ")}
+                  {compactParts.join(" \u00b7 ")}
                 </p>
               )}
             </div>
@@ -151,9 +177,9 @@ export function ObligationCard({
                                 ? "text-destructive font-medium"
                                 : ""
                             }`}>
-                              {dd.date ? new Date(dd.date).toLocaleDateString() : "—"}
+                              {dd.date ? new Date(dd.date).toLocaleDateString() : "\u2014"}
                             </td>
-                            <td className="px-3 py-1.5">{dd.amount || "—"}</td>
+                            <td className="px-3 py-1.5">{dd.amount || "\u2014"}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -177,8 +203,8 @@ export function ObligationCard({
                 </div>
               )}
 
-              {/* Owner & Escalation */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Owner, Escalation & Department */}
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-xs text-muted-foreground">Owner</label>
                   <Input
@@ -196,6 +222,24 @@ export function ObligationCard({
                     placeholder="Escalation..."
                     className="h-7 text-xs mt-1"
                   />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Department</label>
+                  <Select
+                    value={ob.department || ""}
+                    onValueChange={(val) => onUpdateField(ob.id, "department", val)}
+                  >
+                    <SelectTrigger className="h-7 text-xs mt-1">
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DEPARTMENTS.map((dept) => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -257,6 +301,55 @@ export function ObligationCard({
                   <p className="text-xs text-muted-foreground">No evidence attached.</p>
                 )}
               </div>
+
+              {/* Finalization */}
+              {ob.status === "active" && onFinalize && (
+                <div className="pt-2 border-t">
+                  {!showFinalize ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowFinalize(true)}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Finalize
+                    </Button>
+                  ) : (
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-medium">Finalize Obligation</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Add a note describing how this obligation was fulfilled.
+                      </p>
+                      <textarea
+                        className="w-full px-2 py-1.5 border rounded text-sm bg-background resize-none"
+                        rows={3}
+                        placeholder="Describe how this obligation was met..."
+                        value={finalizeNote}
+                        onChange={(e) => setFinalizeNote(e.target.value)}
+                      />
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          disabled={!finalizeNote.trim() || finalizing}
+                          onClick={handleFinalize}
+                        >
+                          {finalizing ? "Finalizing..." : "Confirm Finalization"}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setShowFinalize(false);
+                            setFinalizeNote("");
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Compliance check & Status */}
               <div className="flex items-center justify-between pt-2 border-t">

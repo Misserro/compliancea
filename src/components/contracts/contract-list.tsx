@@ -84,6 +84,10 @@ export function ContractList({ refreshTrigger }: ContractListProps) {
             loadContractObligations(contract.id);
             loadContracts();
           }}
+          onContractUpdate={() => {
+            loadContracts();
+            loadContractObligations(contract.id);
+          }}
         />
       ))}
     </div>

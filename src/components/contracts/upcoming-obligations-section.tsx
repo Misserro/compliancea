@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Obligation } from "@/lib/types";
-import { CATEGORY_COLORS } from "@/lib/constants";
+import { CATEGORY_COLORS, CATEGORY_MIGRATION_MAP } from "@/lib/constants";
 import { Calendar, FileText } from "lucide-react";
 
 export function UpcomingObligationsSection() {
@@ -66,7 +66,9 @@ export function UpcomingObligationsSection() {
 
       <div className="flex gap-3 overflow-x-auto pb-2">
         {obligations.map((ob) => {
-          const categoryColor = CATEGORY_COLORS[ob.category || "others"] || CATEGORY_COLORS.others;
+          const rawCategory = ob.category || "others";
+          const category = CATEGORY_MIGRATION_MAP[rawCategory] || rawCategory;
+          const categoryColor = CATEGORY_COLORS[category] || CATEGORY_COLORS.others;
 
           return (
             <div
@@ -75,7 +77,7 @@ export function UpcomingObligationsSection() {
             >
               <div className="flex items-start justify-between mb-2">
                 <div className={`px-2 py-0.5 rounded text-xs font-medium ${categoryColor}`}>
-                  {ob.category || "others"}
+                  {category}
                 </div>
                 <div className="text-xs text-muted-foreground flex items-center gap-1">
                   <Calendar className="w-3 h-3" />

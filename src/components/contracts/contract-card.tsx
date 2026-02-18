@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { toast } from "sonner";
 import type { Contract, Obligation } from "@/lib/types";
 import { STATUS_COLORS, CONTRACT_STATUS_DISPLAY } from "@/lib/constants";
 import { ContractMetadataDisplay } from "./contract-metadata-display";
@@ -11,16 +12,79 @@ interface ContractCardProps {
   contract: Contract;
   obligations?: Obligation[];
   onObligationUpdate?: () => void;
+  onContractUpdate?: () => void;
 }
 
-export function ContractCard({ contract, obligations = [], onObligationUpdate }: ContractCardProps) {
+const STATUS_ACTIONS: Record<string, { label: string; action: string; confirm?: boolean } | null> = {
+  unsigned: { label: "Mark as To Sign", action: "sign" },
+  signed: { label: "Activate", action: "activate" },
+  active: { label: "Terminate", action: "terminate", confirm: true },
+  terminated: null,
+};
+
+export function ContractCard({ contract, obligations = [], onObligationUpdate, onContractUpdate }: ContractCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const statusColor = STATUS_COLORS[contract.status] || STATUS_COLORS.unsigned;
   const statusDisplay = CONTRACT_STATUS_DISPLAY[contract.status] || contract.status;
 
   // Filter to show only active obligations
   const activeObligations = obligations.filter((ob) => ob.status === "active");
+
+  const handleStatusAction = async () => {
+    const actionConfig = STATUS_ACTIONS[contract.status];
+    if (!actionConfig) return;
+
+    if (actionConfig.confirm) {
+      const confirmed = window.confirm(
+        `Are you sure you want to terminate this contract? This will create a termination notice obligation with a 30-day deadline.`
+      );
+      if (!confirmed) return;
+    }
+
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/documents/${contract.id}/contract-action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: actionConfig.action }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message || `Contract ${actionConfig.action} successful`);
+        onObligationUpdate?.();
+        onContractUpdate?.();
+      } else {
+        toast.error(data.error || "Action failed");
+      }
+    } catch (err) {
+      toast.error(`Action failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleMetadataSave = async (metadata: Record<string, unknown>) => {
+    try {
+      const res = await fetch(`/api/contracts/${contract.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(metadata),
+      });
+      if (res.ok) {
+        toast.success("Contract info updated");
+        onContractUpdate?.();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to update contract info");
+      }
+    } catch (err) {
+      toast.error(`Save failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
+  };
+
+  const actionConfig = STATUS_ACTIONS[contract.status];
 
   return (
     <div className="bg-card border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
@@ -51,6 +115,22 @@ export function ContractCard({ contract, obligations = [], onObligationUpdate }:
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusColor}`}>
                   {statusDisplay}
                 </span>
+                {actionConfig && (
+                  <button
+                    className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+                      actionConfig.confirm
+                        ? "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800"
+                        : "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800"
+                    }`}
+                    disabled={actionLoading}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStatusAction();
+                    }}
+                  >
+                    {actionLoading ? "..." : actionConfig.label}
+                  </button>
+                )}
               </div>
 
               <div className="text-sm text-muted-foreground">
@@ -90,7 +170,7 @@ export function ContractCard({ contract, obligations = [], onObligationUpdate }:
         <div className="border-t">
           {/* Contract Metadata */}
           <div className="p-4 bg-muted/30">
-            <ContractMetadataDisplay contract={contract} />
+            <ContractMetadataDisplay contract={contract} onSave={handleMetadataSave} />
           </div>
 
           {/* Obligations List */}
@@ -114,8 +194,8 @@ export function ContractCard({ contract, obligations = [], onObligationUpdate }:
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ [field]: value }),
                         });
-                        if (res.ok && onObligationUpdate) {
-                          onObligationUpdate();
+                        if (res.ok) {
+                          onObligationUpdate?.();
                         }
                       } catch (err) {
                         console.error("Failed to update obligation:", err);
@@ -129,8 +209,8 @@ export function ContractCard({ contract, obligations = [], onObligationUpdate }:
                         const res = await fetch(`/api/obligations/${obId}/evidence/${index}`, {
                           method: "DELETE",
                         });
-                        if (res.ok && onObligationUpdate) {
-                          onObligationUpdate();
+                        if (res.ok) {
+                          onObligationUpdate?.();
                         }
                       } catch (err) {
                         console.error("Failed to remove evidence:", err);
@@ -147,6 +227,24 @@ export function ContractCard({ contract, obligations = [], onObligationUpdate }:
                         }
                       } catch (err) {
                         console.error("Compliance check failed:", err);
+                      }
+                    }}
+                    onFinalize={async (id, note) => {
+                      try {
+                        const res = await fetch(`/api/obligations/${id}/finalize`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ note }),
+                        });
+                        if (res.ok) {
+                          toast.success("Obligation finalized");
+                          onObligationUpdate?.();
+                        } else {
+                          const data = await res.json();
+                          toast.error(data.error || "Failed to finalize");
+                        }
+                      } catch (err) {
+                        toast.error(`Finalize failed: ${err instanceof Error ? err.message : "Unknown error"}`);
                       }
                     }}
                   />
