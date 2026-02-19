@@ -127,7 +127,7 @@ function DeptSection({
   }
 
   // Order: known types first (in DOC_TYPES order, deduped), then unknowns
-  const knownOrder = Array.from(
+  const knownOrder: string[] = Array.from(
     new Set(DOC_TYPES.map((t) => (t === "agreement" ? "contract" : t)))
   );
   const presentTypes = Object.keys(byType);
