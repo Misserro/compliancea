@@ -1,14 +1,30 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Search, X } from "lucide-react";
 import { UploadSection } from "@/components/documents/upload-section";
 import { ActionBar } from "@/components/documents/action-bar";
 import { DocumentList } from "@/components/documents/document-list";
 import { MetadataDialog } from "@/components/documents/metadata-dialog";
 import { ContractActionDialog } from "@/components/documents/contract-action-dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DOCUMENT_STATUSES, CONTRACT_STATUSES } from "@/lib/constants";
 import type { Document } from "@/lib/types";
+
+// All filterable statuses: document statuses + contract statuses (deduped)
+const ALL_STATUSES = Array.from(
+  new Set([...DOCUMENT_STATUSES, ...CONTRACT_STATUSES])
+) as string[];
 
 export default function DocumentsPage() {
   const router = useRouter();
@@ -16,6 +32,10 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true);
   const [allExpanded, setAllExpanded] = useState(false);
   const [processingIds, setProcessingIds] = useState<Set<number>>(new Set());
+
+  // Search & filter state
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Metadata dialog state
   const [metadataDoc, setMetadataDoc] = useState<Document | null>(null);
@@ -42,6 +62,22 @@ export default function DocumentsPage() {
   useEffect(() => {
     loadDocuments();
   }, [loadDocuments]);
+
+  // Filtered documents derived from search + status
+  const filteredDocuments = useMemo(() => {
+    let result = documents;
+
+    if (statusFilter !== "all") {
+      result = result.filter((d) => d.status === statusFilter);
+    }
+
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter((d) => d.name.toLowerCase().includes(q));
+    }
+
+    return result;
+  }, [documents, search, statusFilter]);
 
   async function handleScanServer() {
     try {
@@ -200,6 +236,8 @@ export default function DocumentsPage() {
     else toast.info(message);
   }
 
+  const hasActiveFilters = search.trim() !== "" || statusFilter !== "all";
+
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div>
@@ -223,11 +261,66 @@ export default function DocumentsPage() {
         onToggleExpand={() => setAllExpanded(!allExpanded)}
       />
 
+      {/* Search & filter bar */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Search input */}
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Search by name…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8 h-9 text-sm"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Status filter */}
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-9 w-[160px] text-sm">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            {ALL_STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s.replace("_", " ")}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Active filter summary + clear */}
+        {hasActiveFilters && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              {filteredDocuments.length} of {documents.length} document{documents.length !== 1 ? "s" : ""}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => { setSearch(""); setStatusFilter("all"); }}
+            >
+              <X className="h-3 w-3 mr-1" />
+              Clear filters
+            </Button>
+          </div>
+        )}
+      </div>
+
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading documents...</p>
       ) : (
         <DocumentList
-          documents={documents}
+          documents={filteredDocuments}
           allExpanded={allExpanded}
           processingIds={processingIds}
           onCategoryChange={handleCategoryChange}
