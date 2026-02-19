@@ -26,7 +26,7 @@ export function DocumentBadges({ doc, expanded = false }: DocumentBadgesProps) {
       {/* Doc Type Badge - always visible */}
       {doc.doc_type && (
         <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-          {doc.doc_type}
+          {doc.doc_type === "agreement" ? "contract" : doc.doc_type}
         </Badge>
       )}
 
