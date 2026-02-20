@@ -229,3 +229,8 @@ export interface MaintenanceResult {
   unconfirmedTags?: unknown;
   tasks?: unknown;
 }
+
+export interface NdaAnalysisResult {
+  markdown: string;
+  tokenUsage?: TokenUsage;
+}
