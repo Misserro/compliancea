@@ -24,10 +24,10 @@ import type {
   DeskResult,
   CrossReference,
   QuestionnaireQuestion,
+  NdaAnalysisResult,
 } from "@/lib/types";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { NdaAnalysisResult } from "@/lib/types";
 
 interface DeskSectionProps {
   documents: Document[];
@@ -785,10 +785,7 @@ function NdaReviewMode() {
 
   function handleExport() {
     if (!result?.markdown) return;
-    const html = `<html><body><pre style="white-space:pre-wrap;font-family:serif;">${result.markdown
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")}</pre></body></html>`;
+    const html = `<html><body><pre style="white-space:pre-wrap;font-family:serif;">${escapeHtml(result.markdown)}</pre></body></html>`;
     downloadBlob(
       html,
       "nda-analysis-report.docx",
@@ -870,7 +867,7 @@ function NdaReviewMode() {
               Export as DOCX
             </Button>
           </div>
-          <div className="rounded-md border bg-muted/30 p-4 overflow-auto max-h-[600px] text-sm [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1 [&_h4]:text-sm [&_h4]:font-medium [&_h4]:mt-2 [&_h4]:mb-1 [&_p]:my-1 [&_ul]:list-disc [&_ul]:ml-4 [&_li]:my-0.5 [&_blockquote]:border-l-2 [&_blockquote]:border-muted-foreground [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_strong]:font-semibold [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-2 [&_th]:text-left [&_th]:font-medium [&_td]:border [&_td]:border-border [&_td]:p-2 [&_hr]:my-3 [&_hr]:border-border">
+          <div className="rounded-md border bg-muted/30 p-4 overflow-auto max-h-[600px] text-sm [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1 [&_h4]:text-sm [&_h4]:font-medium [&_h4]:mt-2 [&_h4]:mb-1 [&_p]:my-1 [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:my-0.5 [&_blockquote]:border-l-2 [&_blockquote]:border-muted-foreground [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_strong]:font-semibold [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-2 [&_th]:text-left [&_th]:font-medium [&_td]:border [&_td]:border-border [&_td]:p-2 [&_hr]:my-3 [&_hr]:border-border">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {result.markdown}
             </ReactMarkdown>
