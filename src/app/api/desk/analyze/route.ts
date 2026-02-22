@@ -4,6 +4,8 @@ import { ensureDb, extractTextFromBuffer, guessType, guessTypeFromMime } from "@
 import { getSettings } from "@/lib/settings-imports";
 import { searchDocuments } from "@/lib/search-imports";
 import { shouldSkipTranslation } from "@/lib/language-detection-imports";
+import fs from "fs/promises";
+import path from "path";
 
 export const runtime = "nodejs";
 
@@ -34,6 +36,11 @@ export async function POST(request: NextRequest) {
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json({ error: "ANTHROPIC_API_KEY is not set." }, { status: 500 });
     }
+
+    const deskSystemPrompt = await fs.readFile(
+      path.join(process.cwd(), "prompts/desk.md"),
+      "utf-8"
+    );
 
     const settings = getSettings();
     const formData = await request.formData();
@@ -125,12 +132,12 @@ export async function POST(request: NextRequest) {
     if (needsLibraryDocs && libraryDocumentIds.length > 0) {
       // Extract questions/requests from the external document
       const extractionModel = settings.useHaikuForExtraction ? haikuModel : modelName;
-      const questionExtractionPrompt = `List ALL questions, requests, and information needs from this document. One per line, numbered.\n\n${docTextForAnalysis}`;
 
       const questionMessage = await anthropic.messages.create({
         model: extractionModel,
         max_tokens: 2048,
-        messages: [{ role: "user", content: questionExtractionPrompt }],
+        system: `You extract every question, request, and information demand from a regulatory or compliance document. Include implicit requests and sub-questions as separate items. Return a numbered list, one item per line.`,
+        messages: [{ role: "user", content: docTextForAnalysis }],
       });
 
       inputTokens += questionMessage.usage?.input_tokens || 0;
@@ -287,6 +294,7 @@ export async function POST(request: NextRequest) {
     const message = await anthropic.messages.create({
       model: modelName,
       max_tokens: 8192,
+      system: deskSystemPrompt,
       messages: [{ role: "user", content: prompt }],
     });
 
