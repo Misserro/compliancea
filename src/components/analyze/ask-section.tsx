@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { DocumentSelectList } from "@/components/analyze/document-select-list";
 import type { Document, Source } from "@/lib/types";
+import { StatusMessage } from "@/components/ui/status-message";
 
 interface AskSectionProps {
   documents: Document[];
@@ -124,19 +125,7 @@ export function AskSection({ documents }: AskSectionProps) {
       </Button>
 
       {/* Status */}
-      {status && (
-        <p
-          className={`text-sm ${
-            status.type === "error"
-              ? "text-destructive"
-              : status.type === "success"
-              ? "text-green-600 dark:text-green-400"
-              : "text-muted-foreground"
-          }`}
-        >
-          {status.message}
-        </p>
-      )}
+      {status && <StatusMessage type={status.type} message={status.message} />}
 
       {/* Results */}
       {result && (
