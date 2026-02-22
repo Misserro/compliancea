@@ -37,7 +37,7 @@ export default function ProcessPage() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Process</CardTitle>
+          <CardTitle>Select a Mode</CardTitle>
           <CardDescription>
             Select a mode: respond to a regulator query with cross-referenced sources, auto-answer a questionnaire, or review an NDA for risks.
           </CardDescription>
