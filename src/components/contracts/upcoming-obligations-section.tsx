@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import type { Obligation } from "@/lib/types";
 import { CATEGORY_COLORS, CATEGORY_MIGRATION_MAP } from "@/lib/constants";
 import { Calendar, FileText } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function UpcomingObligationsSection() {
   const [obligations, setObligations] = useState<Obligation[]>([]);
@@ -34,7 +35,10 @@ export function UpcomingObligationsSection() {
     return (
       <div className="bg-card border rounded-lg p-4">
         <h3 className="text-sm font-semibold mb-3">Upcoming Obligations (Next 30 Days)</h3>
-        <p className="text-sm text-muted-foreground">Loading...</p>
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-full" />
+          <Skeleton className="h-5 w-3/4" />
+        </div>
       </div>
     );
   }
