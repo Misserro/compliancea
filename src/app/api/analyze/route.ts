@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import fs from "fs/promises";
+import path from "path";
 import { ensureDb, extractTextFromBuffer, guessType, guessTypeFromMime, buildJsonSchemaDescription } from "@/lib/server-utils";
 
 export const runtime = "nodejs";
@@ -32,6 +34,11 @@ async function extractTextFromFile(file: File): Promise<string> {
 
 export async function POST(request: NextRequest) {
   await ensureDb();
+
+  const analyzerSystemPrompt = await fs.readFile(
+    path.join(process.cwd(), "prompts/analyzer.md"),
+    "utf-8"
+  );
 
   let inputTokens = 0;
   let outputTokens = 0;
@@ -134,6 +141,7 @@ export async function POST(request: NextRequest) {
     const message = await anthropic.messages.create({
       model: modelName,
       max_tokens: 8192,
+      system: analyzerSystemPrompt,
       messages: [{ role: "user", content: prompt }],
     });
 
