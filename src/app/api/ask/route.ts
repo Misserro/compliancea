@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import fs from "fs/promises";
+import path from "path";
 import { ensureDb } from "@/lib/server-utils";
 import { getDocumentById } from "@/lib/db-imports";
 import { getSettings } from "@/lib/settings-imports";
@@ -84,20 +86,23 @@ export async function POST(request: NextRequest) {
     const sources = getSourceDocuments(searchResults);
 
     // Build prompt for Claude
+    const askSystemPrompt = await fs.readFile(
+      path.join(process.cwd(), "prompts/ask.md"),
+      "utf-8"
+    );
+
     const anthropic = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY,
     });
 
     const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
 
-    const systemPrompt = `You are a document analysis assistant. Answer questions using ONLY the provided document excerpts. When referring to information, mention the document name naturally in your answer (e.g. "The Sanction Screening Policy states that..." or "According to the AML Procedures Manual..."). Be concise but thorough. If context is insufficient, say so.`;
-
     const userPrompt = `Context:\n${contextText}\n\nQuestion: ${question}`;
 
     const message = await anthropic.messages.create({
       model: modelName,
-      max_tokens: 2048,
-      system: systemPrompt,
+      max_tokens: 4096,
+      system: askSystemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     });
 
