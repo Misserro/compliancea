@@ -18,6 +18,7 @@ import {
 import { DocumentSelectList } from "@/components/analyze/document-select-list";
 import { downloadBlob, escapeHtml } from "@/lib/utils";
 import type { Document, DeskResult, CrossReference } from "@/lib/types";
+import { StatusMessage } from "@/components/ui/status-message";
 
 interface RegulatorSectionProps {
   documents: Document[];
@@ -215,19 +216,7 @@ export function RegulatorSection({ documents }: RegulatorSectionProps) {
       </Button>
 
       {/* Status */}
-      {status && (
-        <p
-          className={`text-sm ${
-            status.type === "error"
-              ? "text-destructive"
-              : status.type === "success"
-              ? "text-green-600 dark:text-green-400"
-              : "text-muted-foreground"
-          }`}
-        >
-          {status.message}
-        </p>
-      )}
+      {status && <StatusMessage type={status.type} message={status.message} />}
 
       {/* Results */}
       {result && (

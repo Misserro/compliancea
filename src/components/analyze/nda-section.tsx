@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { downloadBlob, escapeHtml } from "@/lib/utils";
 import type { Document, NdaAnalysisResult } from "@/lib/types";
+import { StatusMessage } from "@/components/ui/status-message";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -158,19 +159,7 @@ export function NdaSection({ documents: _documents }: NdaSectionProps) {
       </Button>
 
       {/* Status */}
-      {status && (
-        <p
-          className={`text-sm ${
-            status.type === "error"
-              ? "text-destructive"
-              : status.type === "success"
-              ? "text-green-600 dark:text-green-400"
-              : "text-muted-foreground"
-          }`}
-        >
-          {status.message}
-        </p>
-      )}
+      {status && <StatusMessage type={status.type} message={status.message} />}
 
       {/* Result */}
       {result?.markdown && (

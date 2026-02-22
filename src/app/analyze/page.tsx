@@ -7,7 +7,7 @@ export default function AnalyzePage() {
       <div>
         <h2 className="text-2xl font-semibold tracking-tight">Analyze</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Upload a document to translate, summarize, extract key points, or generate department to-do lists.
+          AI-powered analysis for a single document.
         </p>
       </div>
       <Card>
