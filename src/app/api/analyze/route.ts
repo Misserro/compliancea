@@ -35,11 +35,6 @@ async function extractTextFromFile(file: File): Promise<string> {
 export async function POST(request: NextRequest) {
   await ensureDb();
 
-  const analyzerSystemPrompt = await fs.readFile(
-    path.join(process.cwd(), "prompts/analyzer.md"),
-    "utf-8"
-  );
-
   let inputTokens = 0;
   let outputTokens = 0;
 
@@ -47,6 +42,11 @@ export async function POST(request: NextRequest) {
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json({ error: "ANTHROPIC_API_KEY is not set." }, { status: 500 });
     }
+
+    const analyzerSystemPrompt = await fs.readFile(
+      path.join(process.cwd(), "prompts/analyzer.md"),
+      "utf-8"
+    );
 
     const formData = await request.formData();
 
