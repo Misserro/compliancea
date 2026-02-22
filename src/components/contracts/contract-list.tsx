@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import type { Contract, Obligation } from "@/lib/types";
 import { ContractCard } from "./contract-card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ContractListProps {
   refreshTrigger?: number;
@@ -59,7 +60,12 @@ export function ContractList({ refreshTrigger }: ContractListProps) {
   }, [contracts]);
 
   if (loading) {
-    return <div className="text-sm text-muted-foreground">Loading contracts...</div>;
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-24 w-full rounded-lg" />
+        <Skeleton className="h-24 w-full rounded-lg" />
+      </div>
+    );
   }
 
   if (contracts.length === 0) {

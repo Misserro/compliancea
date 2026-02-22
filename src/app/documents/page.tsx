@@ -11,6 +11,7 @@ import { MetadataDialog } from "@/components/documents/metadata-dialog";
 import { ContractActionDialog } from "@/components/documents/contract-action-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -317,7 +318,11 @@ export default function DocumentsPage() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading documents...</p>
+        <div className="space-y-3">
+          <Skeleton className="h-20 w-full rounded-lg" />
+          <Skeleton className="h-20 w-full rounded-lg" />
+          <Skeleton className="h-20 w-full rounded-lg" />
+        </div>
       ) : (
         <DocumentList
           documents={filteredDocuments}
