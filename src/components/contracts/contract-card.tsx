@@ -7,6 +7,7 @@ import type { Contract, Obligation } from "@/lib/types";
 import { STATUS_COLORS, CONTRACT_STATUS_DISPLAY, CATEGORY_MIGRATION_MAP } from "@/lib/constants";
 import { ContractMetadataDisplay } from "./contract-metadata-display";
 import { ObligationCard } from "../obligations/obligation-card";
+import { EvidenceDialog } from "../obligations/evidence-dialog";
 
 interface ContractCardProps {
   contract: Contract;
@@ -51,6 +52,7 @@ export function ContractCard({ contract, obligations = [], onObligationUpdate, o
   const [expanded, setExpanded] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("active");
+  const [evidenceDialogObligationId, setEvidenceDialogObligationId] = useState<number | null>(null);
 
   const statusColor = STATUS_COLORS[contract.status] || STATUS_COLORS.unsigned;
   const statusDisplay = CONTRACT_STATUS_DISPLAY[contract.status] || contract.status;
@@ -213,6 +215,18 @@ export function ContractCard({ contract, obligations = [], onObligationUpdate, o
         </div>
       </div>
 
+      <EvidenceDialog
+        obligationId={evidenceDialogObligationId}
+        open={evidenceDialogObligationId !== null}
+        onOpenChange={(open) => {
+          if (!open) setEvidenceDialogObligationId(null);
+        }}
+        onEvidenceAdded={() => {
+          onObligationUpdate?.();
+          setEvidenceDialogObligationId(null);
+        }}
+      />
+
       {/* Expanded Content */}
       {expanded && (
         <div className="border-t">
@@ -307,8 +321,8 @@ export function ContractCard({ contract, obligations = [], onObligationUpdate, o
                         console.error("Failed to update obligation:", err);
                       }
                     }}
-                    onAddEvidence={() => {
-                      // TODO: Open evidence dialog
+                    onAddEvidence={(obId) => {
+                      setEvidenceDialogObligationId(obId);
                     }}
                     onRemoveEvidence={async (obId, index) => {
                       try {
