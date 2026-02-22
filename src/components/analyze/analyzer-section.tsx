@@ -22,6 +22,7 @@ import {
 import { DEPARTMENTS } from "@/lib/constants";
 import { downloadBlob, escapeHtml } from "@/lib/utils";
 import type { AnalyzerResult, KeyPoint, TodoItem } from "@/lib/types";
+import { StatusMessage } from "@/components/ui/status-message";
 
 type OutputOption = "translation" | "summary" | "key_points" | "todos";
 
@@ -200,19 +201,7 @@ export function AnalyzerSection() {
       </div>
 
       {/* Status */}
-      {status && (
-        <p
-          className={`text-sm ${
-            status.type === "error"
-              ? "text-destructive"
-              : status.type === "success"
-              ? "text-green-600 dark:text-green-400"
-              : "text-muted-foreground"
-          }`}
-        >
-          {status.message}
-        </p>
-      )}
+      {status && <StatusMessage type={status.type} message={status.message} />}
 
       {/* Results */}
       {result && (
