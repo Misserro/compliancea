@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Search, ClipboardCheck, Settings } from "lucide-react";
+import { FileText, Search, ClipboardCheck, Settings, MessageSquare, Layers } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -16,26 +16,12 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 
 const navItems = [
-  {
-    title: "Documents",
-    href: "/documents",
-    icon: FileText,
-  },
-  {
-    title: "Analyze & Ask",
-    href: "/analyze",
-    icon: Search,
-  },
-  {
-    title: "Contracts",
-    href: "/contracts",
-    icon: ClipboardCheck,
-  },
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: Settings,
-  },
+  { title: "Documents", href: "/documents", icon: FileText },
+  { title: "Analyze", href: "/analyze", icon: Search },
+  { title: "Ask Library", href: "/ask", icon: MessageSquare },
+  { title: "Process", href: "/process", icon: Layers },
+  { title: "Contracts", href: "/contracts", icon: ClipboardCheck },
+  { title: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -65,7 +51,7 @@ export function AppSidebar() {
         <div className="flex items-center gap-2">
           <SidebarTrigger className="-ml-2" />
           <h1 className="text-lg font-semibold tracking-tight">
-            Document Analyzer
+            ComplianceA
           </h1>
         </div>
       </SidebarHeader>
