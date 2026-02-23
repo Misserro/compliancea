@@ -1,7 +1,7 @@
 export const DEPARTMENTS = ["Finance", "Compliance", "Operations", "HR", "Board", "IT"] as const;
 
 export const DOC_TYPES = [
-  "contract", "invoice", "letter", "report", "application", "policy",
+  "contract", "invoice", "letter", "report", "application", "policy", "procedure",
   "memo", "minutes", "form", "regulation", "certificate", "agreement",
   "notice", "statement", "other"
 ] as const;
