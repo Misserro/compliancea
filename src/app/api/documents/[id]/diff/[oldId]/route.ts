@@ -25,12 +25,15 @@ export async function GET(
       }
       const hunks = computeLineDiff(oldDoc.full_text, newDoc.full_text);
       addDocumentDiff(oldDocumentId, newDocumentId, hunks);
-      stored = getDocumentDiff(oldDocumentId, newDocumentId);
+      return NextResponse.json({
+        hunks,
+        created_at: new Date().toISOString(),
+      });
     }
 
     return NextResponse.json({
-      hunks: JSON.parse(stored!.diff_json as string),
-      created_at: stored!.created_at,
+      hunks: JSON.parse(stored.diff_json as string),
+      created_at: stored.created_at,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
