@@ -6,6 +6,8 @@ import { AIConfigSection } from "@/components/settings/ai-config-section";
 import { GDriveSection } from "@/components/settings/gdrive-section";
 import { MaintenanceSection } from "@/components/settings/maintenance-section";
 import { StatisticsSection } from "@/components/settings/statistics-section";
+import { PoliciesSection } from "@/components/settings/policies-section";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Settings } from "@/lib/types";
 
 export default function SettingsPage() {
@@ -85,6 +87,18 @@ export default function SettingsPage() {
         onReset={handleReset}
         saving={saving}
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Policies</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PoliciesSection
+            selectedTypes={settings?.policiesTabDocTypes ?? ["policy", "procedure"]}
+            onChange={(types) => handleSettingsChange({ policiesTabDocTypes: types })}
+          />
+        </CardContent>
+      </Card>
 
       <GDriveSection />
 
