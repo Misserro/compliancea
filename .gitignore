@@ -47,6 +47,9 @@ next-env.d.ts
 # Claude Code CLI
 .claude/
 
+# Git Worktrees
+.worktrees/
+
 # Database Files (LOCAL DATA - DO NOT UPLOAD!)
 *.db
 *.sqlite
