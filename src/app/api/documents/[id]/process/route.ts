@@ -11,6 +11,9 @@ import {
   insertObligation,
   getObligationById,
   createTaskForObligation,
+  getAllDocuments,
+  addPendingReplacement,
+  getAppSetting,
 } from "@/lib/db-imports";
 import { chunkText, countWords } from "@/lib/chunker-imports";
 import { getEmbedding, embeddingToBuffer, checkEmbeddingStatus } from "@/lib/embeddings-imports";
@@ -19,6 +22,7 @@ import { extractMetadata } from "@/lib/auto-tagger-imports";
 import { logAction } from "@/lib/audit-imports";
 import { extractContractTerms } from "@/lib/contracts-imports";
 import { evaluateDocument, applyActions } from "@/lib/policies-imports";
+import { nameSimilarity } from "@/lib/diff-imports";
 
 export const runtime = "nodejs";
 
@@ -368,6 +372,47 @@ export async function POST(
 
     // Mark document as processed
     updateDocumentProcessed(documentId, wordCount);
+
+    // Store full_text for policy doc types (needed for version diff)
+    const policiesSettingRaw = getAppSetting('policies_tab_doc_types');
+    const policiesDocTypes: string[] = policiesSettingRaw
+      ? JSON.parse(policiesSettingRaw)
+      : ['policy', 'procedure'];
+    const finalDoc = getDocumentById(documentId);
+    if (finalDoc.doc_type && policiesDocTypes.includes(finalDoc.doc_type)) {
+      updateDocumentMetadata(documentId, { full_text: text });
+    }
+
+    // Version detection: find likely predecessor document
+    try {
+      if (finalDoc.doc_type && policiesDocTypes.includes(finalDoc.doc_type)) {
+        const existingDocs = getAllDocuments().filter(
+          (d: { id: number; doc_type: string | null; superseded_by: number | null }) =>
+            d.id !== documentId &&
+            d.doc_type === finalDoc.doc_type &&
+            d.superseded_by === null
+        );
+
+        let bestCandidate: { id: number; score: number } | null = null;
+        for (const candidate of existingDocs) {
+          const score = nameSimilarity(finalDoc.name, candidate.name);
+          if (score > 0.6 && (!bestCandidate || score > bestCandidate.score)) {
+            bestCandidate = { id: candidate.id, score };
+          }
+        }
+
+        if (bestCandidate) {
+          addPendingReplacement(documentId, bestCandidate.id, bestCandidate.score);
+          logAction('document', documentId, 'version_candidate_detected', {
+            candidateId: bestCandidate.id,
+            confidence: bestCandidate.score,
+          });
+        }
+      }
+    } catch (versionErr) {
+      const msg = versionErr instanceof Error ? versionErr.message : 'Unknown error';
+      console.warn('Version detection failed:', msg);
+    }
 
     // Evaluate policy rules
     let policyResult = null;
