@@ -86,6 +86,7 @@ export interface Settings {
   useRelevanceThreshold: boolean;
   relevanceThresholdValue: number;
   minResultsGuarantee: number;
+  policiesTabDocTypes: string[];
 }
 
 export interface TokenUsage {
@@ -149,6 +150,17 @@ export interface AuditEntry {
   created_at: string;
 }
 
+
+export interface DocumentVersion {
+  id: number;
+  name: string;
+  version: number;
+  status: string | null;
+  in_force: string | null;
+  added_at: string;
+  superseded_by: number | null;
+  canonical_id: number | null;
+}
 export interface ContractSummary {
   name: string;
   status: string;

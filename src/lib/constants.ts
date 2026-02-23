@@ -104,3 +104,5 @@ export const PRICING = {
   },
   voyage: 0.02,
 } as const;
+
+export const POLICIES_TAB_DEFAULT_DOC_TYPES = ["policy", "procedure"] as const;
