@@ -66,3 +66,14 @@ export {
   logAction,
   getAuditLog,
 } from "../../lib/db.js";
+
+export {
+  addPendingReplacement,
+  getPendingReplacements,
+  getPendingReplacementForDoc,
+  updatePendingReplacementStatus,
+  addDocumentDiff,
+  getDocumentDiff,
+  getDocumentVersionChain,
+  applyVersionLink,
+} from "../../lib/db.js";
