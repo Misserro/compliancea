@@ -72,3 +72,8 @@ export function addDocumentDiff(...args: any[]): any;
 export function getDocumentDiff(...args: any[]): any;
 export function getDocumentVersionChain(...args: any[]): any;
 export function applyVersionLink(...args: any[]): any;
+export function createProductFeature(...args: any[]): any;
+export function getProductFeatures(...args: any[]): any;
+export function getProductFeature(...args: any[]): any;
+export function updateProductFeature(...args: any[]): any;
+export function deleteProductFeature(...args: any[]): any;

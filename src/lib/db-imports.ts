@@ -65,9 +65,6 @@ export {
   deleteSystemObligation,
   logAction,
   getAuditLog,
-} from "../../lib/db.js";
-
-export {
   addPendingReplacement,
   getPendingReplacements,
   getPendingReplacementForDoc,
