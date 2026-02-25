@@ -26,23 +26,26 @@ export function ProductFeatureCard({ feature, onRefresh }: ProductFeatureCardPro
   })();
 
   async function handleStatusChange(status: FeatureStatus) {
-    await fetch(`/api/product-hub/${feature.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
-    onRefresh();
+    try {
+      const res = await fetch(`/api/product-hub/${feature.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) onRefresh();
+    } catch { /* ignore */ }
   }
 
   async function handleDuplicate() {
-    const res = await fetch('/api/product-hub', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: `${feature.title} (copy)` }),
-    });
-    if (res.ok) {
+    try {
+      const res = await fetch('/api/product-hub', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: `${feature.title} (copy)` }),
+      });
+      if (!res.ok) { toast.error('Failed to duplicate feature'); return; }
       const newFeature = await res.json();
-      await fetch(`/api/product-hub/${newFeature.id}`, {
+      const patchRes = await fetch(`/api/product-hub/${newFeature.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -52,16 +55,28 @@ export function ProductFeatureCard({ feature, onRefresh }: ProductFeatureCardPro
           selected_templates: feature.selected_templates,
         }),
       });
-      toast.success('Feature duplicated');
-      onRefresh();
+      if (patchRes.ok) {
+        toast.success('Feature duplicated');
+        onRefresh();
+      }
+    } catch (e) {
+      toast.error(`Failed to duplicate: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
   async function handleDelete() {
     if (!confirm(`Delete "${feature.title}"? This cannot be undone.`)) return;
-    await fetch(`/api/product-hub/${feature.id}`, { method: 'DELETE' });
-    toast.success('Feature deleted');
-    onRefresh();
+    try {
+      const res = await fetch(`/api/product-hub/${feature.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast.success('Feature deleted');
+        onRefresh();
+      } else {
+        toast.error('Failed to delete feature');
+      }
+    } catch (e) {
+      toast.error(`Failed to delete: ${e instanceof Error ? e.message : String(e)}`);
+    }
   }
 
   return (
