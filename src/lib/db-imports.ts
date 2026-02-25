@@ -76,4 +76,9 @@ export {
   getDocumentDiff,
   getDocumentVersionChain,
   applyVersionLink,
+  createProductFeature,
+  getProductFeatures,
+  getProductFeature,
+  updateProductFeature,
+  deleteProductFeature,
 } from "../../lib/db.js";
