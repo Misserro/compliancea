@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Search, ClipboardCheck, Settings, MessageSquare, Layers, Shield } from "lucide-react";
+import { FileText, Search, ClipboardCheck, Settings, MessageSquare, Layers, Shield, Package } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +22,7 @@ const navItems = [
   { title: "Ask Library", href: "/ask", icon: MessageSquare },
   { title: "Process", href: "/process", icon: Layers },
   { title: "Contracts", href: "/contracts", icon: ClipboardCheck },
+  { title: "Product Hub", href: "/product-hub", icon: Package },
   { title: "Settings", href: "/settings", icon: Settings },
 ];
 
