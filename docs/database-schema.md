@@ -12,6 +12,7 @@ erDiagram
     contract_obligations ||--o{ tasks : "generates"
     documents ||--o{ tasks : "related to"
     documents }o--o{ legal_holds : "subject to"
+    documents }o--o| product_features : "linked contract"
 
     documents {
         integer id PK
@@ -52,6 +53,22 @@ erDiagram
         integer entity_id
         date due_date
         integer obligation_id FK
+    }
+
+    product_features {
+        integer id PK
+        text title
+        text intake_form_json
+        text selected_document_ids
+        text free_context
+        text selected_templates
+        text generated_outputs_json
+        text status
+        text version_history_json
+        integer linked_contract_id FK
+        text created_by
+        datetime created_at
+        datetime updated_at
     }
 ```
 
@@ -393,6 +410,38 @@ Key-value configuration storage.
 
 ---
 
+### product_features
+
+Stores Product Hub features created by users — each feature goes through a 4-step wizard (intake form → document context → template selection → AI generation).
+
+**Columns:**
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INTEGER PRIMARY KEY | Auto-incremented feature identifier |
+| title | TEXT NOT NULL | Feature display name (default: 'Untitled Feature') |
+| intake_form_json | TEXT | JSON-serialised `IntakeForm` object (sections A/B/C) |
+| selected_document_ids | TEXT | JSON array of document IDs selected as context |
+| free_context | TEXT | Free-form context pasted by the user (emails, notes, etc.) |
+| selected_templates | TEXT | JSON array of `TemplateId` values (prd, tech_spec, feature_brief, business_case) |
+| generated_outputs_json | TEXT | JSON map of `TemplateId → { sections: Record<string,string>, gaps: string[] }` |
+| status | TEXT | Feature lifecycle status: idea, in_spec, in_review, approved, in_development, shipped (default: 'idea') |
+| version_history_json | TEXT | JSON array of `VersionSnapshot` objects (timestamp, trigger, templates, snapshot) — capped at 20 entries |
+| linked_contract_id | INTEGER | FK → documents.id for contract traceability (nullable) |
+| created_by | TEXT | Creator identifier (nullable) |
+| created_at | DATETIME | Creation timestamp (auto) |
+| updated_at | DATETIME | Last-modified timestamp (auto) |
+
+**Indexes:**
+- `idx_product_features_status` on `status`
+- `idx_product_features_created` on `created_at`
+
+**Relationships:**
+- `linked_contract_id` references `documents.id` (optional contract traceability link)
+- `selected_document_ids` references `documents.id` values (stored as JSON, not a FK)
+
+---
+
 ## Data Types
 
 **TEXT** - Variable-length strings (UTF-8)
@@ -413,5 +462,6 @@ Key-value configuration storage.
 **tasks**: ~500 bytes per task
 **qa_cards**: ~2 KB per card
 **audit_log**: ~500 bytes per entry
+**product_features**: ~5-50 KB per record (varies with generated_outputs_json and version_history_json)
 
 **Typical database size**: 50-100 MB for 1000 documents with embeddings
