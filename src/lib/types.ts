@@ -246,3 +246,151 @@ export interface NdaAnalysisResult {
   markdown: string;
   tokenUsage?: TokenUsage;
 }
+
+// ============================================
+// Product Hub types
+// ============================================
+
+export interface ProductFeature {
+  id: number;
+  title: string;
+  intake_form_json: string | null;
+  selected_document_ids: string | null;
+  free_context: string | null;
+  selected_templates: string | null;
+  generated_outputs_json: string | null;
+  status: 'idea' | 'in_spec' | 'in_review' | 'approved' | 'in_development' | 'shipped';
+  version_history_json: string | null;
+  linked_contract_id: number | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IntakeForm {
+  sectionA: {
+    problemStatement: string;
+    persona: string;
+    statusQuo: string;
+    whyNow: string;
+  };
+  sectionB: {
+    featureDescription: string;
+    userFlow: string;
+    outOfScope: string;
+    acceptanceCriteria: string;
+  };
+  sectionC: {
+    constraints: string;
+    kpis: string;
+    systems: string;
+    mustHave: string;
+    shouldHave: string;
+    niceToHave: string;
+  };
+}
+
+export interface GeneratedOutputs {
+  [template: string]: {
+    sections: Record<string, string>;
+    gaps: string[];
+  };
+}
+
+export const FEATURE_STATUSES = [
+  'idea', 'in_spec', 'in_review', 'approved', 'in_development', 'shipped'
+] as const;
+
+export type FeatureStatus = typeof FEATURE_STATUSES[number];
+
+export const STATUS_LABELS: Record<FeatureStatus, string> = {
+  idea: 'Idea',
+  in_spec: 'In Spec',
+  in_review: 'In Review',
+  approved: 'Approved',
+  in_development: 'In Development',
+  shipped: 'Shipped',
+};
+
+export const STATUS_COLORS: Record<FeatureStatus, string> = {
+  idea: 'bg-gray-100 text-gray-700',
+  in_spec: 'bg-blue-100 text-blue-700',
+  in_review: 'bg-amber-100 text-amber-700',
+  approved: 'bg-green-100 text-green-700',
+  in_development: 'bg-purple-100 text-purple-700',
+  shipped: 'bg-emerald-100 text-emerald-700',
+};
+
+export const TEMPLATES = [
+  {
+    id: 'feature_brief' as const,
+    name: 'Feature Brief',
+    audience: 'PM, Stakeholders',
+    description: '1-page summary: problem, solution, scope, KPIs',
+    promptFile: 'prompts/prompt_feature_brief.md',
+  },
+  {
+    id: 'prd' as const,
+    name: 'PRD',
+    audience: 'Product, Design',
+    description: 'Full requirements doc with user stories and acceptance criteria',
+    promptFile: 'prompts/prompt_prd.md',
+  },
+  {
+    id: 'tech_spec' as const,
+    name: 'Tech Spec',
+    audience: 'Engineering',
+    description: 'Functional + non-functional requirements, data model hints, API considerations',
+    promptFile: 'prompts/prompt_tech_spec.md',
+  },
+  {
+    id: 'business_case' as const,
+    name: 'Business Case',
+    audience: 'Management',
+    description: 'Business justification, ROI estimation, risks, team dependencies',
+    promptFile: 'prompts/prompt_business_case.md',
+  },
+] as const;
+
+export type TemplateId = 'feature_brief' | 'prd' | 'tech_spec' | 'business_case';
+
+// Sections per template — used to render Step 4 output blocks
+export const TEMPLATE_SECTIONS: Record<TemplateId, { id: string; label: string }[]> = {
+  feature_brief: [
+    { id: 'summary', label: 'Executive Summary' },
+    { id: 'problem', label: 'Problem Statement' },
+    { id: 'solution', label: 'Proposed Solution' },
+    { id: 'scope', label: 'Scope & Out of Scope' },
+    { id: 'kpis', label: 'Success Metrics (KPIs)' },
+    { id: 'open_questions', label: 'Open Questions' },
+  ],
+  prd: [
+    { id: 'problem_statement', label: 'Problem Statement' },
+    { id: 'user_personas', label: 'User Personas' },
+    { id: 'user_stories', label: 'User Stories + Acceptance Criteria' },
+    { id: 'functional_requirements', label: 'Functional Requirements' },
+    { id: 'non_functional_requirements', label: 'Non-Functional Requirements' },
+    { id: 'out_of_scope', label: 'Out of Scope' },
+    { id: 'success_metrics', label: 'Success Metrics (KPIs)' },
+    { id: 'risks_dependencies', label: 'Risks & Dependencies' },
+    { id: 'open_questions', label: 'Open Questions' },
+  ],
+  tech_spec: [
+    { id: 'overview', label: 'Technical Overview' },
+    { id: 'functional_requirements', label: 'Functional Requirements' },
+    { id: 'non_functional_requirements', label: 'Non-Functional Requirements' },
+    { id: 'data_model', label: 'Data Model' },
+    { id: 'api_design', label: 'API Design' },
+    { id: 'dependencies', label: 'Dependencies & Integrations' },
+    { id: 'open_questions', label: 'Open Questions' },
+  ],
+  business_case: [
+    { id: 'executive_summary', label: 'Executive Summary' },
+    { id: 'business_problem', label: 'Business Problem' },
+    { id: 'proposed_solution', label: 'Proposed Solution' },
+    { id: 'roi_estimation', label: 'ROI & Value Assessment' },
+    { id: 'risks', label: 'Risks' },
+    { id: 'team_dependencies', label: 'Team & Dependencies' },
+    { id: 'open_questions', label: 'Open Questions' },
+  ],
+};
