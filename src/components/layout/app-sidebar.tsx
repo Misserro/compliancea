@@ -18,6 +18,12 @@ import { useTheme } from "next-themes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+function ThemeIcon({ theme }: { theme: string | undefined }) {
+  if (theme === "dark") return <Moon className="h-4 w-4" />;
+  if (theme === "light") return <Sun className="h-4 w-4" />;
+  return <Monitor className="h-4 w-4" />;
+}
+
 const navItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "Documents", href: "/documents", icon: FileText },
@@ -53,15 +59,10 @@ export function AppSidebar() {
   }, []);
 
   function cycleTheme() {
+    if (!theme) return;
     if (theme === "light") setTheme("dark");
     else if (theme === "dark") setTheme("system");
     else setTheme("light");
-  }
-
-  function ThemeIcon() {
-    if (theme === "dark") return <Moon className="h-4 w-4" />;
-    if (theme === "light") return <Sun className="h-4 w-4" />;
-    return <Monitor className="h-4 w-4" />;
   }
 
   function themeLabel() {
@@ -114,7 +115,7 @@ export function AppSidebar() {
           className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
           title="Toggle theme"
         >
-          <ThemeIcon />
+          <ThemeIcon theme={theme} />
           <span className="text-xs">{themeLabel()}</span>
         </Button>
       </SidebarFooter>
