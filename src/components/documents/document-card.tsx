@@ -95,9 +95,9 @@ export function DocumentCard({
 
               {tagsOpen && parsedTags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1.5">
-                  {parsedTags.map((tag) => (
+                  {parsedTags.map((tag, i) => (
                     <span
-                      key={tag}
+                      key={`${tag}-${i}`}
                       className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
                     >
                       {tag}
