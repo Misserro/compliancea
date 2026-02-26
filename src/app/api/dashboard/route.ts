@@ -20,7 +20,7 @@ export async function GET() {
     const upcoming = getUpcomingObligations(30) as Array<{ id: number; title: string; due_date: string; document_name: string }>;
     const contracts = getContractsWithSummaries() as Array<{
       id: number; name: string; status: string; expiry_date: string | null;
-      activeObligations: number;
+      activeObligations: number | null;
     }>;
     const features = getProductFeatures() as Array<{ status: string }>;
 
@@ -64,7 +64,7 @@ export async function GET() {
       },
       contracts: {
         total: contracts.length,
-        active: contracts.filter(c => c.status === "active" || (c.activeObligations > 0)).length,
+        active: contracts.filter(c => c.status === "active" || ((c.activeObligations ?? 0) > 0)).length,
         expiringSoon,
       },
       features: {
