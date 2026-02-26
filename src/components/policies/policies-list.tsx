@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, GitBranch, GitMerge } from "lucide-react";
+import { ChevronDown, ChevronRight, Download, GitBranch, GitMerge } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PendingReplacementBanner } from "./pending-replacement-banner";
@@ -77,6 +77,16 @@ function PolicyRow({
         </div>
 
         {/* Actions */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs"
+          onClick={() => window.open(`/api/documents/${doc.id}/download?download=true`, '_blank')}
+          title="Download document"
+        >
+          <Download className="h-3.5 w-3.5 mr-1" />
+          Download
+        </Button>
         <Button
           variant="ghost"
           size="sm"
