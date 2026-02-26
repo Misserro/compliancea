@@ -42,7 +42,14 @@ export function DocumentCard({
   processing = false,
 }: DocumentCardProps) {
   const [isOpen, setIsOpen] = useState(expanded);
+  const [tagsOpen, setTagsOpen] = useState(false);
   const isContract = doc.doc_type === "contract" || doc.doc_type === "agreement";
+  const parsedTags: string[] = (() => {
+    try {
+      const t = JSON.parse(doc.tags || '[]');
+      return Array.isArray(t) ? t : [];
+    } catch { return []; }
+  })();
 
   // Sync expanded prop
   if (expanded !== isOpen && expanded) {
@@ -74,9 +81,30 @@ export function DocumentCard({
                     ? `${doc.word_count?.toLocaleString() || 0} words`
                     : "Not processed"}
                 </span>
+                {parsedTags.length > 0 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setTagsOpen(v => !v); }}
+                    className="text-xs text-muted-foreground hover:text-foreground underline decoration-dashed underline-offset-2 shrink-0"
+                  >
+                    Tags ({parsedTags.length})
+                  </button>
+                )}
               </div>
 
               <DocumentBadges doc={doc} expanded={isOpen} />
+
+              {tagsOpen && parsedTags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {parsedTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {/* Expanded content */}
               <CollapsibleContent>
@@ -103,24 +131,6 @@ export function DocumentCard({
                       </SelectContent>
                     </Select>
                   </div>
-
-                  {/* Tags */}
-                  {doc.tags && (() => {
-                    try {
-                      const tags = JSON.parse(doc.tags);
-                      if (Array.isArray(tags) && tags.length > 0) {
-                        return (
-                          <div className="flex items-start gap-2">
-                            <span className="text-xs text-muted-foreground w-16 shrink-0">Tags:</span>
-                            <p className="text-xs text-muted-foreground">
-                              {tags.join(", ")}
-                            </p>
-                          </div>
-                        );
-                      }
-                    } catch { /* ignore */ }
-                    return null;
-                  })()}
 
                   {/* Client */}
                   {doc.client && (
