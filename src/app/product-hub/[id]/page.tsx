@@ -79,7 +79,10 @@ export default function ProductHubFeaturePage({ params }: { params: Promise<{ id
 
   // Intake form helpers
   const intakeForm: IntakeForm = (() => {
-    try { return JSON.parse(feature?.intake_form_json || '{}'); } catch { return EMPTY_INTAKE; }
+    try {
+      const parsed = JSON.parse(feature?.intake_form_json || 'null');
+      return parsed?.sectionA ? parsed : EMPTY_INTAKE;
+    } catch { return EMPTY_INTAKE; }
   })();
 
   function handleIntakeChange(intake: IntakeForm) {
