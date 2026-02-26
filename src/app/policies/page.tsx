@@ -63,7 +63,7 @@ export default function PoliciesPage() {
     let result = documents.filter((d) => d.doc_type && docTypes.includes(d.doc_type));
 
     if (activeOnly) {
-      result = result.filter((d) => isInForce(d.in_force));
+      result = result.filter((d) => isInForce(d.in_force) && !d.superseded_by && d.status !== "archived");
     }
 
     if (search.trim()) {
@@ -73,8 +73,10 @@ export default function PoliciesPage() {
 
     // Sort: active first, then archived, then alphabetical
     result.sort((a, b) => {
-      if (isInForce(a.in_force) && !isInForce(b.in_force)) return -1;
-      if (!isInForce(a.in_force) && isInForce(b.in_force)) return 1;
+      const aActive = isInForce(a.in_force) && !a.superseded_by && a.status !== "archived";
+      const bActive = isInForce(b.in_force) && !b.superseded_by && b.status !== "archived";
+      if (aActive && !bActive) return -1;
+      if (!aActive && bActive) return 1;
       return a.name.localeCompare(b.name);
     });
 

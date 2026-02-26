@@ -37,7 +37,7 @@ function PolicyRow({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [replaceModalOpen, setReplaceModalOpen] = useState(false);
 
-  const isActive = isInForce(doc.in_force);
+  const isActive = isInForce(doc.in_force) && !doc.superseded_by && doc.status !== "archived";
 
   return (
     <div className="border rounded-lg overflow-hidden">

@@ -55,7 +55,7 @@ export function VersionHistoryPanel({ documentId, documentName }: VersionHistory
       </div>
 
       {versions.map((v, idx) => {
-        const isCurrent = isInForce(v.in_force);
+        const isCurrent = isInForce(v.in_force) && !v.superseded_by;
         const next = versions[idx - 1]; // versions are newest-first, so idx-1 is the next newer version
 
         return (
