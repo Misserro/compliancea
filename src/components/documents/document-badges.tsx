@@ -30,18 +30,18 @@ export function DocumentBadges({ doc, expanded = false }: DocumentBadgesProps) {
         </Badge>
       )}
 
-      {/* In-Force Badge - always visible */}
+      {/* In-Force Pill - always visible */}
       {doc.in_force && doc.in_force !== "unknown" && (
-        <Badge
-          variant="secondary"
-          className={
-            doc.in_force === "in_force"
-              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-              : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
-          }
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+            doc.in_force === "in_force" || doc.in_force === "true"
+              ? "bg-green-500 text-white"
+              : "bg-neutral-200 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300"
+          }`}
         >
-          {doc.in_force === "in_force" ? "In Force" : "Archival"}
-        </Badge>
+          <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
+          {doc.in_force === "in_force" || doc.in_force === "true" ? "In Force" : "Archived"}
+        </span>
       )}
 
       {/* Sensitivity Badge - always visible */}
