@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Search, ClipboardCheck, Settings, MessageSquare, Layers, Shield, Package, LayoutDashboard } from "lucide-react";
+import { FileText, Search, ClipboardCheck, Settings, MessageSquare, Layers, Shield, Package, LayoutDashboard, Sun, Moon, Monitor } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
@@ -13,7 +14,9 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -30,6 +33,7 @@ const navItems = [
 export function AppSidebar() {
   const pathname = usePathname();
   const [overdueCount, setOverdueCount] = useState(0);
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     async function fetchOverdue() {
@@ -47,6 +51,24 @@ export function AppSidebar() {
     const interval = setInterval(fetchOverdue, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  function cycleTheme() {
+    if (theme === "light") setTheme("dark");
+    else if (theme === "dark") setTheme("system");
+    else setTheme("light");
+  }
+
+  function ThemeIcon() {
+    if (theme === "dark") return <Moon className="h-4 w-4" />;
+    if (theme === "light") return <Sun className="h-4 w-4" />;
+    return <Monitor className="h-4 w-4" />;
+  }
+
+  function themeLabel() {
+    if (theme === "dark") return "Dark";
+    if (theme === "light") return "Light";
+    return "System";
+  }
 
   return (
     <Sidebar>
@@ -84,6 +106,18 @@ export function AppSidebar() {
           })}
         </SidebarMenu>
       </SidebarContent>
+      <SidebarFooter className="border-t px-4 py-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={cycleTheme}
+          className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+          title="Toggle theme"
+        >
+          <ThemeIcon />
+          <span className="text-xs">{themeLabel()}</span>
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   );
 }
