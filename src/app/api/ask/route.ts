@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
 
     const settings = getSettings();
     const body = await request.json();
-    const { question, documentIds, topK = 5 } = body;
+    const { question, documentIds, topK = 5, includeHistorical = false } = body;
+    const activeOnly = !includeHistorical;
 
     if (!question || typeof question !== "string") {
       return NextResponse.json({ error: "Question is required" }, { status: 400 });
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
     if (targetDocumentIds.length === 0) {
       try {
         const queryTagResult = await extractQueryTags(question);
-        const tagMatchedIds = scoreDocumentsByTags(queryTagResult.tags, 15);
+        const tagMatchedIds = scoreDocumentsByTags(queryTagResult.tags, 15, activeOnly);
         if (tagMatchedIds.length > 0) {
           targetDocumentIds = tagMatchedIds;
           tagPreFilterUsed = true;
@@ -54,7 +55,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Stage 2: Semantic search
-    let searchResults = await searchDocuments(question, targetDocumentIds, topK);
+    // When searching the entire library (no specific docs selected), apply activeOnly filter.
+    // When specific documents are selected by the user, search exactly those.
+    const searchOptions = targetDocumentIds.length > 0 && !tagPreFilterUsed
+      ? { documentIds: targetDocumentIds, topK }
+      : { documentIds: targetDocumentIds, topK, activeOnly };
+    let searchResults = await searchDocuments(question, searchOptions);
 
     // Apply relevance threshold if enabled
     if (settings.useRelevanceThreshold && searchResults.length > 0) {
@@ -125,7 +131,7 @@ export async function POST(request: NextRequest) {
         return {
           documentId: s.documentId,
           documentName: s.documentName,
-          relevance: Math.round(s.maxScore * 100),
+          relevance: s.maxScore,
           docType: (doc?.doc_type as string) || null,
           category: (doc?.category as string) || null,
         };

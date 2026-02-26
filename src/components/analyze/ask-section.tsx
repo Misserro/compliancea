@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { DocumentSelectList } from "@/components/analyze/document-select-list";
 import type { Document, Source } from "@/lib/types";
 import { StatusMessage } from "@/components/ui/status-message";
+import { isInForce } from "@/lib/utils";
 
 interface AskSectionProps {
   documents: Document[];
@@ -23,11 +24,17 @@ interface AskResult {
 
 export function AskSection({ documents }: AskSectionProps) {
   const [searchEntireLibrary, setSearchEntireLibrary] = useState(false);
+  const [includeHistorical, setIncludeHistorical] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ message: string; type: "info" | "success" | "error" } | null>(null);
   const [result, setResult] = useState<AskResult | null>(null);
+
+  const activeDocuments = documents.filter(
+    (d) => isInForce(d.in_force) && !d.superseded_by && d.status !== "archived"
+  );
+  const displayDocuments = includeHistorical ? documents : activeDocuments;
 
   const canAsk =
     question.trim().length > 0 &&
@@ -41,8 +48,9 @@ export function AskSection({ documents }: AskSectionProps) {
     setStatus({ message: "Searching and generating answer...", type: "info" });
 
     try {
-      const body: { question: string; documentIds?: number[] } = {
+      const body: { question: string; documentIds?: number[]; includeHistorical?: boolean } = {
         question: question.trim(),
+        includeHistorical,
       };
 
       if (!searchEntireLibrary) {
@@ -82,24 +90,43 @@ export function AskSection({ documents }: AskSectionProps) {
 
   return (
     <div className="space-y-4">
-      {/* Search entire library toggle */}
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id="search-entire"
-          checked={searchEntireLibrary}
-          onCheckedChange={(checked) => setSearchEntireLibrary(!!checked)}
-        />
-        <Label htmlFor="search-entire" className="text-sm font-normal cursor-pointer">
-          Search entire library
-        </Label>
+      {/* Search toggles */}
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="search-entire"
+            checked={searchEntireLibrary}
+            onCheckedChange={(checked) => setSearchEntireLibrary(!!checked)}
+          />
+          <Label htmlFor="search-entire" className="text-sm font-normal cursor-pointer">
+            Search entire library
+          </Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="include-historical"
+            checked={includeHistorical}
+            onCheckedChange={(checked) => setIncludeHistorical(!!checked)}
+          />
+          <Label htmlFor="include-historical" className="text-sm font-normal cursor-pointer">
+            Include historical versions
+          </Label>
+        </div>
       </div>
 
       {/* Document selection */}
       {!searchEntireLibrary && (
         <div className="space-y-2">
-          <Label>Select documents to search</Label>
+          <Label>
+            Select documents to search
+            {!includeHistorical && activeDocuments.length < documents.length && (
+              <span className="ml-2 text-xs text-muted-foreground font-normal">
+                (active only — {activeDocuments.length} of {documents.length})
+              </span>
+            )}
+          </Label>
           <DocumentSelectList
-            documents={documents}
+            documents={displayDocuments}
             selectedIds={selectedIds}
             onSelectionChange={setSelectedIds}
             maxHeight="250px"
