@@ -16,10 +16,10 @@ You are a document classification and metadata extraction specialist. Analyze th
       "topics": array of 5-10 main subjects/themes covered in the document,
       "subtopics": array of 5-10 more specific sub-themes or details,
       "legal_concepts": array of 3-8 legal principles, doctrines, or frameworks referenced (e.g. "fiduciary-duty", "force-majeure", "data-minimization"),
-      "regulations": array of 2-10 specific regulations, directives, or laws cited (e.g. "gdpr", "amld5", "mifid-ii", "fatca", "ccpa"),
+      "regulations": array of 1-8 specific regulations, directives, or laws cited (e.g. "gdpr", "amld5", "mifid-ii", "fatca", "ccpa"),
       "entity_types": array of 1-5 entity types discussed (e.g. "pep", "corporate", "natural-person", "trust", "foundation"),
-      "procedures": array of 2-8 procedures or processes described (e.g. "onboarding", "kyc", "due-diligence", "risk-assessment", "reporting"),
-      "compliance_areas": array of 2-8 compliance domains (e.g. "aml", "sanctions", "data-protection", "tax-compliance", "consumer-protection"),
+      "procedures": array of 1-8 procedures or processes described (e.g. "onboarding", "kyc", "due-diligence", "risk-assessment", "reporting"),
+      "compliance_areas": array of 1-8 compliance domains (e.g. "aml", "sanctions", "data-protection", "tax-compliance", "consumer-protection"),
       "geographic": array of 1-6 countries, regions, or markets referenced (e.g. "latvia", "european-union", "united-states"),
       "temporal": array of 0-4 time references (e.g. "2024", "q1-2024", "annual", "multi-year"),
       "industry": array of 1-3 industry sectors (e.g. "banking", "insurance", "fintech", "real-estate", "payments")
