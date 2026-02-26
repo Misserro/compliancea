@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronDown, ChevronRight, Pencil, Play, Briefcase, Trash2, Download } from "lucide-react";
+import { ChevronDown, ChevronRight, Pencil, Play, Briefcase, Trash2, Download, Tags } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,10 +25,12 @@ interface DocumentCardProps {
   expanded: boolean;
   onCategoryChange: (id: number, category: string | null) => void;
   onProcess: (id: number) => void;
+  onRetag: (id: number) => void;
   onDelete: (id: number) => void;
   onEditMetadata: (doc: Document) => void;
   onManageContract: (docId: number) => void;
   processing?: boolean;
+  retagging?: boolean;
 }
 
 export function DocumentCard({
@@ -36,10 +38,12 @@ export function DocumentCard({
   expanded,
   onCategoryChange,
   onProcess,
+  onRetag,
   onDelete,
   onEditMetadata,
   onManageContract,
   processing = false,
+  retagging = false,
 }: DocumentCardProps) {
   const [isOpen, setIsOpen] = useState(expanded);
   const [tagsOpen, setTagsOpen] = useState(false);
@@ -164,15 +168,27 @@ export function DocumentCard({
               </Button>
 
               {doc.processed ? (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => window.open(`/api/documents/${doc.id}/download`, "_blank")}
-                  title="Download"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                </Button>
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => window.open(`/api/documents/${doc.id}/download`, "_blank")}
+                    title="Download"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => onRetag(doc.id)}
+                    disabled={retagging}
+                    title="Retag document"
+                  >
+                    <Tags className="h-3.5 w-3.5" />
+                  </Button>
+                </>
               ) : (
                 <Button
                   variant="ghost"

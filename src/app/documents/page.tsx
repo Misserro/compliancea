@@ -33,6 +33,7 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true);
   const [allExpanded, setAllExpanded] = useState(false);
   const [processingIds, setProcessingIds] = useState<Set<number>>(new Set());
+  const [retaggingIds, setRetaggingIds] = useState<Set<number>>(new Set());
 
   // Search & filter state
   const [search, setSearch] = useState("");
@@ -199,6 +200,28 @@ export default function DocumentsPage() {
     }
   }
 
+  async function handleRetag(id: number) {
+    setRetaggingIds((prev) => new Set(prev).add(id));
+    try {
+      const res = await fetch(`/api/documents/${id}/retag`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message);
+        await loadDocuments();
+      } else {
+        toast.error(data.error);
+      }
+    } catch (err) {
+      toast.error(`Retag failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+    } finally {
+      setRetaggingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
   async function handleDelete(id: number) {
     try {
       const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
@@ -328,8 +351,10 @@ export default function DocumentsPage() {
           documents={filteredDocuments}
           allExpanded={allExpanded}
           processingIds={processingIds}
+          retaggingIds={retaggingIds}
           onCategoryChange={handleCategoryChange}
           onProcess={handleProcess}
+          onRetag={handleRetag}
           onDelete={handleDelete}
           onEditMetadata={(doc) => {
             setMetadataDoc(doc);

@@ -10,8 +10,10 @@ interface DocumentListProps {
   documents: Document[];
   allExpanded: boolean;
   processingIds: Set<number>;
+  retaggingIds: Set<number>;
   onCategoryChange: (id: number, category: string | null) => void;
   onProcess: (id: number) => void;
+  onRetag: (id: number) => void;
   onDelete: (id: number) => void;
   onEditMetadata: (doc: Document) => void;
   onManageContract: (docId: number) => void;
@@ -35,8 +37,10 @@ interface DocTypeSectionProps {
   docs: Document[];
   allExpanded: boolean;
   processingIds: Set<number>;
+  retaggingIds: Set<number>;
   onCategoryChange: (id: number, category: string | null) => void;
   onProcess: (id: number) => void;
+  onRetag: (id: number) => void;
   onDelete: (id: number) => void;
   onEditMetadata: (doc: Document) => void;
   onManageContract: (docId: number) => void;
@@ -47,8 +51,10 @@ function DocTypeSection({
   docs,
   allExpanded,
   processingIds,
+  retaggingIds,
   onCategoryChange,
   onProcess,
+  onRetag,
   onDelete,
   onEditMetadata,
   onManageContract,
@@ -78,8 +84,10 @@ function DocTypeSection({
               doc={doc}
               expanded={allExpanded}
               processing={processingIds?.has(doc.id) ?? false}
+              retagging={retaggingIds?.has(doc.id) ?? false}
               onCategoryChange={onCategoryChange}
               onProcess={onProcess}
+              onRetag={onRetag}
               onDelete={onDelete}
               onEditMetadata={onEditMetadata}
               onManageContract={onManageContract}
@@ -98,8 +106,10 @@ interface DeptSectionProps {
   docs: Document[];
   allExpanded: boolean;
   processingIds: Set<number>;
+  retaggingIds: Set<number>;
   onCategoryChange: (id: number, category: string | null) => void;
   onProcess: (id: number) => void;
+  onRetag: (id: number) => void;
   onDelete: (id: number) => void;
   onEditMetadata: (doc: Document) => void;
   onManageContract: (docId: number) => void;
@@ -110,8 +120,10 @@ function DeptSection({
   docs,
   allExpanded,
   processingIds,
+  retaggingIds,
   onCategoryChange,
   onProcess,
+  onRetag,
   onDelete,
   onEditMetadata,
   onManageContract,
@@ -139,8 +151,10 @@ function DeptSection({
   const sharedProps = {
     allExpanded,
     processingIds,
+    retaggingIds,
     onCategoryChange,
     onProcess,
+    onRetag,
     onDelete,
     onEditMetadata,
     onManageContract,
@@ -188,8 +202,10 @@ export function DocumentList({
   documents,
   allExpanded,
   processingIds,
+  retaggingIds,
   onCategoryChange,
   onProcess,
+  onRetag,
   onDelete,
   onEditMetadata,
   onManageContract,
@@ -218,8 +234,10 @@ export function DocumentList({
   const sharedProps = {
     allExpanded,
     processingIds,
+    retaggingIds,
     onCategoryChange,
     onProcess,
+    onRetag,
     onDelete,
     onEditMetadata,
     onManageContract,
