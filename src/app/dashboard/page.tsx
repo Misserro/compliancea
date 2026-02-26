@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ElementType } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, AlertTriangle, Briefcase, Rocket, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,7 +22,7 @@ interface DashboardData {
 function KpiCard({
   icon: Icon, label, value, sub, href, accent,
 }: {
-  icon: React.ElementType; label: string; value: number | string;
+  icon: ElementType; label: string; value: number | string;
   sub?: string; href: string; accent?: "red" | "green";
 }) {
   const router = useRouter();
