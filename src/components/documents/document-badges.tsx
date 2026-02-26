@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { STATUS_COLORS } from "@/lib/constants";
 import type { Document } from "@/lib/types";
+import { isInForce } from "@/lib/utils";
 
 interface DocumentBadgesProps {
   doc: Document;
@@ -19,13 +20,13 @@ export function DocumentBadges({ doc, expanded = false }: DocumentBadgesProps) {
       {doc.in_force && doc.in_force !== "unknown" && (
         <span
           className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-            doc.in_force === "in_force" || doc.in_force === "true"
+            isInForce(doc.in_force)
               ? "bg-green-500 text-white"
               : "bg-neutral-200 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300"
           }`}
         >
           <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
-          {doc.in_force === "in_force" || doc.in_force === "true" ? "In Force" : "Archived"}
+          {isInForce(doc.in_force) ? "In Force" : "Archived"}
         </span>
       )}
 
