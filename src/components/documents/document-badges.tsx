@@ -15,21 +15,6 @@ export function DocumentBadges({ doc, expanded = false }: DocumentBadgesProps) {
 
   return (
     <div className="flex flex-wrap gap-1.5">
-      {/* Status Badge - always visible */}
-      <Badge
-        variant="secondary"
-        className={STATUS_COLORS[statusLabel] || STATUS_COLORS.draft}
-      >
-        {statusLabel.replace("_", " ")}
-      </Badge>
-
-      {/* Doc Type Badge - always visible */}
-      {doc.doc_type && (
-        <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-          {doc.doc_type === "agreement" ? "contract" : doc.doc_type}
-        </Badge>
-      )}
-
       {/* In-Force Pill - always visible */}
       {doc.in_force && doc.in_force !== "unknown" && (
         <span
@@ -44,27 +29,42 @@ export function DocumentBadges({ doc, expanded = false }: DocumentBadgesProps) {
         </span>
       )}
 
-      {/* Sensitivity Badge - always visible */}
-      {doc.sensitivity && (
-        <Badge
-          variant="outline"
-          className={
-            doc.sensitivity === "restricted"
-              ? "border-red-300 text-red-700 dark:border-red-700 dark:text-red-300"
-              : doc.sensitivity === "confidential"
-              ? "border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300"
-              : doc.sensitivity === "internal"
-              ? "border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300"
-              : "border-green-300 text-green-700 dark:border-green-700 dark:text-green-300"
-          }
-        >
-          {doc.sensitivity}
-        </Badge>
-      )}
-
       {/* Expanded badges */}
       {expanded && (
         <>
+          {/* Status Badge */}
+          <Badge
+            variant="secondary"
+            className={STATUS_COLORS[statusLabel] || STATUS_COLORS.draft}
+          >
+            {statusLabel.replace("_", " ")}
+          </Badge>
+
+          {/* Doc Type Badge */}
+          {doc.doc_type && (
+            <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+              {doc.doc_type === "agreement" ? "contract" : doc.doc_type}
+            </Badge>
+          )}
+
+          {/* Sensitivity Badge */}
+          {doc.sensitivity && (
+            <Badge
+              variant="outline"
+              className={
+                doc.sensitivity === "restricted"
+                  ? "border-red-300 text-red-700 dark:border-red-700 dark:text-red-300"
+                  : doc.sensitivity === "confidential"
+                  ? "border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300"
+                  : doc.sensitivity === "internal"
+                  ? "border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300"
+                  : "border-green-300 text-green-700 dark:border-green-700 dark:text-green-300"
+              }
+            >
+              {doc.sensitivity}
+            </Badge>
+          )}
+
           {/* Source */}
           {doc.gdrive_file_id ? (
             <Badge variant="outline">GDrive</Badge>

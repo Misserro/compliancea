@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight, Pencil, Play, Briefcase, Trash2, Download } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -51,10 +51,10 @@ export function DocumentCard({
     } catch { return []; }
   })();
 
-  // Sync expanded prop
-  if (expanded !== isOpen && expanded) {
-    setIsOpen(true);
-  }
+  // Sync expanded prop (both open and close)
+  useEffect(() => {
+    setIsOpen(expanded);
+  }, [expanded]);
 
   return (
     <Card className="border-l-4 border-l-transparent hover:border-l-primary/50 transition-colors">
