@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Search, ClipboardCheck, Settings, MessageSquare, Layers, Shield, Package } from "lucide-react";
+import { FileText, Search, ClipboardCheck, Settings, MessageSquare, Layers, Shield, Package, LayoutDashboard } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 
 const navItems = [
+  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "Documents", href: "/documents", icon: FileText },
   { title: "Policies", href: "/policies", icon: Shield },
   { title: "Analyze", href: "/analyze", icon: Search },
