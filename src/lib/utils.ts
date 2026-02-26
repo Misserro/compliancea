@@ -33,3 +33,7 @@ export function escapeHtml(str: string): string {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 }
+
+export function isInForce(value: string | null | undefined): boolean {
+  return value === "true" || value === "in_force";
+}

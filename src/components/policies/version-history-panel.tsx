@@ -5,6 +5,7 @@ import { GitBranch, CheckCircle, Archive, GitCompare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DiffModal } from "./diff-modal";
+import { isInForce } from "@/lib/utils";
 import type { DocumentVersion } from "@/lib/types";
 
 interface VersionHistoryPanelProps {
@@ -54,7 +55,7 @@ export function VersionHistoryPanel({ documentId, documentName }: VersionHistory
       </div>
 
       {versions.map((v, idx) => {
-        const isCurrent = v.in_force === "true";
+        const isCurrent = isInForce(v.in_force);
         const next = versions[idx - 1]; // versions are newest-first, so idx-1 is the next newer version
 
         return (

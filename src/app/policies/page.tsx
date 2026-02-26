@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { PoliciesList } from "@/components/policies/policies-list";
+import { isInForce } from "@/lib/utils";
 import type { Document } from "@/lib/types";
 
 interface PendingReplacement {
@@ -62,7 +63,7 @@ export default function PoliciesPage() {
     let result = documents.filter((d) => d.doc_type && docTypes.includes(d.doc_type));
 
     if (activeOnly) {
-      result = result.filter((d) => d.in_force === "true");
+      result = result.filter((d) => isInForce(d.in_force));
     }
 
     if (search.trim()) {
@@ -72,8 +73,8 @@ export default function PoliciesPage() {
 
     // Sort: active first, then archived, then alphabetical
     result.sort((a, b) => {
-      if (a.in_force === "true" && b.in_force !== "true") return -1;
-      if (a.in_force !== "true" && b.in_force === "true") return 1;
+      if (isInForce(a.in_force) && !isInForce(b.in_force)) return -1;
+      if (!isInForce(a.in_force) && isInForce(b.in_force)) return 1;
       return a.name.localeCompare(b.name);
     });
 

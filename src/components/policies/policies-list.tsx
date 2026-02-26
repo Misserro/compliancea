@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { PendingReplacementBanner } from "./pending-replacement-banner";
 import { VersionHistoryPanel } from "./version-history-panel";
 import { SetReplacementModal } from "./set-replacement-modal";
+import { isInForce } from "@/lib/utils";
 import type { Document } from "@/lib/types";
 
 interface PendingReplacement {
@@ -36,7 +37,7 @@ function PolicyRow({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [replaceModalOpen, setReplaceModalOpen] = useState(false);
 
-  const isActive = doc.in_force === "true";
+  const isActive = isInForce(doc.in_force);
 
   return (
     <div className="border rounded-lg overflow-hidden">
