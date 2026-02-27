@@ -5,21 +5,32 @@ import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { OutputSection } from "./output-section";
+import { GapQaPanel } from "./gap-qa-panel";
 import { TEMPLATES, TEMPLATE_SECTIONS, type TemplateId, type GeneratedOutputs } from "@/lib/types";
+
+interface QuestionSuggestion {
+  question: string;
+  suggestions: string[];
+}
 
 interface Step4OutputViewerProps {
   selectedTemplates: TemplateId[];
   outputs: GeneratedOutputs;
   streamingTemplate: TemplateId | null;
   streamingRawText: Record<TemplateId, string>;
+  gapSuggestions: Record<TemplateId, QuestionSuggestion[]>;
+  loadingSuggestions: Record<TemplateId, boolean>;
+  submittingAnswers: boolean;
   onRegenerate: (template: TemplateId, section?: string) => void;
   onOutputChange: (template: TemplateId, sectionId: string, content: string) => void;
   onRegenerateAll: () => void;
+  onAnswerGaps: (template: TemplateId, answers: { question: string; answer: string }[]) => void;
 }
 
 export function Step4OutputViewer({
   selectedTemplates, outputs, streamingTemplate, streamingRawText,
-  onRegenerate, onOutputChange, onRegenerateAll,
+  gapSuggestions, loadingSuggestions, submittingAnswers,
+  onRegenerate, onOutputChange, onRegenerateAll, onAnswerGaps,
 }: Step4OutputViewerProps) {
   const [activeTab, setActiveTab] = useState<TemplateId>(selectedTemplates[0]);
 
@@ -27,7 +38,7 @@ export function Step4OutputViewer({
   const sections = TEMPLATE_SECTIONS[activeTab] ?? [];
   const templateOutput = outputs[activeTab];
   const isStreaming = streamingTemplate === activeTab;
-  const rawText = streamingRawText[activeTab] ?? '';
+  const gaps = templateOutput?.gaps ?? [];
 
   return (
     <div className="space-y-4">
@@ -36,9 +47,11 @@ export function Step4OutputViewer({
         <div className="flex gap-1 border-b flex-1">
           {selectedTemplates.map(tid => {
             const def = TEMPLATES.find(t => t.id === tid);
+            const hasGaps = (outputs[tid]?.gaps?.length ?? 0) > 0;
             return (
               <button
                 key={tid}
+                type="button"
                 onClick={() => setActiveTab(tid)}
                 className={cn(
                   "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
@@ -46,17 +59,21 @@ export function Step4OutputViewer({
                     ? "border-primary text-foreground"
                     : "border-transparent text-muted-foreground hover:text-foreground",
                 )}
+                aria-selected={activeTab === tid}
               >
                 {def?.name ?? tid}
                 {streamingTemplate === tid && (
-                  <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                  <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary animate-pulse" aria-hidden="true" />
+                )}
+                {hasGaps && streamingTemplate !== tid && (
+                  <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" aria-label="has open questions" />
                 )}
               </button>
             );
           })}
         </div>
         <Button variant="outline" size="sm" onClick={onRegenerateAll} disabled={!!streamingTemplate}>
-          <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Regenerate All
+          <RotateCcw className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" /> Regenerate All
         </Button>
       </div>
 
@@ -65,7 +82,7 @@ export function Step4OutputViewer({
         // Skeleton loader — shows section structure while AI generates
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-pulse" aria-hidden="true" />
             Generating {templateDef?.name}…
           </p>
           {sections.map(section => (
@@ -83,20 +100,33 @@ export function Step4OutputViewer({
           ))}
         </div>
       ) : templateOutput ? (
-        <div className="space-y-3">
-          {sections.map(section => (
-            <OutputSection
-              key={section.id}
-              sectionId={section.id}
-              label={section.label}
-              content={templateOutput.sections[section.id] ?? ''}
-              streaming={isStreaming}
-              gaps={templateOutput.gaps ?? []}
-              onRegenerate={(sid) => onRegenerate(activeTab, sid)}
-              onChange={(sid, content) => onOutputChange(activeTab, sid, content)}
+        <>
+          <div className="space-y-3">
+            {sections.map(section => (
+              <OutputSection
+                key={section.id}
+                sectionId={section.id}
+                label={section.label}
+                content={templateOutput.sections[section.id] ?? ''}
+                streaming={isStreaming}
+                gaps={templateOutput.gaps ?? []}
+                onRegenerate={(sid) => onRegenerate(activeTab, sid)}
+                onChange={(sid, content) => onOutputChange(activeTab, sid, content)}
+              />
+            ))}
+          </div>
+
+          {/* Q&A panel — only shown when there are gaps */}
+          {gaps.length > 0 && (
+            <GapQaPanel
+              gaps={gaps}
+              suggestions={gapSuggestions[activeTab] ?? []}
+              loadingSuggestions={loadingSuggestions[activeTab] ?? false}
+              onSubmit={(answers) => onAnswerGaps(activeTab, answers)}
+              submitting={submittingAnswers}
             />
-          ))}
-        </div>
+          )}
+        </>
       ) : (
         <div className="border rounded-lg p-8 text-center text-muted-foreground text-sm">
           No output yet. Click Generate in Step 3.
