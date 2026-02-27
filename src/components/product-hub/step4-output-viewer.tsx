@@ -62,10 +62,25 @@ export function Step4OutputViewer({
 
       {/* Active template content */}
       {isStreaming && !templateOutput ? (
-        // Raw streaming view before first template_complete
-        <div className="border rounded-lg p-4 bg-muted/20 min-h-[200px]">
-          <p className="text-xs text-muted-foreground mb-2 font-medium">Generating {templateDef?.name}…</p>
-          <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono">{rawText}</pre>
+        // Skeleton loader — shows section structure while AI generates
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+            Generating {templateDef?.name}…
+          </p>
+          {sections.map(section => (
+            <div key={section.id} className="border rounded-lg overflow-hidden bg-card animate-pulse">
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b bg-muted/20">
+                <div className="h-4 w-4 rounded bg-muted-foreground/20" />
+                <div className="h-3.5 w-32 rounded bg-muted-foreground/20" />
+              </div>
+              <div className="px-4 py-3 space-y-2">
+                <div className="h-3 w-full rounded bg-muted-foreground/10" />
+                <div className="h-3 w-5/6 rounded bg-muted-foreground/10" />
+                <div className="h-3 w-4/6 rounded bg-muted-foreground/10" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : templateOutput ? (
         <div className="space-y-3">
