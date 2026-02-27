@@ -33,6 +33,9 @@ export default function ProductHubFeaturePage({ params }: { params: Promise<{ id
   const [streamingRawText, setStreamingRawText] = useState<Record<string, string>>({});
   const [outputs, setOutputs] = useState<GeneratedOutputs>({});
   const [editingTitle, setEditingTitle] = useState(false);
+  const [gapSuggestions, setGapSuggestions] = useState<Record<string, { question: string; suggestions: string[] }[]>>({});
+  const [loadingSuggestions, setLoadingSuggestions] = useState<Record<string, boolean>>({});
+  const [submittingAnswers, setSubmittingAnswers] = useState(false);
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPatchRef = useRef<Partial<ProductFeature>>({});
@@ -151,11 +154,15 @@ export default function ProductHubFeaturePage({ params }: { params: Promise<{ id
                 [event.template]: (prev[event.template] ?? '') + event.content,
               }));
             } else if (event.type === 'template_complete') {
+              const gaps: string[] = event.gaps ?? [];
               setOutputs(prev => ({
                 ...prev,
-                [event.template]: { sections: event.sections, gaps: event.gaps ?? [] },
+                [event.template]: { sections: event.sections, gaps },
               }));
               setStreamingTemplate(null);
+              if (gaps.length > 0) {
+                fetchSuggestions(event.template as TemplateId, gaps);
+              }
             } else if (event.type === 'done') {
               const refreshed = await fetch(`/api/product-hub/${id}`).then(r => r.json());
               if (refreshed.feature) setFeature(refreshed.feature);
@@ -235,6 +242,52 @@ export default function ProductHubFeaturePage({ params }: { params: Promise<{ id
         gaps: outputs[template]?.gaps ?? [],
       },
     })});
+  }
+
+  async function fetchSuggestions(templateId: TemplateId, gaps: string[]) {
+    if (gaps.length === 0) return;
+    setLoadingSuggestions(prev => ({ ...prev, [templateId]: true }));
+
+    const intakeSummary = [
+      intakeForm.sectionA.problemStatement,
+      intakeForm.sectionB.featureDescription,
+      intakeForm.sectionC.kpis,
+    ].filter(Boolean).join('\n');
+
+    try {
+      const res = await fetch(`/api/product-hub/${id}/suggest-answers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gaps, intakeSummary }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setGapSuggestions(prev => ({ ...prev, [templateId]: data.suggestions ?? [] }));
+      }
+    } catch {
+      // Silently degrade — panel shows without chips
+    } finally {
+      setLoadingSuggestions(prev => ({ ...prev, [templateId]: false }));
+    }
+  }
+
+  async function handleAnswerGaps(template: TemplateId, answers: { question: string; answer: string }[]) {
+    if (!feature || answers.length === 0) return;
+    setSubmittingAnswers(true);
+
+    const answersText = answers
+      .map(a => `Q: ${a.question}\nA: ${a.answer}`)
+      .join('\n\n');
+
+    const existingContext = feature.free_context ?? '';
+    const separator = existingContext.trim() ? '\n\n---\n\n' : '';
+    const newContext = existingContext + separator + '## Answers to open questions\n\n' + answersText;
+
+    updateFeature({ free_context: newContext });
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setSubmittingAnswers(false);
+    handleGenerate();
   }
 
   function handleVersionRestore(snapshot: GeneratedOutputs) {
@@ -348,10 +401,13 @@ export default function ProductHubFeaturePage({ params }: { params: Promise<{ id
           selectedTemplates={selectedTemplates.length > 0 ? selectedTemplates : Object.keys(outputs) as TemplateId[]}
           outputs={outputs}
           streamingTemplate={streamingTemplate}
-          streamingRawText={streamingRawText as Record<TemplateId, string>}
+          gapSuggestions={gapSuggestions as Record<TemplateId, { question: string; suggestions: string[] }[]>}
+          loadingSuggestions={loadingSuggestions as Record<TemplateId, boolean>}
+          submittingAnswers={submittingAnswers}
           onRegenerate={handleRegenerate}
           onOutputChange={handleOutputChange}
           onRegenerateAll={handleGenerate}
+          onAnswerGaps={handleAnswerGaps}
         />
       )}
     </div>
