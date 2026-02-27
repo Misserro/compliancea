@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ElementType } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { RotateCcw, Pencil, Check, X } from "lucide-react";
@@ -20,7 +20,7 @@ interface OutputSectionProps {
   onChange: (sectionId: string, content: string) => void;
 }
 
-const SECTION_ICON_MAP: Record<string, React.ElementType> = {
+const SECTION_ICON_MAP: Record<string, ElementType> = {
   summary: FileText, executive_summary: FileText,
   problem: AlertCircle, problem_statement: AlertCircle, business_problem: AlertCircle,
   user_personas: Users, user_stories: BookOpen,
@@ -71,7 +71,7 @@ export function OutputSection({
               <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={saveEdit}>
                 <Check className="h-3 w-3 mr-1" /> Save
               </Button>
-              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={cancelEdit}>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={cancelEdit} aria-label="Cancel edit">
                 <X className="h-3 w-3" />
               </Button>
             </>
@@ -103,9 +103,9 @@ export function OutputSection({
       {/* Gap warnings (open_questions section only) */}
       {isOpenQuestions && gaps.length > 0 && !editing && (
         <div className="px-4 pt-3 space-y-1">
-          {gaps.map((gap, i) => (
-            <div key={i} className="flex gap-2 p-2 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300">
-              <span>⚠️</span>
+          {gaps.map((gap) => (
+            <div key={gap} className="flex gap-2 p-2 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300">
+              <span aria-hidden="true">⚠️</span>
               <span>{gap}</span>
             </div>
           ))}
@@ -119,6 +119,7 @@ export function OutputSection({
           onChange={(e) => setDraft(e.target.value)}
           className="w-full px-4 py-3 text-sm font-mono resize-none outline-none bg-background min-h-[200px]"
           rows={Math.max(8, draft.split('\n').length + 2)}
+          aria-label={`Edit ${label}`}
         />
       ) : (
         <div className={cn(
