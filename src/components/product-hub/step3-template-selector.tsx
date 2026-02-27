@@ -55,8 +55,9 @@ export function Step3TemplateSelector({
               <span className="font-medium">{missingFields.join(', ')}</span>.
             </p>
             <button
+              type="button"
               onClick={onBack}
-              className="text-xs mt-1 underline underline-offset-2 hover:no-underline"
+              className="text-xs mt-1 underline underline-offset-2 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 rounded-sm"
             >
               Go back to fill them
             </button>
