@@ -394,3 +394,32 @@ export const TEMPLATE_SECTIONS: Record<TemplateId, { id: string; label: string }
     { id: 'open_questions', label: 'Open Questions' },
   ],
 };
+
+// Map section IDs to Lucide icon names for display in output cards
+export const SECTION_ICON_NAMES: Record<string, string> = {
+  summary: 'FileText',
+  executive_summary: 'FileText',
+  problem: 'AlertCircle',
+  problem_statement: 'AlertCircle',
+  business_problem: 'AlertCircle',
+  user_personas: 'Users',
+  user_stories: 'BookOpen',
+  functional_requirements: 'CheckSquare',
+  non_functional_requirements: 'Shield',
+  risks: 'AlertTriangle',
+  risks_dependencies: 'AlertTriangle',
+  open_questions: 'HelpCircle',
+  kpis: 'TrendingUp',
+  success_metrics: 'TrendingUp',
+  solution: 'Lightbulb',
+  proposed_solution: 'Lightbulb',
+  data_model: 'Database',
+  api_design: 'Code',
+  dependencies: 'GitBranch',
+  team_dependencies: 'GitBranch',
+  roi_estimation: 'DollarSign',
+  scope: 'Maximize',
+  out_of_scope: 'XCircle',
+  user_flow: 'ArrowRight',
+  overview: 'Layers',
+};
