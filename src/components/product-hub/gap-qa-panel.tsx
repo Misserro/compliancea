@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MessageCircleQuestion, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,11 @@ export function GapQaPanel({
   gaps, suggestions, loadingSuggestions, onSubmit, submitting,
 }: GapQaPanelProps) {
   const [answers, setAnswers] = useState<Record<number, string>>({});
+
+  // Reset answers when gaps change (e.g. after regeneration produces new questions)
+  useEffect(() => {
+    setAnswers({});
+  }, [gaps]);
 
   function setAnswer(index: number, value: string) {
     setAnswers(prev => ({ ...prev, [index]: value }));
