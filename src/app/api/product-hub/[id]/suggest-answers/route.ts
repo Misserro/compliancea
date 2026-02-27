@@ -58,20 +58,32 @@ Respond ONLY with valid JSON in this exact format (no markdown, no preamble):
   try {
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
+      max_tokens: 4096,
       messages: [{ role: 'user', content: prompt }],
     });
 
+    if (message.stop_reason === 'max_tokens') {
+      console.error('suggest-answers: response truncated by max_tokens');
+      return Response.json({ suggestions: [] });
+    }
+
     const text = message.content[0].type === 'text' ? message.content[0].text : '[]';
 
-    // Strip any markdown code fences if present
-    const clean = text.replace(/^```(?:json)?\n?/m, '').replace(/```$/m, '').trim();
+    // Extract JSON array from response — handles preamble text and code fences
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    const clean = jsonMatch ? jsonMatch[0] : '[]';
     const parsed = JSON.parse(clean);
 
     return Response.json({ suggestions: parsed });
   } catch (e) {
-    // Degrade gracefully — return empty suggestions, panel still renders without chips
-    console.error('suggest-answers error:', e);
+    // Transport/auth errors (Anthropic SDK throws) — return 502 so client can distinguish
+    const isAnthropicError = e instanceof Error && (e.message.includes('401') || e.message.includes('429') || e.message.includes('503'));
+    if (isAnthropicError) {
+      console.error('suggest-answers transport error:', e);
+      return Response.json({ error: 'upstream_error', suggestions: [] }, { status: 502 });
+    }
+    // Parse/shape errors — degrade silently, panel renders without chips
+    console.error('suggest-answers parse error:', e);
     return Response.json({ suggestions: [] });
   }
 }
