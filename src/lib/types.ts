@@ -395,7 +395,9 @@ export const TEMPLATE_SECTIONS: Record<TemplateId, { id: string; label: string }
   ],
 };
 
-// Map section IDs to Lucide icon names for display in output cards
+// Map section IDs to Lucide icon names. Used as a shared reference for consumers
+// that do dynamic icon resolution. output-section.tsx uses its own typed SECTION_ICON_MAP
+// with ElementType values for type-safe rendering.
 export const SECTION_ICON_NAMES: Record<string, string> = {
   summary: 'FileText',
   executive_summary: 'FileText',

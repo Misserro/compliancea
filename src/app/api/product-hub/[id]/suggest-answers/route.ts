@@ -24,7 +24,9 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!feature) return Response.json({ error: 'Not found' }, { status: 404 });
 
   const body: SuggestAnswersBody = await req.json();
-  const { gaps, intakeSummary } = body;
+  const { gaps } = body;
+  // Cap intakeSummary to avoid excessive token usage and limit prompt injection surface
+  const intakeSummary = (body.intakeSummary ?? '').slice(0, 3000);
 
   if (!gaps || gaps.length === 0) {
     return Response.json({ suggestions: [] });

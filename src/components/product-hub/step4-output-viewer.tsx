@@ -17,7 +17,6 @@ interface Step4OutputViewerProps {
   selectedTemplates: TemplateId[];
   outputs: GeneratedOutputs;
   streamingTemplate: TemplateId | null;
-  streamingRawText?: Record<TemplateId, string>;
   gapSuggestions: Partial<Record<TemplateId, QuestionSuggestion[]>>;
   loadingSuggestions: Partial<Record<TemplateId, boolean>>;
   submittingAnswers: boolean;
@@ -28,7 +27,7 @@ interface Step4OutputViewerProps {
 }
 
 export function Step4OutputViewer({
-  selectedTemplates, outputs, streamingTemplate, streamingRawText,
+  selectedTemplates, outputs, streamingTemplate,
   gapSuggestions, loadingSuggestions, submittingAnswers,
   onRegenerate, onOutputChange, onRegenerateAll, onAnswerGaps,
 }: Step4OutputViewerProps) {
