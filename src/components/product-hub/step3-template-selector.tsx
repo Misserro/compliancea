@@ -1,20 +1,29 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { TEMPLATES, type TemplateId } from "@/lib/types";
+import { TEMPLATES, type TemplateId, type IntakeForm } from "@/lib/types";
 
 interface Step3TemplateSelectorProps {
   selectedTemplates: TemplateId[];
   generating: boolean;
+  intakeForm: IntakeForm;
   onChange: (templates: TemplateId[]) => void;
   onBack: () => void;
   onGenerate: () => void;
 }
 
+function getMissingFields(intake: IntakeForm): string[] {
+  const missing: string[] = [];
+  if (!intake.sectionA.problemStatement?.trim()) missing.push('Problem Statement');
+  if (!intake.sectionB.featureDescription?.trim()) missing.push('Feature Description');
+  if (!intake.sectionC.kpis?.trim()) missing.push('Success Metrics (KPIs)');
+  return missing;
+}
+
 export function Step3TemplateSelector({
-  selectedTemplates, generating, onChange, onBack, onGenerate
+  selectedTemplates, generating, intakeForm, onChange, onBack, onGenerate
 }: Step3TemplateSelectorProps) {
   function toggle(id: TemplateId) {
     onChange(
@@ -24,6 +33,8 @@ export function Step3TemplateSelector({
     );
   }
 
+  const missingFields = getMissingFields(intakeForm);
+
   return (
     <div className="space-y-6">
       <div>
@@ -32,6 +43,26 @@ export function Step3TemplateSelector({
           Choose one or more documents to generate. Each will be a separate tab in the output view.
         </p>
       </div>
+
+      {/* Completeness warning */}
+      {missingFields.length > 0 && (
+        <div className="flex gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-sm text-amber-800 dark:text-amber-300">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
+          <div>
+            <p className="font-medium">Incomplete intake form</p>
+            <p className="text-xs mt-0.5 text-amber-700 dark:text-amber-400">
+              These fields are empty and may produce incomplete output:{' '}
+              <span className="font-medium">{missingFields.join(', ')}</span>.
+            </p>
+            <button
+              onClick={onBack}
+              className="text-xs mt-1 underline underline-offset-2 hover:no-underline"
+            >
+              Go back to fill them
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {TEMPLATES.map(t => {

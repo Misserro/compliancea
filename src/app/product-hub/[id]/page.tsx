@@ -336,6 +336,7 @@ export default function ProductHubFeaturePage({ params }: { params: Promise<{ id
         <Step3TemplateSelector
           selectedTemplates={selectedTemplates}
           generating={generating}
+          intakeForm={intakeForm}
           onChange={handleTemplatesChange}
           onBack={() => setCurrentStep(2)}
           onGenerate={handleGenerate}
