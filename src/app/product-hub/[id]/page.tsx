@@ -33,8 +33,8 @@ export default function ProductHubFeaturePage({ params }: { params: Promise<{ id
   const [streamingRawText, setStreamingRawText] = useState<Record<string, string>>({});
   const [outputs, setOutputs] = useState<GeneratedOutputs>({});
   const [editingTitle, setEditingTitle] = useState(false);
-  const [gapSuggestions, setGapSuggestions] = useState<Record<string, { question: string; suggestions: string[] }[]>>({});
-  const [loadingSuggestions, setLoadingSuggestions] = useState<Record<string, boolean>>({});
+  const [gapSuggestions, setGapSuggestions] = useState<Partial<Record<TemplateId, { question: string; suggestions: string[] }[]>>>({});
+  const [loadingSuggestions, setLoadingSuggestions] = useState<Partial<Record<TemplateId, boolean>>>({});
   const [submittingAnswers, setSubmittingAnswers] = useState(false);
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -283,9 +283,20 @@ export default function ProductHubFeaturePage({ params }: { params: Promise<{ id
     const separator = existingContext.trim() ? '\n\n---\n\n' : '';
     const newContext = existingContext + separator + '## Answers to open questions\n\n' + answersText;
 
+    // Update local state for UI consistency
     updateFeature({ free_context: newContext });
 
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Flush directly to DB — do NOT rely on the 2-second debounce
+    try {
+      await fetch(`/api/product-hub/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ free_context: newContext }),
+      });
+    } catch {
+      // If flush fails, generation will use old context — acceptable degradation
+    }
+
     setSubmittingAnswers(false);
     handleGenerate();
   }
@@ -401,8 +412,8 @@ export default function ProductHubFeaturePage({ params }: { params: Promise<{ id
           selectedTemplates={selectedTemplates.length > 0 ? selectedTemplates : Object.keys(outputs) as TemplateId[]}
           outputs={outputs}
           streamingTemplate={streamingTemplate}
-          gapSuggestions={gapSuggestions as Record<TemplateId, { question: string; suggestions: string[] }[]>}
-          loadingSuggestions={loadingSuggestions as Record<TemplateId, boolean>}
+          gapSuggestions={gapSuggestions}
+          loadingSuggestions={loadingSuggestions}
           submittingAnswers={submittingAnswers}
           onRegenerate={handleRegenerate}
           onOutputChange={handleOutputChange}
