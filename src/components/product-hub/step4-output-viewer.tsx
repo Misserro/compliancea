@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,7 @@ interface Step4OutputViewerProps {
   selectedTemplates: TemplateId[];
   outputs: GeneratedOutputs;
   streamingTemplate: TemplateId | null;
-  streamingRawText: Record<TemplateId, string>;
+  streamingRawText?: Record<TemplateId, string>;
   gapSuggestions: Record<TemplateId, QuestionSuggestion[]>;
   loadingSuggestions: Record<TemplateId, boolean>;
   submittingAnswers: boolean;
@@ -34,6 +34,13 @@ export function Step4OutputViewer({
 }: Step4OutputViewerProps) {
   const [activeTab, setActiveTab] = useState<TemplateId>(selectedTemplates[0]);
 
+  // Re-sync active tab if it's no longer in selectedTemplates (e.g. after template set changes)
+  useEffect(() => {
+    if (!selectedTemplates.includes(activeTab)) {
+      setActiveTab(selectedTemplates[0]);
+    }
+  }, [selectedTemplates, activeTab]);
+
   const templateDef = TEMPLATES.find(t => t.id === activeTab);
   const sections = TEMPLATE_SECTIONS[activeTab] ?? [];
   const templateOutput = outputs[activeTab];
@@ -44,7 +51,7 @@ export function Step4OutputViewer({
     <div className="space-y-4">
       {/* Tab bar + Regenerate All */}
       <div className="flex items-center justify-between gap-4">
-        <div className="flex gap-1 border-b flex-1">
+        <div className="flex gap-1 border-b flex-1" role="tablist">
           {selectedTemplates.map(tid => {
             const def = TEMPLATES.find(t => t.id === tid);
             const hasGaps = (outputs[tid]?.gaps?.length ?? 0) > 0;
@@ -59,6 +66,7 @@ export function Step4OutputViewer({
                     ? "border-primary text-foreground"
                     : "border-transparent text-muted-foreground hover:text-foreground",
                 )}
+                role="tab"
                 aria-selected={activeTab === tid}
               >
                 {def?.name ?? tid}
@@ -66,7 +74,7 @@ export function Step4OutputViewer({
                   <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary animate-pulse" aria-hidden="true" />
                 )}
                 {hasGaps && streamingTemplate !== tid && (
-                  <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" aria-label="has open questions" />
+                  <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" role="img" aria-label="has open questions" />
                 )}
               </button>
             );
