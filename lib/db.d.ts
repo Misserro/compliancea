@@ -77,3 +77,7 @@ export function getProductFeatures(...args: any[]): any;
 export function getProductFeature(...args: any[]): any;
 export function updateProductFeature(...args: any[]): any;
 export function deleteProductFeature(...args: any[]): any;
+export function getUserByEmail(...args: any[]): any;
+export function getUserByGoogleId(...args: any[]): any;
+export function createUser(...args: any[]): any;
+export function createOrUpdateGoogleUser(...args: any[]): any;

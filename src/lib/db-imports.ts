@@ -78,4 +78,8 @@ export {
   getProductFeature,
   updateProductFeature,
   deleteProductFeature,
+  getUserByEmail,
+  getUserByGoogleId,
+  createUser,
+  createOrUpdateGoogleUser,
 } from "../../lib/db.js";
