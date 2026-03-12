@@ -80,22 +80,6 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">Or</span>
-        </div>
-      </div>
-
-      <button
-        onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-        className="w-full rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent"
-      >
-        Continue with Google
-      </button>
-
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
         <a href="/register" className="text-primary hover:underline">

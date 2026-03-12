@@ -1,11 +1,7 @@
 import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
-import {
-  getUserByEmail,
-  createOrUpdateGoogleUser,
-} from "@/lib/db-imports";
+import { getUserByEmail } from "@/lib/db-imports";
 
 // ─── Type augmentation ─────────────────────────────────────────────────────────
 declare module "next-auth" {
@@ -55,23 +51,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         };
       },
     }),
-    Google,
   ],
   callbacks: {
-    async signIn({ user, account }) {
-      if (account?.provider === "google") {
-        if (!user.email) return false;
-        const dbUser = createOrUpdateGoogleUser(
-          account.providerAccountId,
-          user.email,
-          user.name ?? null,
-          user.image ?? null
-        );
-        user.id = String(dbUser.id);
-        (user as any).role = dbUser.role ?? "admin";
-      }
-      return true;
-    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
