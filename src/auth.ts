@@ -38,9 +38,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         const email = credentials?.email as string | undefined;
         const password = credentials?.password as string | undefined;
-        if (!email || !password) return null;
+        const normalizedEmail = email?.trim().toLowerCase();
+        if (!normalizedEmail || !password) return null;
 
-        const user = getUserByEmail(email);
+        const user = getUserByEmail(normalizedEmail);
         if (!user || !user.password_hash) return null;
 
         const valid = await bcrypt.compare(password, user.password_hash as string);
@@ -59,9 +60,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === "google") {
+        if (!user.email) return false;
         const dbUser = createOrUpdateGoogleUser(
           account.providerAccountId,
-          user.email!,
+          user.email,
           user.name ?? null,
           user.image ?? null
         );
@@ -78,8 +80,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token;
     },
     async session({ session, token }) {
-      session.user.id = token.id as string;
-      session.user.role = token.role as string;
+      if (token.id) session.user.id = token.id;
+      if (token.role) session.user.role = token.role;
       return session;
     },
   },
