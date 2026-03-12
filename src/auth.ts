@@ -2,6 +2,7 @@ import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { getUserByEmail } from "@/lib/db-imports";
+import { authConfig } from "../auth.config";
 
 // ─── Type augmentation ─────────────────────────────────────────────────────────
 declare module "next-auth" {
@@ -25,6 +26,7 @@ declare module "@auth/core/jwt" {
 
 // ─── NextAuth config ──────────────────────────────────────────────────────────
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   providers: [
     Credentials({
       credentials: {
@@ -65,9 +67,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token.role) session.user.role = token.role;
       return session;
     },
-  },
-  pages: {
-    signIn: "/login",
-    error: "/login",
   },
 });
