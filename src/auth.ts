@@ -2,6 +2,7 @@ import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { getUserByEmail } from "@/lib/db-imports";
+import { ensureDb } from "@/lib/server-utils";
 import { authConfig } from "../auth.config";
 
 // ─── Type augmentation ─────────────────────────────────────────────────────────
@@ -34,6 +35,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        await ensureDb();
         const email = credentials?.email as string | undefined;
         const password = credentials?.password as string | undefined;
         const normalizedEmail = email?.trim().toLowerCase();

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { getUserByEmail, createUser } from "@/lib/db-imports";
+import { ensureDb } from "@/lib/server-utils";
 
 export async function POST(req: NextRequest) {
+  await ensureDb();
+
   let body: { name?: string; email?: string; password?: string };
   try {
     body = await req.json();
