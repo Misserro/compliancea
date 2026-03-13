@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Search, ClipboardCheck, Settings, MessageSquare, Layers, Shield, Package, LayoutDashboard, Sun, Moon, Monitor } from "lucide-react";
+import { FileText, Search, ClipboardCheck, Settings, MessageSquare, Layers, Shield, Package, LayoutDashboard, Sun, Moon, Monitor, Users, LogOut } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
+import { useSession, signOut } from "next-auth/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -40,6 +41,10 @@ export function AppSidebar() {
   const pathname = usePathname();
   const [overdueCount, setOverdueCount] = useState(0);
   const { theme, setTheme } = useTheme();
+  const { data: sessionData } = useSession();
+  const userEmail = sessionData?.user?.email ?? "";
+  const userName = sessionData?.user?.name || userEmail;
+  const isAdmin = sessionData?.user?.role === "admin";
 
   useEffect(() => {
     async function fetchOverdue() {
@@ -71,6 +76,11 @@ export function AppSidebar() {
     return "System";
   }
 
+  const allNavItems = [
+    ...navItems,
+    ...(isAdmin ? [{ title: "Users", href: "/users", icon: Users }] : []),
+  ];
+
   return (
     <Sidebar>
       <SidebarHeader className="border-b px-6 py-4">
@@ -83,7 +93,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent className="px-2 py-4">
         <SidebarMenu>
-          {navItems.map((item) => {
+          {allNavItems.map((item) => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
             return (
@@ -107,7 +117,24 @@ export function AppSidebar() {
           })}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="border-t px-4 py-3">
+      <SidebarFooter className="border-t px-4 py-3 space-y-1">
+        {userEmail && (
+          <div className="px-2 py-2 border-b mb-1">
+            <p className="text-sm font-medium truncate">{userName}</p>
+            {userName !== userEmail && (
+              <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => signOut({ redirectTo: "/login" })}
+              className="mt-1 w-full justify-start gap-2 text-muted-foreground hover:text-foreground px-0"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="text-xs">Sign out</span>
+            </Button>
+          </div>
+        )}
         <Button
           variant="ghost"
           size="sm"
