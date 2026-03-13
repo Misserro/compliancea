@@ -37,6 +37,7 @@ export default async function UsersPage() {
   if (session.user.role !== "admin") redirect("/dashboard");
 
   await ensureDb();
+  // getUsersWithSessionInfo is synchronous (sql.js) — no await needed
   const users = getUsersWithSessionInfo() as Array<{
     id: number;
     name: string | null;
