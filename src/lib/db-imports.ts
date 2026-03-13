@@ -82,4 +82,10 @@ export {
   getUserByGoogleId,
   createUser,
   createOrUpdateGoogleUser,
+  SESSION_ACTIVE_WINDOW_MINUTES,
+  createSession,
+  touchSession,
+  revokeUserSessions,
+  getSessionById,
+  getUsersWithSessionInfo,
 } from "../../lib/db.js";
