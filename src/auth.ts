@@ -1,7 +1,7 @@
 import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { getUserByEmail } from "@/lib/db-imports";
+import { getUserByEmail, createSession, getSessionById } from "@/lib/db-imports";
 import { ensureDb } from "@/lib/server-utils";
 import { authConfig } from "../auth.config";
 
@@ -11,6 +11,7 @@ declare module "next-auth" {
     user: {
       id: string;
       role: string;
+      sessionId?: string;
     } & DefaultSession["user"];
   }
   interface User {
@@ -22,6 +23,7 @@ declare module "@auth/core/jwt" {
   interface JWT {
     id?: string;
     role?: string;
+    sessionId?: string;
   }
 }
 
@@ -59,14 +61,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        // First sign-in: persist id/role and create a new session row
         token.id = user.id;
         token.role = (user as any).role ?? "admin";
+        const sessionId = crypto.randomUUID();
+        await ensureDb();
+        createSession(sessionId, Number(user.id));
+        token.sessionId = sessionId;
+      } else if (token.sessionId && token.id) {
+        // Subsequent requests: lazy re-hydration in case DB was wiped on redeploy.
+        // NOTE: this branch runs on every request (every auth() call), not only after cold starts.
+        // getSessionById is a synchronous in-memory sql.js query so the cost is negligible.
+        await ensureDb();
+        const existing = getSessionById(token.sessionId);
+        if (!existing) {
+          createSession(token.sessionId, Number(token.id));
+        }
       }
       return token;
     },
     async session({ session, token }) {
-      if (token.id) session.user.id = token.id;
-      if (token.role) session.user.role = token.role;
+      if (token.id)        session.user.id        = token.id;
+      if (token.role)      session.user.role      = token.role;
+      if (token.sessionId) session.user.sessionId = token.sessionId;
       return session;
     },
   },
