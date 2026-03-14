@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function UpcomingObligationsSection() {
   const [obligations, setObligations] = useState<Obligation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   useEffect(() => {
@@ -20,9 +21,11 @@ export function UpcomingObligationsSection() {
           const data = await res.json();
           setObligations(data.obligations || []);
         } else {
+          setError(true);
           toast.error("Failed to load upcoming obligations");
         }
       } catch (err) {
+        setError(true);
         toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
       } finally {
         setLoading(false);
@@ -41,12 +44,15 @@ export function UpcomingObligationsSection() {
   });
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    // Parse YYYY-MM-DD in local time to avoid UTC offset issues
+    const [year, month, day] = dateString.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
     const today = new Date();
-    const diffDays = Math.ceil((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     if (diffDays === 0) return "Today";
     if (diffDays === 1) return "Tomorrow";
-    if (diffDays < 7) return `In ${diffDays} days`;
+    if (diffDays < 7 && diffDays > 0) return `In ${diffDays} days`;
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
@@ -82,6 +88,8 @@ export function UpcomingObligationsSection() {
             <Skeleton key={i} className="h-28 rounded-lg" />
           ))}
         </div>
+      ) : !loading && error ? (
+        <p className="text-sm text-destructive text-center py-6">Failed to load upcoming obligations.</p>
       ) : filteredObligations.length === 0 ? (
         <p className="text-sm text-muted-foreground py-6 text-center">{emptyMessage}</p>
       ) : (
@@ -102,7 +110,7 @@ export function UpcomingObligationsSection() {
                   </span>
                   <div className="text-xs text-muted-foreground flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
-                    {ob.due_date && formatDate(ob.due_date)}
+                    {ob.due_date ? formatDate(ob.due_date) : "—"}
                   </div>
                 </div>
                 <h4 className="font-medium text-sm mb-2 line-clamp-2">{ob.title}</h4>
