@@ -7,32 +7,37 @@ import { ContractCard } from "./contract-card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ContractListProps {
+  /** Increment to trigger a re-fetch of the contract list */
   refreshTrigger?: number;
 }
 
 export function ContractList({ refreshTrigger }: ContractListProps) {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const loadContracts = async () => {
-    try {
-      const res = await fetch("/api/contracts");
-      if (res.ok) {
-        const data = await res.json();
-        setContracts(data.contracts || []);
-      } else {
-        toast.error("Failed to load contracts");
-      }
-    } catch (err) {
-      toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [cardRefresh, setCardRefresh] = useState(0);
 
   useEffect(() => {
-    loadContracts();
-  }, [refreshTrigger]);
+    const controller = new AbortController();
+
+    setLoading(true);
+    fetch("/api/contracts", { signal: controller.signal })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load contracts");
+        return res.json();
+      })
+      .then((data) => {
+        setContracts(data.contracts || []);
+      })
+      .catch((err) => {
+        if (err.name === "AbortError") return;
+        toast.error(err instanceof Error ? err.message : "Error loading contracts");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [refreshTrigger, cardRefresh]);
 
   if (loading) {
     return (
@@ -58,7 +63,7 @@ export function ContractList({ refreshTrigger }: ContractListProps) {
         <ContractCard
           key={contract.id}
           contract={contract}
-          onContractUpdate={loadContracts}
+          onContractUpdate={() => setCardRefresh((n) => n + 1)}
         />
       ))}
     </div>
