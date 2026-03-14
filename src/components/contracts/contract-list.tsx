@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import type { Contract, Obligation } from "@/lib/types";
+import type { Contract } from "@/lib/types";
 import { ContractCard } from "./contract-card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -12,7 +12,6 @@ interface ContractListProps {
 
 export function ContractList({ refreshTrigger }: ContractListProps) {
   const [contracts, setContracts] = useState<Contract[]>([]);
-  const [contractObligations, setContractObligations] = useState<Record<number, Obligation[]>>({});
   const [loading, setLoading] = useState(true);
 
   const loadContracts = async () => {
@@ -31,33 +30,9 @@ export function ContractList({ refreshTrigger }: ContractListProps) {
     }
   };
 
-  const loadContractObligations = async (contractId: number) => {
-    try {
-      const res = await fetch(`/api/documents/${contractId}/obligations`);
-      if (res.ok) {
-        const data = await res.json();
-        setContractObligations((prev) => ({
-          ...prev,
-          [contractId]: data.obligations || [],
-        }));
-      }
-    } catch (err) {
-      console.error("Failed to load obligations:", err);
-    }
-  };
-
   useEffect(() => {
     loadContracts();
   }, [refreshTrigger]);
-
-  // Load obligations for each contract
-  useEffect(() => {
-    contracts.forEach((contract) => {
-      if (!contractObligations[contract.id]) {
-        loadContractObligations(contract.id);
-      }
-    });
-  }, [contracts]);
 
   if (loading) {
     return (
@@ -72,9 +47,7 @@ export function ContractList({ refreshTrigger }: ContractListProps) {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <p>No contracts found.</p>
-        <p className="text-sm mt-1">
-          Upload contract documents to get started.
-        </p>
+        <p className="text-sm mt-1">Use "Add New Contract" to get started.</p>
       </div>
     );
   }
@@ -85,15 +58,7 @@ export function ContractList({ refreshTrigger }: ContractListProps) {
         <ContractCard
           key={contract.id}
           contract={contract}
-          obligations={contractObligations[contract.id] || []}
-          onObligationUpdate={() => {
-            loadContractObligations(contract.id);
-            loadContracts();
-          }}
-          onContractUpdate={() => {
-            loadContracts();
-            loadContractObligations(contract.id);
-          }}
+          onContractUpdate={loadContracts}
         />
       ))}
     </div>
