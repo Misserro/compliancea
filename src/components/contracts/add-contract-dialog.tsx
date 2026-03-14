@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { X } from "lucide-react";
 import { DEPARTMENTS } from "@/lib/constants";
 
@@ -20,6 +20,8 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
   const [obligationsCount, setObligationsCount] = useState(0);
   const [documentId, setDocumentId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const reset = () => {
     setStep("upload");
@@ -29,7 +31,15 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
     setObligationsCount(0);
     setDocumentId(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+    setIsSubmitting(false);
   };
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const handleClose = () => {
     if (step === "processing") return; // cannot dismiss during processing
@@ -46,7 +56,7 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
       const count: number = data.contract?.obligations?.length ?? 0;
       setObligationsCount(count);
       setStep("done");
-      setTimeout(() => {
+      timerRef.current = setTimeout(() => {
         reset();
         onSuccess();
       }, 2000);
@@ -58,6 +68,7 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
 
   const handleUpload = async () => {
     if (!file) return;
+    setIsSubmitting(true);
     setError("");
 
     const formData = new FormData();
@@ -74,6 +85,7 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
       setStep("processing");
       await handleProcess(docId);
     } catch (err) {
+      setIsSubmitting(false);
       setError(err instanceof Error ? err.message : "Upload failed");
       setStep("error-upload");
     }
@@ -149,7 +161,7 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
               </button>
               <button
                 onClick={handleUpload}
-                disabled={!file}
+                disabled={!file || isSubmitting}
                 className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Upload &amp; Process
