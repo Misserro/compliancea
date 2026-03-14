@@ -12,10 +12,14 @@ interface ContractCardProps {
   onContractUpdate?: () => void;
 }
 
-const STATUS_ACTIONS: Record<
-  string,
-  Array<{ label: string; action: string; confirm?: boolean; variant: "forward" | "backward" }>
-> = {
+type StatusActionConfig = {
+  label: string;
+  action: string;
+  confirm?: boolean;
+  variant: "forward" | "backward";
+};
+
+const STATUS_ACTIONS: Record<string, Array<StatusActionConfig>> = {
   unsigned: [{ label: "→ To Sign", action: "sign", variant: "forward" }],
   signed: [
     { label: "← Inactive", action: "unsign", variant: "backward" },
@@ -30,6 +34,19 @@ const STATUS_ACTIONS: Record<
 
 const STATUS_ORDER = ["unsigned", "signed", "active", "terminated"] as const;
 
+function formatDate(dateString: string | null) {
+  if (!dateString) return null;
+  try {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return dateString;
+  }
+}
+
 export function ContractCard({ contract, onContractUpdate }: ContractCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -38,24 +55,7 @@ export function ContractCard({ contract, onContractUpdate }: ContractCardProps) 
   const statusDisplay = CONTRACT_STATUS_DISPLAY[contract.status] || contract.status;
   const actions = STATUS_ACTIONS[contract.status] || [];
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return null;
-    try {
-      return new Date(dateString).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return dateString;
-    }
-  };
-
-  const handleStatusAction = async (actionConfig: {
-    label: string;
-    action: string;
-    confirm?: boolean;
-  }) => {
+  const handleStatusAction = async (actionConfig: StatusActionConfig) => {
     if (actionConfig.confirm) {
       const confirmed = window.confirm(
         actionConfig.action === "terminate"
@@ -116,10 +116,6 @@ export function ContractCard({ contract, onContractUpdate }: ContractCardProps) 
           <div className="flex items-start gap-3 flex-1">
             <button
               className="mt-1 text-muted-foreground hover:text-foreground transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                setExpanded(!expanded);
-              }}
             >
               {expanded ? (
                 <ChevronDown className="w-5 h-5" />
