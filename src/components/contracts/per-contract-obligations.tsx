@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { toast } from "sonner";
 import type { Contract, Obligation } from "@/lib/types";
@@ -24,8 +24,10 @@ function ContractObligationsRow({ contract, categoryFilter }: ContractRowProps) 
   const [obligations, setObligations] = useState<Obligation[]>([]);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("active");
   const [evidenceDialogObligationId, setEvidenceDialogObligationId] = useState<number | null>(null);
+  const refreshCountRef = useRef(0);
 
   const statusColor = STATUS_COLORS[contract.status] || STATUS_COLORS.unsigned;
   const statusDisplay = CONTRACT_STATUS_DISPLAY[contract.status] || contract.status;
@@ -38,9 +40,13 @@ function ContractObligationsRow({ contract, categoryFilter }: ContractRowProps) 
         const data = await res.json();
         setObligations(data.obligations || []);
         setLoaded(true);
+        setFetchError(false);
+      } else {
+        setFetchError(true);
       }
     } catch (err) {
       console.error("Failed to load obligations:", err);
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -53,11 +59,15 @@ function ContractObligationsRow({ contract, categoryFilter }: ContractRowProps) 
   };
 
   const refreshObligations = async () => {
+    const currentRefresh = ++refreshCountRef.current;
     try {
       const res = await fetch(`/api/documents/${contract.id}/obligations`);
       if (res.ok) {
         const data = await res.json();
-        setObligations(data.obligations || []);
+        // Only apply if this is still the latest refresh
+        if (currentRefresh === refreshCountRef.current) {
+          setObligations(data.obligations || []);
+        }
       }
     } catch (err) {
       console.error("Failed to refresh obligations:", err);
@@ -140,6 +150,8 @@ function ContractObligationsRow({ contract, categoryFilter }: ContractRowProps) 
               <Skeleton className="h-16 w-full rounded" />
               <Skeleton className="h-16 w-full rounded" />
             </div>
+          ) : fetchError ? (
+            <p className="text-sm text-destructive py-2">Failed to load obligations. Try collapsing and re-expanding.</p>
           ) : (
             <>
               {/* Status tab filter */}
@@ -182,6 +194,7 @@ function ContractObligationsRow({ contract, categoryFilter }: ContractRowProps) 
                           refreshObligations();
                         } catch (err) {
                           console.error("Failed to update obligation:", err);
+                          toast.error(`Failed to update: ${err instanceof Error ? err.message : "Unknown error"}`);
                         }
                       }}
                       onAddEvidence={(obId) => setEvidenceDialogObligationId(obId)}
