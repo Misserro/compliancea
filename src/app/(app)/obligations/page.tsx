@@ -7,13 +7,12 @@ export default function ObligationsRedirectPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to the new Contract Hub
-    router.replace("/contracts");
+    router.replace("/contracts?tab=obligations");
   }, [router]);
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <p className="text-sm text-muted-foreground">Redirecting to Contract Hub...</p>
+      <p className="text-sm text-muted-foreground">Redirecting to Obligations…</p>
     </div>
   );
 }
