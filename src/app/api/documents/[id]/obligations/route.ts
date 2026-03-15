@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureDb } from "@/lib/server-utils";
-import { getDocumentById, getObligationsByDocumentId } from "@/lib/db-imports";
+import { getDocumentById, getObligationsByDocumentId, insertObligation } from "@/lib/db-imports";
 
 export const runtime = "nodejs";
 
@@ -23,5 +23,48 @@ export async function GET(
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  await ensureDb();
+  const { id } = await params;
+  const docId = parseInt(id, 10);
+  try {
+    if (isNaN(docId)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+    const doc = getDocumentById(docId);
+    if (!doc) return NextResponse.json({ error: "Document not found" }, { status: 404 });
+    const body = await request.json();
+    if (!body.title) return NextResponse.json({ error: "title is required" }, { status: 400 });
+    const noticePeriodDaysParsed = parseInt(body.noticePeriodDays, 10);
+    const noticePeriodDays = isNaN(noticePeriodDaysParsed) ? null : noticePeriodDaysParsed;
+    const newId = insertObligation({
+      documentId: docId,
+      obligationType: body.obligationType || "general",
+      title: body.title,
+      description: body.description,
+      clauseReference: body.clauseReference,
+      dueDate: body.dueDate,
+      recurrence: body.recurrence,
+      noticePeriodDays,
+      owner: body.owner,
+      escalationTo: body.escalationTo,
+      proofDescription: body.proofDescription,
+      evidenceJson: "[]",
+      category: body.category,
+      department: body.department,
+      activation: body.activation,
+      summary: body.summary,
+      detailsJson: "{}",
+      penalties: body.penalties,
+      stage: "active",
+    });
+    return NextResponse.json({ id: newId }, { status: 201 });
+  } catch (err: unknown) {
+    console.error("Error creating obligation:", err);
+    return NextResponse.json({ error: "Failed to create obligation" }, { status: 500 });
   }
 }
