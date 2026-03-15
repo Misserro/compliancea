@@ -63,6 +63,10 @@ export interface Obligation {
   department: string | null;
   finalization_note: string | null;
   finalization_document_id: number | null;
+  start_date: string | null;
+  is_repeating: number;
+  recurrence_interval: number | null;
+  parent_obligation_id: number | null;
   document_name?: string;
   document_status?: string;
   contracting_company?: string;

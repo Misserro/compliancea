@@ -50,6 +50,7 @@ export {
   getObligationById,
   updateObligation,
   deleteObligation,
+  spawnDueObligations,
   getUpcomingObligations,
   getOverdueObligations,
   getAllObligations,
