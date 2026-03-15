@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DEPARTMENTS, OBLIGATION_CATEGORIES, CONTRACT_STATUS_DISPLAY } from "@/lib/constants";
 
@@ -47,7 +48,7 @@ function makeObligation(): ObligationDraft {
 
 interface ObligationFormCardProps {
   obligation: ObligationDraft;
-  onChange: (key: string, field: string, value: string) => void;
+  onChange: (key: string, field: keyof ObligationDraft, value: string) => void;
   onRemove: (key: string) => void;
 }
 
@@ -153,7 +154,7 @@ export function ContractsNewForm() {
       .catch(() => setLoadError("Failed to load document."));
   }, [id]);
 
-  const handleObligationChange = (key: string, field: string, value: string) => {
+  const handleObligationChange = (key: string, field: keyof ObligationDraft, value: string) => {
     setObligations((prev) =>
       prev.map((ob) => (ob.key === key ? { ...ob, [field]: value } : ob))
     );
@@ -164,6 +165,10 @@ export function ContractsNewForm() {
     setSaveError(null);
     if (!contractName.trim()) {
       setNameError("Contract name is required.");
+      return;
+    }
+    if (!id) {
+      setSaveError("Missing document ID.");
       return;
     }
     setSaving(true);
@@ -219,9 +224,9 @@ export function ContractsNewForm() {
     return (
       <div className="p-6 text-sm text-destructive">
         <p>{loadError}</p>
-        <a href="/contracts" className="underline text-muted-foreground mt-2 inline-block">
+        <Link href="/contracts" className="underline text-muted-foreground mt-2 inline-block">
           Back to contracts
-        </a>
+        </Link>
       </div>
     );
   }
