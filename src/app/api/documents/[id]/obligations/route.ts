@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureDb } from "@/lib/server-utils";
-import { getDocumentById, getObligationsByDocumentId, insertObligation } from "@/lib/db-imports";
+import { getDocumentById, getObligationsByDocumentId, insertObligation, spawnDueObligations } from "@/lib/db-imports";
 
 export const runtime = "nodejs";
 
@@ -17,6 +17,8 @@ export async function GET(
     if (!doc) {
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
+
+    spawnDueObligations(docId);
 
     const obligations = getObligationsByDocumentId(docId);
     return NextResponse.json({ obligations });
@@ -39,8 +41,9 @@ export async function POST(
     if (!doc) return NextResponse.json({ error: "Document not found" }, { status: 404 });
     const body = await request.json();
     if (!body.title) return NextResponse.json({ error: "title is required" }, { status: 400 });
-    const noticePeriodDaysParsed = parseInt(body.noticePeriodDays, 10);
-    const noticePeriodDays = isNaN(noticePeriodDaysParsed) ? null : noticePeriodDaysParsed;
+    const recurrenceIntervalParsed = parseInt(body.recurrenceInterval, 10);
+    const recurrenceInterval = isNaN(recurrenceIntervalParsed) ? null : recurrenceIntervalParsed;
+
     const newId = insertObligation({
       documentId: docId,
       obligationType: body.obligationType || "general",
@@ -49,7 +52,7 @@ export async function POST(
       clauseReference: body.clauseReference,
       dueDate: body.dueDate,
       recurrence: body.recurrence,
-      noticePeriodDays,
+      noticePeriodDays: body.noticePeriodDays ?? null,
       owner: body.owner,
       escalationTo: body.escalationTo,
       proofDescription: body.proofDescription,
@@ -61,6 +64,10 @@ export async function POST(
       detailsJson: "{}",
       penalties: body.penalties,
       stage: "active",
+      startDate: body.startDate,
+      isRepeating: body.isRepeating ?? false,
+      recurrenceInterval,
+      parentObligationId: body.parentObligationId ?? null,
     });
     return NextResponse.json({ id: newId }, { status: 201 });
   } catch (err: unknown) {
