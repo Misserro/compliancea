@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { DEPARTMENTS } from "@/lib/constants";
 
@@ -10,7 +11,7 @@ interface AddContractDialogProps {
   onSuccess: () => void;
 }
 
-type Step = "upload" | "processing" | "done" | "error-upload" | "error-process";
+type Step = "upload" | "uploading-manual" | "processing" | "done" | "error-upload" | "error-process";
 
 export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContractDialogProps) {
   const [step, setStep] = useState<Step>("upload");
@@ -22,6 +23,7 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
   const fileInputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
   const reset = () => {
     setStep("upload");
@@ -42,7 +44,7 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
   }, []);
 
   const handleClose = () => {
-    if (step === "processing") return; // cannot dismiss during processing
+    if (step === "processing" || step === "uploading-manual") return; // cannot dismiss during processing
     reset();
     onOpenChange(false);
   };
@@ -91,6 +93,33 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
     }
   };
 
+  const handleUploadManual = async () => {
+    if (!file || isSubmitting) return;
+    setIsSubmitting(true);
+    setStep("uploading-manual");
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const response = await fetch("/api/documents/upload", {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Upload failed");
+      }
+      const data = await response.json();
+      const docId = data.document?.id;
+      reset();
+      onOpenChange(false);
+      router.push(`/contracts/new?id=${docId}`);
+    } catch (err: unknown) {
+      setIsSubmitting(false);
+      setError(err instanceof Error ? err.message : "Upload failed");
+      setStep("error-upload");
+    }
+  };
+
   const handleRetryProcess = async () => {
     if (!documentId) return;
     setError("");
@@ -106,7 +135,7 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold">Add New Contract</h2>
-          {step !== "processing" && (
+          {step !== "processing" && step !== "uploading-manual" && (
             <button
               onClick={handleClose}
               className="text-muted-foreground hover:text-foreground transition-colors"
@@ -160,11 +189,18 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
                 Cancel
               </button>
               <button
+                onClick={handleUploadManual}
+                disabled={!file || isSubmitting}
+                className="px-4 py-2 border border-input rounded text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Add manually
+              </button>
+              <button
                 onClick={handleUpload}
                 disabled={!file || isSubmitting}
-                className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Upload &amp; Process
+                Add with AI
               </button>
             </div>
           </div>
@@ -175,6 +211,15 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
           <div className="py-10 text-center">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
             <p className="text-sm text-muted-foreground">Processing contract…</p>
+            <p className="text-xs text-muted-foreground mt-1">This may take a moment.</p>
+          </div>
+        )}
+
+        {/* Step: Uploading manual */}
+        {step === "uploading-manual" && (
+          <div className="py-10 text-center">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-sm text-muted-foreground">Uploading contract…</p>
             <p className="text-xs text-muted-foreground mt-1">This may take a moment.</p>
           </div>
         )}
