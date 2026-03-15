@@ -9,19 +9,17 @@ import { DEPARTMENTS, OBLIGATION_CATEGORIES, CONTRACT_STATUS_DISPLAY } from "@/l
 interface ObligationDraft {
   key: string;
   title: string;
-  obligationType: string;
   description: string;
   clauseReference: string;
   dueDate: string;
-  recurrence: string;
-  noticePeriodDays: string;
+  startDate: string;
+  isRepeating: boolean;
+  recurrenceInterval: string;
   owner: string;
   escalationTo: string;
   category: string;
   department: string;
   summary: string;
-  activation: string;
-  penalties: string;
   proofDescription: string;
 }
 
@@ -29,26 +27,24 @@ function makeObligation(): ObligationDraft {
   return {
     key: crypto.randomUUID(),
     title: "",
-    obligationType: "",
     description: "",
     clauseReference: "",
     dueDate: "",
-    recurrence: "",
-    noticePeriodDays: "",
+    startDate: "",
+    isRepeating: false,
+    recurrenceInterval: "",
     owner: "",
     escalationTo: "",
     category: "",
     department: "",
     summary: "",
-    activation: "",
-    penalties: "",
     proofDescription: "",
   };
 }
 
 interface ObligationFormCardProps {
   obligation: ObligationDraft;
-  onChange: (key: string, field: keyof ObligationDraft, value: string) => void;
+  onChange: (key: string, field: keyof ObligationDraft, value: string | boolean) => void;
   onRemove: (key: string) => void;
 }
 
@@ -59,13 +55,13 @@ function ObligationFormCard({ obligation, onChange, onRemove }: ObligationFormCa
       {type === "textarea" ? (
         <textarea
           className="w-full border border-input rounded px-3 py-2 text-sm min-h-[80px] bg-background"
-          value={obligation[name]}
+          value={obligation[name] as string}
           onChange={(e) => onChange(obligation.key, name, e.target.value)}
         />
       ) : type === "select" && options ? (
         <select
           className="w-full border border-input rounded px-3 py-2 text-sm bg-background"
-          value={obligation[name]}
+          value={obligation[name] as string}
           onChange={(e) => onChange(obligation.key, name, e.target.value)}
         >
           <option value="">— select —</option>
@@ -77,7 +73,7 @@ function ObligationFormCard({ obligation, onChange, onRemove }: ObligationFormCa
         <input
           type={type}
           className="w-full border border-input rounded px-3 py-2 text-sm bg-background"
-          value={obligation[name]}
+          value={obligation[name] as string}
           onChange={(e) => onChange(obligation.key, name, e.target.value)}
         />
       )}
@@ -99,19 +95,42 @@ function ObligationFormCard({ obligation, onChange, onRemove }: ObligationFormCa
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {field("Title *", "title", "text")}
-        {field("Type", "obligationType", "text")}
         {field("Clause reference", "clauseReference", "text")}
         {field("Due date", "dueDate", "date")}
-        {field("Recurrence", "recurrence", "text")}
-        {field("Notice period (days)", "noticePeriodDays", "number")}
+        {field("Start date", "startDate", "date")}
+        <div className="md:col-span-2">
+          <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+            <input
+              type="checkbox"
+              checked={obligation.isRepeating}
+              onChange={(e) => onChange(obligation.key, "isRepeating", e.target.checked)}
+              className="rounded border-input"
+            />
+            Repeating?
+          </label>
+        </div>
+        {obligation.isRepeating && (
+          <div>
+            <label className="block text-sm font-medium mb-1">Repeat every</label>
+            <select
+              className="w-full border border-input rounded px-3 py-2 text-sm bg-background"
+              value={obligation.recurrenceInterval}
+              onChange={(e) => onChange(obligation.key, "recurrenceInterval", e.target.value)}
+            >
+              <option value="">— select —</option>
+              <option value="7">7 days</option>
+              <option value="30">30 days</option>
+              <option value="90">90 days</option>
+              <option value="365">365 days</option>
+            </select>
+          </div>
+        )}
         {field("Owner", "owner", "text")}
         {field("Escalation to", "escalationTo", "text")}
-        {field("Activation", "activation", "text")}
         {field("Category", "category", "select", OBLIGATION_CATEGORIES)}
         {field("Department", "department", "select", DEPARTMENTS)}
         {field("Description", "description", "textarea")}
         {field("Summary", "summary", "textarea")}
-        {field("Penalties", "penalties", "textarea")}
         {field("Proof description", "proofDescription", "textarea")}
       </CardContent>
     </Card>
@@ -154,7 +173,7 @@ export function ContractsNewForm() {
       .catch(() => setLoadError("Failed to load document."));
   }, [id]);
 
-  const handleObligationChange = (key: string, field: keyof ObligationDraft, value: string) => {
+  const handleObligationChange = (key: string, field: keyof ObligationDraft, value: string | boolean) => {
     setObligations((prev) =>
       prev.map((ob) => (ob.key === key ? { ...ob, [field]: value } : ob))
     );
@@ -170,6 +189,12 @@ export function ContractsNewForm() {
     if (!id) {
       setSaveError("Missing document ID.");
       return;
+    }
+    for (const ob of obligations) {
+      if (ob.isRepeating && !ob.recurrenceInterval) {
+        setSaveError(`Obligation "${ob.title || "New Obligation"}": please select a repeat interval.`);
+        return;
+      }
     }
     setSaving(true);
     try {
@@ -199,13 +224,19 @@ export function ContractsNewForm() {
       }
       // POST obligations sequentially
       for (const ob of obligations) {
-        const { key: _key, ...obData } = ob;
-        const noticePeriodDaysParsed = parseInt(obData.noticePeriodDays, 10);
-        const noticePeriodDays = isNaN(noticePeriodDaysParsed) ? null : noticePeriodDaysParsed;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { key: _key, isRepeating, recurrenceInterval, ...obData } = ob;
+        const recurrenceIntervalParsed = parseInt(recurrenceInterval, 10);
+        const finalRecurrenceInterval = !isRepeating ? null : (isNaN(recurrenceIntervalParsed) ? null : recurrenceIntervalParsed);
+
         const obRes = await fetch(`/api/documents/${id}/obligations`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...obData, noticePeriodDays }),
+          body: JSON.stringify({
+            ...obData,
+            isRepeating,
+            recurrenceInterval: finalRecurrenceInterval,
+          }),
         });
         if (!obRes.ok) {
           const errData = await obRes.json().catch(() => ({}));
