@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Search, ClipboardCheck, Settings, MessageSquare, Layers, Shield, Package, LayoutDashboard, Sun, Moon, Monitor, Users, LogOut } from "lucide-react";
+import { FileText, ClipboardCheck, Settings, MessageSquare, Layers, Shield, Package, LayoutDashboard, Sun, Moon, Monitor, Users, LogOut, ListChecks } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -12,6 +12,9 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarTrigger,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
@@ -25,17 +28,6 @@ function ThemeIcon({ theme }: { theme: string | undefined }) {
   return <Monitor className="h-4 w-4" />;
 }
 
-const navItems = [
-  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Documents", href: "/documents", icon: FileText },
-  { title: "Policies", href: "/policies", icon: Shield },
-  { title: "Analyze", href: "/analyze", icon: Search },
-  { title: "Ask Library", href: "/ask", icon: MessageSquare },
-  { title: "Process", href: "/process", icon: Layers },
-  { title: "Contracts", href: "/contracts", icon: ClipboardCheck },
-  { title: "Product Hub", href: "/product-hub", icon: Package },
-  { title: "Settings", href: "/settings", icon: Settings },
-];
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -76,11 +68,6 @@ export function AppSidebar() {
     return "System";
   }
 
-  const allNavItems = [
-    ...navItems,
-    ...(isAdmin ? [{ title: "Users", href: "/users", icon: Users }] : []),
-  ];
-
   return (
     <Sidebar>
       <SidebarHeader className="border-b px-6 py-4">
@@ -92,17 +79,53 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent className="px-2 py-4">
-        <SidebarMenu>
-          {allNavItems.map((item) => {
-            const isActive =
-              pathname === item.href || pathname.startsWith(item.href + "/");
-            return (
-              <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span>{item.title}</span>
-                    {item.href === "/contracts" && overdueCount > 0 && (
+        {/* Dashboard */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard" || pathname.startsWith("/dashboard/")}
+                  tooltip="Dashboard"
+                >
+                  <Link href="/dashboard">
+                    <LayoutDashboard />
+                    <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Contract Hub */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Contract Hub</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/contracts" || pathname.startsWith("/contracts/")}
+                  tooltip="Contracts"
+                >
+                  <Link href="/contracts">
+                    <ClipboardCheck />
+                    <span>Contracts</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/obligations" || pathname.startsWith("/obligations/")}
+                  tooltip="Obligations"
+                >
+                  <Link href="/obligations">
+                    <ListChecks />
+                    <span>Obligations</span>
+                    {overdueCount > 0 && (
                       <Badge
                         variant="destructive"
                         className="ml-auto h-5 min-w-5 px-1.5 text-xs"
@@ -113,9 +136,61 @@ export function AppSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            );
-          })}
-        </SidebarMenu>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Documents Hub */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Documents Hub</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {[
+                { title: "Documents", href: "/documents", icon: FileText },
+                { title: "Policies", href: "/policies", icon: Shield },
+                { title: "Analyze & Process", href: "/document-tools", icon: Layers },
+                { title: "Ask Library", href: "/ask", icon: MessageSquare },
+              ].map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+                      <Link href={item.href}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Bottom standalones */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {[
+                { title: "Product Hub", href: "/product-hub", icon: Package },
+                { title: "Settings", href: "/settings", icon: Settings },
+                ...(isAdmin ? [{ title: "Users", href: "/users", icon: Users }] : []),
+              ].map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+                      <Link href={item.href}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t px-4 py-3 space-y-1">
         {userEmail && (
