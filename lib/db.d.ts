@@ -45,6 +45,7 @@ export function updateQaCard(...args: any[]): any;
 export function deleteQaCard(...args: any[]): any;
 export function getAllQaCardsWithEmbeddings(...args: any[]): any;
 export function insertObligation(...args: any[]): any;
+export function spawnDueObligations(documentId: number): void;
 export function getObligationsByDocumentId(...args: any[]): any;
 export function getObligationById(...args: any[]): any;
 export function updateObligation(...args: any[]): any;
