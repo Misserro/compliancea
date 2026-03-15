@@ -27,7 +27,7 @@ Gains two new state variables:
 
 **Layout changes** (below the existing title + "Add New Contract" button row):
 
-1. **Search bar** — a full-width `<input type="text">` with placeholder "Search by name or vendor…". Controlled: updates `searchQuery` on every `onChange`. Uses existing `Input` component from `@/components/ui/input` if available, otherwise a plain styled input consistent with the app's style.
+1. **Search bar** — a full-width controlled input with placeholder "Search by name or vendor…", updates `searchQuery` on every `onChange`. Uses the `Input` component from `@/components/ui/input` (confirmed present in this codebase).
 
 2. **Status checkboxes** — a horizontal row of four labelled checkboxes, one per status, using the internal status keys and their display labels from `CONTRACT_STATUS_DISPLAY` (imported from `@/lib/constants`):
    - `unsigned` → "Inactive"
@@ -52,9 +52,9 @@ After the fetch resolves, derives `filteredContracts` from the raw `contracts` a
 1. **Status filter:** keep contracts where `contract.status` is included in `selectedStatuses`. If `selectedStatuses` is empty, show nothing (not all — empty selection means nothing passes).
 
 2. **Search filter:** if `searchQuery.trim()` is non-empty, keep only contracts where at least one of the following contains the query (case-insensitive):
-   - `contract.name`
-   - `contract.contracting_vendor`
-   - `contract.client`
+   - `contract.name` (non-nullable, safe to call directly)
+   - `contract.contracting_vendor` (nullable — must be null-guarded, e.g. `(contract.contracting_vendor ?? "")`)
+   - `contract.client` (nullable — must be null-guarded, e.g. `(contract.client ?? "")`)
 
 Renders `filteredContracts` instead of `contracts`.
 
