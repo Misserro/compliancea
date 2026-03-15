@@ -10,6 +10,24 @@ import { logAction } from "@/lib/audit-imports";
 
 export const runtime = "nodejs";
 
+export async function GET(
+  _request: Request,
+  props: { params: Promise<{ id: string }> }
+) {
+  try {
+    await ensureDb();
+    const params = await props.params;
+    const docId = parseInt(params.id, 10);
+    if (isNaN(docId)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+    const doc = getDocumentById(docId);
+    if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ document: doc });
+  } catch (error) {
+    console.error("Error fetching document:", error);
+    return NextResponse.json({ error: "Failed to fetch document" }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   _request: Request,
   props: { params: Promise<{ id: string }> }
