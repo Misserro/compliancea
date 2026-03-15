@@ -9,9 +9,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface ContractListProps {
   /** Increment to trigger a re-fetch of the contract list */
   refreshTrigger?: number;
+  searchQuery: string;
+  selectedStatuses: string[];
 }
 
-export function ContractList({ refreshTrigger }: ContractListProps) {
+export function ContractList({ refreshTrigger, searchQuery, selectedStatuses }: ContractListProps) {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [cardRefresh, setCardRefresh] = useState(0);
@@ -39,6 +41,18 @@ export function ContractList({ refreshTrigger }: ContractListProps) {
     return () => controller.abort();
   }, [refreshTrigger, cardRefresh]);
 
+  const q = searchQuery.trim().toLowerCase();
+  const filteredContracts = contracts
+    .filter((c) => selectedStatuses.includes(c.status))
+    .filter((c) => {
+      if (!q) return true;
+      return (
+        c.name.toLowerCase().includes(q) ||
+        (c.contracting_vendor ?? "").toLowerCase().includes(q) ||
+        (c.client ?? "").toLowerCase().includes(q)
+      );
+    });
+
   if (loading) {
     return (
       <div className="space-y-3">
@@ -57,9 +71,17 @@ export function ContractList({ refreshTrigger }: ContractListProps) {
     );
   }
 
+  if (filteredContracts.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <p>No contracts match your search.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {contracts.map((contract) => (
+      {filteredContracts.map((contract) => (
         <ContractCard
           key={contract.id}
           contract={contract}
