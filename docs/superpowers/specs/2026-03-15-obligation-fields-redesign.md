@@ -61,19 +61,25 @@ ALTER TABLE contract_obligations ADD COLUMN parent_obligation_id INTEGER REFEREN
 
 Add four new named parameters: `startDate`, `isRepeating`, `recurrenceInterval`, `parentObligationId`. All default to `null` / `0` when omitted, so existing callers (AI path) require no changes.
 
-The updated INSERT adds these four columns after `department`:
+The updated INSERT adds these four columns after `stage` (the last existing column):
 
 ```
-..., department, start_date, is_repeating, recurrence_interval, parent_obligation_id
+..., stage, start_date, is_repeating, recurrence_interval, parent_obligation_id
 ```
 
 Values:
 ```
-..., department || null, startDate || null, isRepeating ? 1 : 0, recurrenceInterval || null, parentObligationId || null
+..., stage || "active", startDate || null, isRepeating ? 1 : 0, recurrenceInterval || null, parentObligationId || null
 ```
 
-Full updated column list (25 total):
+Full updated column list (24 total):
 `document_id, obligation_type, title, description, clause_reference, due_date, recurrence, notice_period_days, owner, escalation_to, proof_description, evidence_json, category, department, activation, status, summary, details_json, penalties, stage, start_date, is_repeating, recurrence_interval, parent_obligation_id`
+
+The VALUES array must have exactly 24 entries matching the column order above.
+
+### `updateObligation` allowedFields extension
+
+`updateObligation` in `lib/db.js` has a hardcoded `allowedFields` array. Add the four new column names to it: `"start_date"`, `"is_repeating"`, `"recurrence_interval"`, `"parent_obligation_id"`. Without this, PATCH calls that try to update these fields will silently do nothing.
 
 ---
 
@@ -85,37 +91,48 @@ The GET handler in `src/app/api/documents/[id]/obligations/route.ts` calls `spaw
 
 ### `spawnDueObligations(documentId)` — new function in `lib/db.js`
 
+Export this function from `lib/db.js` and add it to the re-export barrel at `src/lib/db-imports.ts`.
+
 ```
 function spawnDueObligations(documentId):
   1. Fetch the parent contract using getContractById(documentId).
      If not found, or contract.status not in ["active", "signed"], return immediately.
-  2. Get today's date as a YYYY-MM-DD string.
+  2. Get today's date as a YYYY-MM-DD string using UTC:
+       new Date().toISOString().slice(0, 10)
   3. Loop (max 100 iterations to prevent runaway catch-up):
      a. Query: find obligations where
           document_id = documentId
           AND is_repeating = 1
           AND recurrence_interval IS NOT NULL
+          AND due_date IS NOT NULL
           AND due_date < today
-          AND id NOT IN (SELECT parent_obligation_id FROM contract_obligations
-                         WHERE parent_obligation_id IS NOT NULL)
+          AND NOT EXISTS (
+            SELECT 1 FROM contract_obligations c2
+            WHERE c2.parent_obligation_id = contract_obligations.id
+          )
      b. If no results, break.
      c. For each qualifying obligation:
-          - Compute next_due = obligation.due_date + recurrence_interval days (date arithmetic)
+          - Compute next_due using UTC date arithmetic:
+              const d = new Date(obligation.due_date + "T00:00:00Z");
+              d.setUTCDate(d.getUTCDate() + obligation.recurrence_interval);
+              const next_due = d.toISOString().slice(0, 10);
           - Call insertObligation with all fields copied from the parent, except:
-              due_date         = next_due
-              status           = "active"
-              stage            = "active"
+              due_date             = next_due
+              activation           = null        ← forces statusValue = "active" in insertObligation
+              stage                = "active"
               parent_obligation_id = obligation.id
-              evidence_json    = "[]"
-              details_json     = "{}"
+              evidence_json        = "[]"
+              details_json         = "{}"
   4. Return (the updated list is fetched separately by the caller).
 ```
 
-**Date arithmetic:** Add `recurrence_interval` days to the ISO date string. Use JavaScript `Date` object: `new Date(dueDate)` → `.setDate(d.getDate() + interval)` → format back to `YYYY-MM-DD`.
+**`status` note:** `insertObligation` derives the `status` column from `activation` via `const statusValue = activation || "active"`. To ensure spawned children always have `status = "active"`, pass `activation: null` when calling `insertObligation` from `spawnDueObligations`. Do not pass the parent's `activation` value.
+
+**Obligations with null `due_date`:** Excluded from spawning by the `due_date IS NOT NULL AND due_date < today` predicate. No separate guard is needed.
 
 **Contract status check:** `getContractById` already exists and is exported from `@/lib/db-imports`. Check `contract.status` (the document's `status` column). Valid statuses for spawning: `"active"` and `"signed"`.
 
-**Safety cap:** The outer loop runs at most 100 times total. In practice, each iteration creates one generation of copies; subsequent iterations handle the newly created copies whose own due dates may also be past (catch-up scenario).
+**Safety cap:** The outer loop runs at most 100 iterations total. Each iteration creates one generation of copies and re-queries — handling catch-up scenarios where the page hasn't been loaded in a long time.
 
 ### What gets copied
 
@@ -162,8 +179,8 @@ parent_obligation_id: number | null;
 2. Clause reference (text)
 3. Due date (date)
 4. Start date (date)
-5. Repeating? (checkbox) — when checked, show:
-6. → Repeat every (select: `""` placeholder + `"7"`, `"30"`, `"90"`, `"365"` with labels "7 days", "30 days", "90 days", "365 days")
+5. Repeating? (checkbox)
+6. → Repeat every (select, only rendered when `isRepeating` is true): `""` placeholder + `"7"` / `"30"` / `"90"` / `"365"` with labels "7 days" / "30 days" / "90 days" / "365 days"
 7. Owner (text)
 8. Escalation to (text)
 9. Category (select from `OBLIGATION_CATEGORIES`)
@@ -171,6 +188,18 @@ parent_obligation_id: number | null;
 11. Description (textarea)
 12. Summary (textarea)
 13. Proof description (textarea)
+
+**Checkbox wiring:** The `onChange` prop signature must accept `string | boolean` as its `value` parameter: `onChange: (key: string, field: keyof ObligationDraft, value: string | boolean) => void`. The checkbox renders as:
+```tsx
+<input
+  type="checkbox"
+  checked={obligation.isRepeating}
+  onChange={(e) => onChange(obligation.key, "isRepeating", e.target.checked)}
+/>
+```
+The parent's `handleObligationChange` must accept `value: string | boolean` and set the field accordingly.
+
+**Form validation:** If `isRepeating` is `true` and `recurrenceInterval` is `""` when the user clicks Save, block submission with an inline error on the "Repeat every" field: "Please select a repeat interval."
 
 **`handleSave` in `ContractsNewForm`:** When POSTing each obligation:
 - Exclude `key` (UI-only, as before)
