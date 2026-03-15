@@ -153,6 +153,20 @@ export function ObligationCard({
                 <p className="text-sm text-muted-foreground">{ob.summary}</p>
               )}
 
+              {ob.start_date && (
+                <div>
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Start date</span>
+                  <p className="text-sm mt-0.5">{ob.start_date}</p>
+                </div>
+              )}
+
+              {ob.is_repeating === 1 && ob.recurrence_interval && (
+                <div>
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Recurrence</span>
+                  <p className="text-sm mt-0.5">Repeats every {ob.recurrence_interval} days</p>
+                </div>
+              )}
+
               {/* Payment schedule */}
               {dueDates.length > 0 && (
                 <div>
@@ -190,16 +204,6 @@ export function ObligationCard({
                       </p>
                     )}
                   </div>
-                </div>
-              )}
-
-              {/* Penalties */}
-              {ob.penalties && (
-                <div>
-                  <h4 className="text-xs font-medium text-muted-foreground mb-1">
-                    Penalties
-                  </h4>
-                  <p className="text-sm text-destructive">{ob.penalties}</p>
                 </div>
               )}
 
