@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, Download } from "lucide-react";
+import { ChevronDown, ChevronRight, Download } from "lucide-react";
 import { toast } from "sonner";
 import type { Contract } from "@/lib/types";
 import { STATUS_COLORS, CONTRACT_STATUS_DISPLAY } from "@/lib/constants";
@@ -142,21 +142,6 @@ export function ContractCard({ contract, onContractUpdate }: ContractCardProps) 
             </div>
           </div>
 
-          {/* Obligation count badges */}
-          <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-            {contract.activeObligations > 0 && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded text-xs font-medium">
-                <CheckCircle2 className="w-3 h-3" />
-                {contract.activeObligations} Active
-              </div>
-            )}
-            {contract.overdueObligations > 0 && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded text-xs font-medium">
-                <AlertCircle className="w-3 h-3" />
-                {contract.overdueObligations} Overdue
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
