@@ -1,9 +1,12 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import {
   getContractById,
   updateContractMetadata,
   getObligationsByDocumentId,
 } from "@/lib/db-imports";
+import { ensureDb } from "@/lib/server-utils";
 
 /**
  * GET /api/contracts/[id]
@@ -14,6 +17,7 @@ export async function GET(
   props: { params: Promise<{ id: string }> }
 ) {
   try {
+    await ensureDb();
     const params = await props.params;
     const id = parseInt(params.id, 10);
     if (isNaN(id)) {
@@ -51,6 +55,7 @@ export async function PATCH(
   props: { params: Promise<{ id: string }> }
 ) {
   try {
+    await ensureDb();
     const params = await props.params;
     const id = parseInt(params.id, 10);
     if (isNaN(id)) {
@@ -59,6 +64,10 @@ export async function PATCH(
 
     const body = await request.json();
     const {
+      name,
+      status,
+      category,
+      doc_type,
       contracting_company,
       contracting_vendor,
       signature_date,
@@ -67,6 +76,10 @@ export async function PATCH(
     } = body;
 
     const metadata: Record<string, any> = {};
+    if (name !== undefined) metadata.name = name;
+    if (status !== undefined) metadata.status = status;
+    if (category !== undefined) metadata.category = category;
+    if (doc_type !== undefined) metadata.doc_type = doc_type;
     if (contracting_company !== undefined) metadata.contracting_company = contracting_company;
     if (contracting_vendor !== undefined) metadata.contracting_vendor = contracting_vendor;
     if (signature_date !== undefined) metadata.signature_date = signature_date;
@@ -76,6 +89,12 @@ export async function PATCH(
     await updateContractMetadata(id, metadata);
 
     const updatedContract = await getContractById(id);
+    if (!updatedContract) {
+      return NextResponse.json(
+        { error: "Contract not found after update — doc_type may not have been written" },
+        { status: 500 }
+      );
+    }
     return NextResponse.json({ contract: updatedContract });
   } catch (error) {
     console.error("Error updating contract:", error);
