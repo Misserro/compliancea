@@ -216,7 +216,7 @@ export async function GET(
 
 ### 3b. Extend `updateContractMetadata` and PATCH route to accept `name`, `status`, `category`, and `doc_type`
 
-**`lib/db.js`** — add `"name"`, `"status"`, `"category"`, and `"doc_type"` to the `allowedFields` array inside `updateContractMetadata`. **Important:** `updateContractMetadata` silently returns early at line 1270 (`if (fields.length === 0) return`) if none of the passed keys match `allowedFields`. Verify that all four new keys are correctly added — a missed entry causes a silent no-op with no error, making the contract invisible in the list (which also filters on `doc_type`).
+**`lib/db.js`** — add `"name"`, `"status"`, `"category"`, and `"doc_type"` to the `allowedFields` array inside `updateContractMetadata`. The `category` and `doc_type` columns already exist on the `documents` table (both defined in the base `CREATE TABLE` at lines 34 and 39 of `lib/db.js`) — no migration required. **Important:** `updateContractMetadata` silently returns early at line 1270 (`if (fields.length === 0) return`) if none of the passed keys match `allowedFields`. Verify that all four new keys are correctly added — a missed entry causes a silent no-op with no error, making the contract invisible in the list (which also filters on `doc_type`).
 
 **`src/app/api/contracts/[id]/route.ts`** — this file currently has no `export const runtime = "nodejs"` and no `ensureDb()` call. Add both:
 - Add `export const runtime = "nodejs"` at the top of the file (file-level export).
@@ -249,11 +249,13 @@ Request body fields: `title` (required), `obligationType`, `description`, `claus
 
 **`obligationType` handling:** The `obligation_type` column is NOT NULL in the schema. If the caller omits `obligationType` or sends an empty string, default it to `"general"` before calling `insertObligation`.
 
+**`noticePeriodDays` handling:** Parse it with `parseInt(body.noticePeriodDays, 10)` before passing to `insertObligation`; use `null` if the result is `NaN`. Do not pass the raw string — a non-numeric user input would silently corrupt the INTEGER column.
+
 Implementation:
 0. `await ensureDb()` — the file already has `export const runtime = "nodejs"` and imports `ensureDb`. Call it at the start of the POST handler body before any DB access, following the same pattern as the GET handler in this file.
 1. Parse and validate `docId`.
 2. `getDocumentById(docId)` — 404 if missing.
-3. `insertObligation({ documentId: docId, ...body fields, obligationType: body.obligationType || "general", evidenceJson: "[]", detailsJson: "{}", stage: "active" })`. **`stage: "active"` is the correct default** — it matches the value the AI processing path uses for obligations it creates, making manual and AI obligations consistent. **`noticePeriodDays` empty-string handling:** the obligation form initialises all fields to `""`. The POST handler passes the raw value; `insertObligation` coerces it to `null` via `noticePeriodDays || null`, which is acceptable (consistent with all other optional numeric fields in the DB layer).
+3. `insertObligation({ documentId: docId, ...body fields, obligationType: body.obligationType || "general", noticePeriodDays: parseInt(body.noticePeriodDays, 10) || null, evidenceJson: "[]", detailsJson: "{}", stage: "active" })`. **`stage: "active"` is the correct default** — it matches the value the AI processing path uses for obligations it creates, making manual and AI obligations consistent.
 4. Return `{ id: newId }` with status 201.
 
 `insertObligation` is already exported from `@/lib/db-imports`.
