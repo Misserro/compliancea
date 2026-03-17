@@ -1,0 +1,14 @@
+{
+  "name": "018-contracts-expansion",
+  "description": "Expand the Contracts tab with invoice tracking and multi-document support per contract",
+  "plan_file": "documentation/plans/018-contracts-expansion/README.md",
+  "status": "executing",
+  "started_at": "2026-03-17T00:00:00.000Z",
+  "ended_at": null,
+  "elapsed_seconds": 0,
+  "concurrency_limit": 1,
+  "total_tasks": 2,
+  "completed_tasks": 0,
+  "active_tasks": 0,
+  "pending_tasks": 2
+}

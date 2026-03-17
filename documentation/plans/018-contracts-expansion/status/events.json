@@ -1,0 +1,11 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-03-17T00:00:00.000Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution started — 018-contracts-expansion: Invoice Management and Multi-Document Support (2 tasks, concurrency 1)"
+    }
+  ]
+}

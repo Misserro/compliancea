@@ -18,8 +18,8 @@ ComplianceA is an AI-powered compliance document management and analysis platfor
 
 ## Quick Links
 
-- [Architecture](./architecture.md) - System design and component overview
-- [Features](./features.md) - Detailed feature descriptions and workflows
+- [Architecture](./README.md) - System design and component overview
+- [Features](../../product/requirements/features.md) - Detailed feature descriptions and workflows
 - [Tech Stack](./tech-stack.md) - Technologies and libraries used
 - [Data Flow](./data-flow.md) - How data moves through the system
 - [Database Schema](./database-schema.md) - Database tables and relationships

@@ -233,19 +233,19 @@ stateDiagram-v2
 
 **State Transitions:**
 
-**Sign Contract (unsigned → signed):**
+**Sign Contract (unsigned -> signed):**
 1. Update document status to "signed"
 2. Activate obligations in "signed" stage
 3. Deactivate obligations in "not_signed" stage
 4. Create tasks for signed-stage obligations
 
-**Activate Contract (signed → active):**
+**Activate Contract (signed -> active):**
 1. Update document status to "active"
 2. Activate obligations in "active" stage
 3. Deactivate obligations in "signed" stage
 4. Create tasks for active-stage obligations
 
-**Terminate Contract (active → terminated):**
+**Terminate Contract (active -> terminated):**
 1. Update document status to "terminated"
 2. Activate obligations in "terminated" stage
 3. Deactivate obligations in "active" stage
@@ -299,36 +299,36 @@ sequenceDiagram
 ### Translation Export (DOCX)
 
 ```
-User uploads document → Process → Claude translates → Format as DOCX → Download
+User uploads document -> Process -> Claude translates -> Format as DOCX -> Download
 ```
 
 ### Todo Export (CSV)
 
 ```
-User uploads document → Process → Claude extracts todos by department → Format as CSV → Download
+User uploads document -> Process -> Claude extracts todos by department -> Format as CSV -> Download
 ```
 
 ### Questionnaire Export (CSV)
 
 ```
-User uploads questionnaire → Process → Generate answers → User approves → Format as CSV → Download
+User uploads questionnaire -> Process -> Generate answers -> User approves -> Format as CSV -> Download
 Columns: Question Number, Question, Answer, Confidence, Sources
 ```
 
 ## Error Handling Patterns
 
 **File Processing Errors:**
-- PDF parsing failure → Return error, log to audit
-- DOCX parsing failure → Return error, log to audit
-- File not found → Return 404
+- PDF parsing failure -> Return error, log to audit
+- DOCX parsing failure -> Return error, log to audit
+- File not found -> Return 404
 
 **API Errors:**
-- Claude API error → Retry with exponential backoff, log error
-- Voyage API error → Retry, log error
-- Rate limiting → Queue request, retry later
+- Claude API error -> Retry with exponential backoff, log error
+- Voyage API error -> Retry, log error
+- Rate limiting -> Queue request, retry later
 
 **Database Errors:**
-- Write failure → Rollback transaction, return error
-- Duplicate key → Return conflict error
+- Write failure -> Rollback transaction, return error
+- Duplicate key -> Return conflict error
 
 **All errors logged to audit_log for compliance tracking.**

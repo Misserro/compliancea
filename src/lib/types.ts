@@ -194,6 +194,39 @@ export interface Contract {
   nextDeadline: string | null;
 }
 
+export interface Invoice {
+  id: number;
+  contract_id: number;
+  amount: number;
+  currency: string;
+  description: string | null;
+  date_of_issue: string | null;
+  date_of_payment: string | null;
+  is_paid: number;
+  invoice_file_path: string | null;
+  payment_confirmation_path: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InvoiceSummary {
+  totalInvoiced: number;
+  totalPaid: number;
+  overdueCount: number;
+}
+
+export interface ContractDocument {
+  id: number;
+  contract_id: number;
+  document_id: number | null;
+  file_path: string | null;
+  file_name: string | null;
+  document_type: string;
+  label: string | null;
+  added_at: string;
+  linked_document_name?: string;
+}
+
 export interface ContractWithObligations extends Contract {
   obligations: Obligation[];
 }

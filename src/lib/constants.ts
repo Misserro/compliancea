@@ -105,4 +105,28 @@ export const PRICING = {
   voyage: 0.02,
 } as const;
 
+export const INVOICE_CURRENCIES = ["EUR", "USD", "GBP", "PLN", "CHF"] as const;
+
+export const INVOICE_FILE_EXTENSIONS = [".pdf", ".docx", ".jpg", ".png"] as const;
+
+export const INVOICE_STATUS_COLORS: Record<string, string> = {
+  paid: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  overdue: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  pending: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
+};
+
+export const CONTRACT_DOCUMENT_TYPES = [
+  { value: "amendment", label: "Amendment" },
+  { value: "addendum", label: "Addendum" },
+  { value: "exhibit", label: "Exhibit" },
+  { value: "other", label: "Other" },
+] as const;
+
+export const CONTRACT_DOCUMENT_TYPE_COLORS: Record<string, string> = {
+  amendment: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  addendum: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+  exhibit: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+  other: "bg-neutral-100 text-neutral-800 dark:bg-neutral-900 dark:text-neutral-200",
+};
+
 export const POLICIES_TAB_DEFAULT_DOC_TYPES = ["policy", "procedure"] as const;

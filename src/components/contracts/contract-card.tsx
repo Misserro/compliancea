@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import type { Contract } from "@/lib/types";
 import { STATUS_COLORS, CONTRACT_STATUS_DISPLAY } from "@/lib/constants";
 import { ContractMetadataDisplay } from "./contract-metadata-display";
+import { InvoiceSection } from "./invoice-section";
+import { ContractDocumentsSection } from "./contract-documents-section";
 
 interface ContractCardProps {
   contract: Contract;
@@ -217,6 +219,20 @@ export function ContractCard({ contract, onContractUpdate }: ContractCardProps) 
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Invoice section — spans full width below the two-column grid */}
+          <div className="p-4 md:p-6 pt-0 md:pt-0 bg-muted/30">
+            <div className="border-t pt-4">
+              <InvoiceSection contractId={contract.id} onUpdate={onContractUpdate} />
+            </div>
+          </div>
+
+          {/* Documents section — spans full width below invoices */}
+          <div className="p-4 md:p-6 pt-0 md:pt-0 bg-muted/30">
+            <div className="border-t pt-4">
+              <ContractDocumentsSection contractId={contract.id} onUpdate={onContractUpdate} />
             </div>
           </div>
         </div>

@@ -151,7 +151,7 @@ In production: Use the Railway-provided URL.
 
 **Endpoint:** `PATCH /api/documents/:id/status`
 
-**Description:** Update document status (draft → in_review → approved → archived → disposed).
+**Description:** Update document status (draft -> in_review -> approved -> archived -> disposed).
 
 **Request Body:**
 ```json
@@ -389,9 +389,9 @@ In production: Use the Railway-provided URL.
 ```
 
 **Actions:**
-- `sign` - unsigned → signed
-- `activate` - signed → active
-- `terminate` - active → terminated
+- `sign` - unsigned -> signed
+- `activate` - signed -> active
+- `terminate` - active -> terminated
 
 **Response:**
 ```json
