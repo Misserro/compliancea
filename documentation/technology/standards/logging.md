@@ -47,7 +47,7 @@ Action names are past-tense, lowercase, underscore-separated. The canonical set:
 created, updated, deleted, searched, state_changed,
 hold_applied, hold_released, processed, synced, tagged,
 policy_triggered, batch_approved, retag_document,
-contract_sign, contract_activate
+contract_sign, contract_activate, finalized
 ```
 
 When adding a new action, follow the pattern: `{verb_past_tense}` or `{noun}_{verb_past_tense}`.

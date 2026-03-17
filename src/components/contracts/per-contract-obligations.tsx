@@ -217,26 +217,7 @@ function ContractObligationsRow({ contract, categoryFilter }: ContractRowProps) 
                           console.error("Compliance check failed:", err);
                         }
                       }}
-                      onFinalize={async (id, note) => {
-                        try {
-                          const res = await fetch(`/api/obligations/${id}/finalize`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ note }),
-                          });
-                          if (res.ok) {
-                            toast.success("Obligation finalized");
-                            refreshObligations();
-                          } else {
-                            const data = await res.json();
-                            toast.error(data.error || "Failed to finalize");
-                          }
-                        } catch (err) {
-                          toast.error(
-                            `Finalize failed: ${err instanceof Error ? err.message : "Unknown error"}`
-                          );
-                        }
-                      }}
+                      onCompleted={() => refreshObligations()}
                     />
                   ))}
                 </div>

@@ -1,0 +1,14 @@
+{
+  "name": "019-obligation-improvements",
+  "description": "Navigation cleanup, 4-category typed system, obligation card redesign with completion dialog",
+  "plan_file": "documentation/plans/019-obligation-improvements/README.md",
+  "status": "executing",
+  "started_at": "2026-03-17T00:00:00.000Z",
+  "ended_at": null,
+  "elapsed_seconds": 0,
+  "concurrency_limit": 2,
+  "total_tasks": 3,
+  "completed_tasks": 0,
+  "active_tasks": 0,
+  "pending_tasks": 3
+}

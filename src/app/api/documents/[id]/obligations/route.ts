@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureDb } from "@/lib/server-utils";
-import { getDocumentById, getObligationsByDocumentId, insertObligation, spawnDueObligations } from "@/lib/db-imports";
+import { getDocumentById, getObligationsByDocumentId, getObligationById, insertObligation, spawnDueObligations } from "@/lib/db-imports";
+import { logAction } from "@/lib/audit-imports";
 
 export const runtime = "nodejs";
 
@@ -68,8 +69,18 @@ export async function POST(
       isRepeating: body.isRepeating ?? false,
       recurrenceInterval,
       parentObligationId: body.parentObligationId ?? null,
+      paymentAmount: body.paymentAmount ?? null,
+      paymentCurrency: body.paymentCurrency || null,
+      reportingFrequency: body.reportingFrequency || null,
+      reportingRecipient: body.reportingRecipient || null,
+      complianceRegulatoryBody: body.complianceRegulatoryBody || null,
+      complianceJurisdiction: body.complianceJurisdiction || null,
+      operationalServiceType: body.operationalServiceType || null,
+      operationalSlaMetric: body.operationalSlaMetric || null,
     });
-    return NextResponse.json({ id: newId }, { status: 201 });
+    logAction("obligation", newId, "created", { documentId: docId, title: body.title });
+    const created = getObligationById(newId);
+    return NextResponse.json({ obligation: created }, { status: 201 });
   } catch (err: unknown) {
     console.error("Error creating obligation:", err);
     return NextResponse.json({ error: "Failed to create obligation" }, { status: 500 });

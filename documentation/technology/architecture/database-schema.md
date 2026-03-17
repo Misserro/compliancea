@@ -157,7 +157,7 @@ Text chunks with embeddings for semantic search.
 
 ### contract_obligations
 
-Obligations extracted from contracts.
+Obligations extracted from contracts or created manually.
 
 **Columns:**
 
@@ -171,29 +171,32 @@ Obligations extracted from contracts.
 | clause_reference | TEXT | Contract clause reference |
 | stage | TEXT | Lifecycle stage (not_signed, signed, active, terminated) |
 | status | TEXT | Status (active, inactive, met, waived, finalized) |
-| category | TEXT | Category (payments, termination, legal, others) |
+| category | TEXT | Category (payment, reporting, compliance, operational) |
 | due_date | DATE | Deadline date |
-| recurrence | TEXT | Recurrence pattern (one-time, monthly, quarterly, annually) |
+| start_date | DATE | Start date for repeating obligations |
+| is_repeating | INTEGER | 0/1 flag for repeating obligations |
+| recurrence_interval | INTEGER | Days between spawned child obligations |
+| parent_obligation_id | INTEGER | FK to parent obligation (self-ref, nullable) |
 | notice_period_days | INTEGER | Notice period in days |
 | owner | TEXT | Responsible person |
 | escalation_to | TEXT | Escalation contact |
-| penalties | TEXT | Penalty description |
-| details_json | TEXT | Additional details (JSON) |
-| evidence_json | TEXT | Evidence documents (JSON array) |
-| finalization_note | TEXT | Completion notes |
-| finalization_document_id | INTEGER | Proof document ID |
+| department | TEXT | Responsible department |
+| evidence_json | TEXT | Evidence documents (JSON array of {id, name}) |
+| finalization_note | TEXT | Completion note (required for finalization unless document provided) |
+| finalization_document_id | INTEGER | Proof document ID (required unless note provided) |
+| details_json | TEXT | Legacy additional details (JSON) |
 
 **Indexes:**
 - PRIMARY KEY (id)
 - INDEX (document_id)
-- INDEX (stage)
 - INDEX (status)
 - INDEX (due_date)
 
 **Notes:**
-- Stage transitions: not_signed -> signed -> active -> terminated
-- Only obligations matching contract status are active
-- Tasks auto-created for active obligations
+- Categories: payment, reporting, compliance, operational (4 canonical types)
+- Repeating obligations: `spawnDueObligations()` runs on each GET, creates child when due_date is past and no child exists yet
+- Completion (finalization) requires at least one of: finalization_note or finalization_document_id
+- Stage transitions: not_signed → signed → active → terminated (drives obligation activation)
 
 ---
 

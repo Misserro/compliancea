@@ -1,0 +1,23 @@
+{
+  "task_id": "task-2",
+  "task_name": "Category system — 4 typed categories, DB columns, creation form",
+  "team_name": "task-2-team",
+  "goal": "4 new categories with typed DB columns; category-first creation form; PATCH allowlist expanded; npm run build passes",
+  "status": "pending",
+  "pipeline_mode": false,
+  "started_at": null,
+  "ended_at": null,
+  "elapsed_seconds": 0,
+  "stages": {
+    "planning":       { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-2",  "role": "executor",  "model": "opus",   "status": "idle", "spawned_at": null, "ended_at": null },
+    { "name": "reviewer-2",  "role": "reviewer",  "model": "sonnet", "status": "idle", "spawned_at": null, "ended_at": null },
+    { "name": "tester-2",    "role": "tester",    "model": "sonnet", "status": "idle", "spawned_at": null, "ended_at": null }
+  ]
+}

@@ -67,6 +67,14 @@ export interface Obligation {
   is_repeating: number;
   recurrence_interval: number | null;
   parent_obligation_id: number | null;
+  payment_amount: number | null;
+  payment_currency: string | null;
+  reporting_frequency: string | null;
+  reporting_recipient: string | null;
+  compliance_regulatory_body: string | null;
+  compliance_jurisdiction: string | null;
+  operational_service_type: string | null;
+  operational_sla_metric: string | null;
   document_name?: string;
   document_status?: string;
   contracting_company?: string;

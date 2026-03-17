@@ -20,7 +20,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const allowed = ["owner", "escalation_to", "status", "proof_description", "due_date", "title", "description", "activation", "stage", "department", "category"];
+    const allowed = ["owner", "escalation_to", "status", "proof_description", "due_date", "title", "description", "activation", "stage", "department", "category", "payment_amount", "payment_currency", "reporting_frequency", "reporting_recipient", "compliance_regulatory_body", "compliance_jurisdiction", "operational_service_type", "operational_sla_metric"];
     const updates: Record<string, unknown> = {};
     for (const key of allowed) {
       if (body[key] !== undefined) {

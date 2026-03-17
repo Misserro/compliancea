@@ -1,14 +1,19 @@
-import { NextResponse } from "next/server";
-import { finalizeObligation, logAction } from "@/lib/db-imports";
+import { NextRequest, NextResponse } from "next/server";
+import { ensureDb } from "@/lib/server-utils";
+import { finalizeObligation } from "@/lib/db-imports";
+import { logAction } from "@/lib/audit-imports";
+
+export const runtime = "nodejs";
 
 /**
  * POST /api/obligations/[id]/finalize
  * Finalize an obligation with note or document
  */
 export async function POST(
-  request: Request,
+  request: NextRequest,
   props: { params: Promise<{ id: string }> }
 ) {
+  await ensureDb();
   try {
     const params = await props.params;
     const id = parseInt(params.id, 10);
@@ -29,11 +34,10 @@ export async function POST(
 
     const obligation = await finalizeObligation(id, { note, documentId });
 
-    // Log the action
-    await logAction("obligation", id, "finalized", JSON.stringify({ note, documentId }));
+    logAction("obligation", id, "finalized", { note: note ?? null, documentId: documentId ?? null });
 
     return NextResponse.json({ obligation });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error finalizing obligation:", error);
     const message = error instanceof Error ? error.message : "Failed to finalize obligation";
     return NextResponse.json({ error: message }, { status: 500 });

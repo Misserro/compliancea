@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DEPARTMENTS, OBLIGATION_CATEGORIES, CONTRACT_STATUS_DISPLAY } from "@/lib/constants";
+import { DEPARTMENTS, OBLIGATION_CATEGORIES, CONTRACT_STATUS_DISPLAY, INVOICE_CURRENCIES, REPORTING_FREQUENCIES } from "@/lib/constants";
 
 interface ObligationDraft {
   key: string;
@@ -21,6 +21,14 @@ interface ObligationDraft {
   department: string;
   summary: string;
   proofDescription: string;
+  paymentAmount: string;
+  paymentCurrency: string;
+  reportingFrequency: string;
+  reportingRecipient: string;
+  complianceRegulatoryBody: string;
+  complianceJurisdiction: string;
+  operationalServiceType: string;
+  operationalSlaMetric: string;
 }
 
 function makeObligation(): ObligationDraft {
@@ -35,10 +43,18 @@ function makeObligation(): ObligationDraft {
     recurrenceInterval: "",
     owner: "",
     escalationTo: "",
-    category: "",
+    category: "payment",
     department: "",
     summary: "",
     proofDescription: "",
+    paymentAmount: "",
+    paymentCurrency: "EUR",
+    reportingFrequency: "",
+    reportingRecipient: "",
+    complianceRegulatoryBody: "",
+    complianceJurisdiction: "",
+    operationalServiceType: "",
+    operationalSlaMetric: "",
   };
 }
 
@@ -80,6 +96,41 @@ function ObligationFormCard({ obligation, onChange, onRemove }: ObligationFormCa
     </div>
   );
 
+  const categorySpecificFields = () => {
+    switch (obligation.category) {
+      case "payment":
+        return (
+          <>
+            {field("Amount", "paymentAmount", "number")}
+            {field("Currency", "paymentCurrency", "select", INVOICE_CURRENCIES)}
+          </>
+        );
+      case "reporting":
+        return (
+          <>
+            {field("Frequency", "reportingFrequency", "select", REPORTING_FREQUENCIES)}
+            {field("Recipient", "reportingRecipient", "text")}
+          </>
+        );
+      case "compliance":
+        return (
+          <>
+            {field("Regulatory body", "complianceRegulatoryBody", "text")}
+            {field("Jurisdiction", "complianceJurisdiction", "text")}
+          </>
+        );
+      case "operational":
+        return (
+          <>
+            {field("Service type", "operationalServiceType", "text")}
+            {field("SLA metric", "operationalSlaMetric", "text")}
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <Card className="mb-4">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -94,10 +145,24 @@ function ObligationFormCard({ obligation, onChange, onRemove }: ObligationFormCa
         </button>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium mb-1">Category *</label>
+          <select
+            className="w-full border border-input rounded px-3 py-2 text-sm bg-background"
+            value={obligation.category}
+            onChange={(e) => onChange(obligation.key, "category", e.target.value)}
+          >
+            {OBLIGATION_CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+            ))}
+          </select>
+        </div>
         {field("Title *", "title", "text")}
-        {field("Clause reference", "clauseReference", "text")}
         {field("Due date", "dueDate", "date")}
         {field("Start date", "startDate", "date")}
+        {field("Owner", "owner", "text")}
+        {field("Description", "description", "textarea")}
+        {obligation.category && categorySpecificFields()}
         <div className="md:col-span-2">
           <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
             <input
@@ -125,13 +190,7 @@ function ObligationFormCard({ obligation, onChange, onRemove }: ObligationFormCa
             </select>
           </div>
         )}
-        {field("Owner", "owner", "text")}
-        {field("Escalation to", "escalationTo", "text")}
-        {field("Category", "category", "select", OBLIGATION_CATEGORIES)}
         {field("Department", "department", "select", DEPARTMENTS)}
-        {field("Description", "description", "textarea")}
-        {field("Summary", "summary", "textarea")}
-        {field("Proof description", "proofDescription", "textarea")}
       </CardContent>
     </Card>
   );
@@ -225,9 +284,11 @@ export function ContractsNewForm() {
       // POST obligations sequentially
       for (const ob of obligations) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { key: _key, isRepeating, recurrenceInterval, ...obData } = ob;
+        const { key: _key, isRepeating, recurrenceInterval, paymentAmount, ...obData } = ob;
         const recurrenceIntervalParsed = parseInt(recurrenceInterval, 10);
         const finalRecurrenceInterval = !isRepeating ? null : (isNaN(recurrenceIntervalParsed) ? null : recurrenceIntervalParsed);
+        const parsedPaymentAmount = parseFloat(paymentAmount);
+        const finalPaymentAmount = isNaN(parsedPaymentAmount) ? null : parsedPaymentAmount;
 
         const obRes = await fetch(`/api/documents/${id}/obligations`, {
           method: "POST",
@@ -236,6 +297,7 @@ export function ContractsNewForm() {
             ...obData,
             isRepeating,
             recurrenceInterval: finalRecurrenceInterval,
+            paymentAmount: finalPaymentAmount,
           }),
         });
         if (!obRes.ok) {
