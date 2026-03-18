@@ -2,9 +2,8 @@
 
 import { useState, useEffect, type ElementType } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, AlertTriangle, Briefcase, Rocket, TrendingUp } from "lucide-react";
+import { FileText, AlertTriangle, Briefcase } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FEATURE_STATUSES, STATUS_LABELS } from "@/lib/types";
 
 interface DashboardData {
   docs: { total: number; processed: number; byType: Record<string, number> };
@@ -16,7 +15,6 @@ interface DashboardData {
     total: number; active: number;
     expiringSoon: Array<{ id: number; name: string; expiry_date: string; daysLeft: number }>;
   };
-  features: { total: number; byStatus: Record<string, number> };
 }
 
 function KpiCard({
@@ -64,9 +62,9 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
-          Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)
+          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)
         ) : data ? (
           <>
             <KpiCard
@@ -84,11 +82,6 @@ export default function DashboardPage() {
               icon={Briefcase} label="Contracts" href="/contracts"
               value={data.contracts.total}
               sub={`${data.contracts.expiringSoon.length} expiring soon`}
-            />
-            <KpiCard
-              icon={Rocket} label="Features" href="/product-hub"
-              value={data.features.total}
-              sub={`${data.features.byStatus["shipped"] ?? 0} shipped`}
             />
           </>
         ) : null}
@@ -166,32 +159,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Product Hub status bar */}
-      {data && data.features.total > 0 && (
-        <div className="rounded-xl border bg-card shadow-sm px-5 py-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold">Product Hub</h3>
-            <span className="text-xs text-muted-foreground ml-auto">{data.features.total} features</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {FEATURE_STATUSES.map(status => {
-              const count = data.features.byStatus[status] ?? 0;
-              if (count === 0) return null;
-              return (
-                <button
-                  key={status}
-                  onClick={() => router.push("/product-hub")}
-                  className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs hover:bg-muted/40 transition-colors"
-                >
-                  <span className="font-medium">{STATUS_LABELS[status]}</span>
-                  <span className="font-bold">{count}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

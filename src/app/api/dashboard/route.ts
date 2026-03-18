@@ -6,7 +6,6 @@ import {
   getOverdueObligations,
   getUpcomingObligations,
   getContractsWithSummaries,
-  getProductFeatures,
 } from "@/lib/db-imports";
 
 export const runtime = "nodejs";
@@ -22,8 +21,6 @@ export async function GET() {
       id: number; name: string; status: string; expiry_date: string | null;
       activeObligations: number | null;
     }>;
-    const features = getProductFeatures() as Array<{ status: string }>;
-
     // Contracts expiring within 60 days
     const now = new Date();
     const in60Days = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
@@ -44,12 +41,6 @@ export async function GET() {
       byType[t] = (byType[t] || 0) + 1;
     }
 
-    // Feature status breakdown
-    const byStatus: Record<string, number> = {};
-    for (const f of features) {
-      byStatus[f.status] = (byStatus[f.status] || 0) + 1;
-    }
-
     return NextResponse.json({
       docs: {
         total: docs.length,
@@ -66,10 +57,6 @@ export async function GET() {
         total: contracts.length,
         active: contracts.filter(c => c.status === "active" || ((c.activeObligations ?? 0) > 0)).length,
         expiringSoon,
-      },
-      features: {
-        total: features.length,
-        byStatus,
       },
     });
   } catch (err: unknown) {
