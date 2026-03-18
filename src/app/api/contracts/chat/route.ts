@@ -187,8 +187,9 @@ Expiry: ${doc.expiry_date || "not set"}
           if (doc) {
             contracts = [doc];
             const fullText = (doc.full_text as string) || "";
-            const truncated = fullText.split(/\s+/).slice(0, 6000).join(" ");
-            contextText = `CONTRACT: ${doc.name}
+            if (fullText.trim()) {
+              const truncated = fullText.split(/\s+/).slice(0, 6000).join(" ");
+              contextText = `CONTRACT: ${doc.name}
 Status: ${doc.status}
 Vendor: ${doc.contracting_vendor || "N/A"}
 Company: ${doc.contracting_company || "N/A"}
@@ -196,6 +197,15 @@ Expiry: ${doc.expiry_date || "not set"}
 
 FULL TEXT:
 ${truncated}`;
+            } else {
+              contextText = `CONTRACT: ${doc.name}
+Status: ${doc.status}
+Vendor: ${doc.contracting_vendor || "N/A"}
+Company: ${doc.contracting_company || "N/A"}
+Expiry: ${doc.expiry_date || "not set"}
+
+[No full text available — this contract was created manually without an uploaded document.]`;
+            }
           }
         } else if (found.length > 1) {
           const names = found.map((c) => `"${c.name}"`).join(", ");
@@ -209,22 +219,30 @@ ${truncated}`;
         }
       }
     } else if (intent === "obligations") {
+      const safeDaysLimit =
+        typeof params.dueWithinDays === "number" && isFinite(params.dueWithinDays)
+          ? Math.max(0, Math.min(Math.floor(params.dueWithinDays), 365))
+          : undefined;
+      const VALID_CATEGORIES = new Set(["payments", "reporting", "compliance", "operational"]);
+      const safeCategory = params.category && VALID_CATEGORIES.has(params.category) ? params.category : undefined;
       obligations = getObligationsForChat({
-        dueWithinDays: params.dueWithinDays ?? undefined,
+        dueWithinDays: safeDaysLimit,
         overdue: params.overdue,
-        category: params.category ?? undefined,
+        category: safeCategory,
         contractIds: selectedContractId ? [selectedContractId] : undefined,
         limit: 20,
       }) as ObligationRow[];
-      appliedFilters.dueWithinDays = params.dueWithinDays;
+      appliedFilters.dueWithinDays = safeDaysLimit;
       appliedFilters.overdue = params.overdue;
-      appliedFilters.category = params.category;
+      appliedFilters.category = safeCategory;
       contextText = formatObligationsContext(obligations);
     } else if (intent === "filter") {
+      const VALID_STATUSES = new Set(["unsigned", "signed", "active", "terminated"]);
+      const safeStatus = params.status && VALID_STATUSES.has(params.status) ? params.status : undefined;
       contracts = searchContractsByFilters({
         company: params.company ?? undefined,
         vendor: params.vendor ?? undefined,
-        status: params.status ?? undefined,
+        status: safeStatus,
         expiryBefore: params.expiryBefore ?? undefined,
         expiryAfter: params.expiryAfter ?? undefined,
         missingExpiry: params.missingExpiry,
@@ -233,7 +251,7 @@ ${truncated}`;
       }) as ContractRow[];
       appliedFilters.company = params.company;
       appliedFilters.vendor = params.vendor;
-      appliedFilters.status = params.status;
+      appliedFilters.status = safeStatus;
       appliedFilters.expiryBefore = params.expiryBefore;
       appliedFilters.expiryAfter = params.expiryAfter;
       contextText = formatContractsContext(contracts);
