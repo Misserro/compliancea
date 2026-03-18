@@ -74,7 +74,7 @@ export default function SettingsPage() {
       <div>
         <h2 className="text-2xl font-semibold tracking-tight">Settings</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Configure AI models, integrations, and maintenance.
+          Configure AI models, Google Drive integration, and policy filters.
         </p>
       </div>
 
