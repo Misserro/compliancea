@@ -11,9 +11,17 @@ interface ContractListProps {
   refreshTrigger?: number;
   searchQuery: string;
   selectedStatuses: string[];
+  selectedContractId?: number | null;
+  onSelectContract?: (contractId: number | null, contractName: string | null) => void;
 }
 
-export function ContractList({ refreshTrigger, searchQuery, selectedStatuses }: ContractListProps) {
+export function ContractList({
+  refreshTrigger,
+  searchQuery,
+  selectedStatuses,
+  selectedContractId,
+  onSelectContract,
+}: ContractListProps) {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [cardRefresh, setCardRefresh] = useState(0);
@@ -86,6 +94,8 @@ export function ContractList({ refreshTrigger, searchQuery, selectedStatuses }: 
           key={contract.id}
           contract={contract}
           onContractUpdate={() => setCardRefresh((n) => n + 1)}
+          isSelected={selectedContractId === contract.id}
+          onSelect={onSelectContract}
         />
       ))}
     </div>

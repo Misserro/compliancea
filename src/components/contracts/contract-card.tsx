@@ -12,6 +12,8 @@ import { ContractDocumentsSection } from "./contract-documents-section";
 interface ContractCardProps {
   contract: Contract;
   onContractUpdate?: () => void;
+  onSelect?: (contractId: number | null, contractName: string | null) => void;
+  isSelected?: boolean;
 }
 
 type StatusActionConfig = {
@@ -49,7 +51,7 @@ function formatDate(dateString: string | null) {
   }
 }
 
-export function ContractCard({ contract, onContractUpdate }: ContractCardProps) {
+export function ContractCard({ contract, onContractUpdate, onSelect, isSelected }: ContractCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -108,11 +110,17 @@ export function ContractCard({ contract, onContractUpdate }: ContractCardProps) 
   };
 
   return (
-    <div className="bg-card border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+    <div className={`bg-card border rounded-lg overflow-hidden hover:shadow-md transition-shadow ${isSelected ? "ring-2 ring-primary/40" : ""}`}>
       {/* Collapsed header */}
       <div
         className="p-4 cursor-pointer"
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => {
+          const nextExpanded = !expanded;
+          setExpanded(nextExpanded);
+          if (onSelect) {
+            onSelect(nextExpanded ? contract.id : null, nextExpanded ? contract.name : null);
+          }
+        }}
       >
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1">
