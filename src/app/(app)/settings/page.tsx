@@ -4,8 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { AIConfigSection } from "@/components/settings/ai-config-section";
 import { GDriveSection } from "@/components/settings/gdrive-section";
-import { MaintenanceSection } from "@/components/settings/maintenance-section";
-import { StatisticsSection } from "@/components/settings/statistics-section";
 import { PoliciesSection } from "@/components/settings/policies-section";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Settings } from "@/lib/types";
@@ -101,10 +99,6 @@ export default function SettingsPage() {
       </Card>
 
       <GDriveSection />
-
-      <MaintenanceSection />
-
-      <StatisticsSection />
     </div>
   );
 }
