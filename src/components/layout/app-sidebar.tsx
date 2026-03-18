@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, ClipboardCheck, Settings, MessageSquare, Layers, Shield, Package, LayoutDashboard, Sun, Moon, Monitor, Users, LogOut, ListChecks } from "lucide-react";
+import { FileText, ClipboardCheck, Settings, MessageSquare, Layers, Shield, LayoutDashboard, Sun, Moon, Monitor, Users, LogOut, ListChecks } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -172,7 +172,6 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {[
-                { title: "Product Hub", href: "/product-hub", icon: Package },
                 { title: "Settings", href: "/settings", icon: Settings },
                 ...(isAdmin ? [{ title: "Users", href: "/users", icon: Users }] : []),
               ].map((item) => {
