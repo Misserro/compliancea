@@ -1,0 +1,312 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-03-18T00:00:00.000Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution started \u2014 Legal Hub (5 tasks, concurrency limit 2)"
+    },
+    {
+      "timestamp": "2026-03-18T12:43:18.000Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1-team spawned: DB schema + Case Registry API + Matter Dashboard UI (executor-1, reviewer-1, tester-1)"
+    },
+    {
+      "timestamp": "2026-03-18T12:43:18.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-18T12:46:29.000Z",
+      "type": "stall_detected",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "executor-1 hit HTTP 529 overload error (first occurrence) \u2014 re-spawned on Opus (retry_count: 1)"
+    },
+    {
+      "timestamp": "2026-03-18T12:51:04.000Z",
+      "type": "rate_limit_suspected",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "executor-1 hit HTTP 529 a second time on Opus \u2014 systemic overload pattern confirmed. Spawn pause in effect. (retry_count: 2)"
+    },
+    {
+      "timestamp": "2026-03-18T12:55:13.000Z",
+      "type": "stall_detected",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "executor-1 re-spawned on Opus (attempt 3) \u2014 monitoring for further failure. (retry_count: 3)"
+    },
+    {
+      "timestamp": "2026-03-18T12:59:49.000Z",
+      "type": "rate_limit_recovered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "executor-1 switched from Opus to Sonnet due to persistent 529 overload \u2014 re-spawned on Sonnet (attempt 4, retry_count: 4)"
+    },
+    {
+      "timestamp": "2026-03-18T13:03:14.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 entered implementation stage \u2014 plan approved with minor status-list fix. Planning elapsed: ~20 minutes (includes ~16 min of 529 downtime)"
+    },
+    {
+      "timestamp": "2026-03-18T13:12:51.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "reviewer-1",
+      "message": "task-1 entered review stage \u2014 implementation complete in ~9 minutes. reviewer-1 now active."
+    },
+    {
+      "timestamp": "2026-03-18T13:13:54.000Z",
+      "type": "pipeline_spawn",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2-team pipeline-spawned in planning-only mode \u2014 Case Detail UI (metadata, parties, status, deadlines). Blocked on task-1 approval before implementation."
+    },
+    {
+      "timestamp": "2026-03-18T13:13:54.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "executor-2",
+      "message": "task-2 entered planning stage (pipeline mode \u2014 implementation gated on task-1 approval)"
+    },
+    {
+      "timestamp": "2026-03-18T13:50:34.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 review FAILED \u2014 2 issues flagged: catch typing and response envelope keys. Looping back to implementation for fixes. Review elapsed: ~38 minutes. retry_count: 5"
+    },
+    {
+      "timestamp": "2026-03-18T13:52:13.000Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 COMPLETED \u2014 DB schema + Case Registry API + Matter Dashboard UI. Total elapsed: ~69 minutes (includes ~16 min 529 downtime). retry_count: 5"
+    },
+    {
+      "timestamp": "2026-03-18T13:52:13.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1-team shut down \u2014 executor-1, reviewer-1, tester-1 all ended"
+    },
+    {
+      "timestamp": "2026-03-18T13:52:13.000Z",
+      "type": "implementation_approved",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 plan approved \u2014 pipeline_mode cleared, implementation stage unlocked. executor-2 proceeding to implement."
+    },
+    {
+      "timestamp": "2026-03-18T13:52:13.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "executor-2",
+      "message": "task-2 entered implementation stage \u2014 planning elapsed: ~38 minutes (ran concurrently during task-1 review + fix cycle)"
+    },
+    {
+      "timestamp": "2026-03-18T13:58:19.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "reviewer-2",
+      "message": "task-2 entered review stage \u2014 implementation complete in ~6 minutes. reviewer-2 now active."
+    },
+    {
+      "timestamp": "2026-03-18T14:00:06.000Z",
+      "type": "pipeline_spawn",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3-team pipeline-spawned in planning-only mode \u2014 Case Document Repository. Gated on task-2 approval before implementation."
+    },
+    {
+      "timestamp": "2026-03-18T14:00:06.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "executor-3",
+      "message": "task-3 entered planning stage (pipeline mode \u2014 implementation gated on task-2 approval)"
+    },
+    {
+      "timestamp": "2026-03-18T14:00:06.000Z",
+      "type": "pipeline_spawn",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4-team pipeline-spawned in planning-only mode \u2014 Template-based Document Generation. Gated on task-2 approval before implementation."
+    },
+    {
+      "timestamp": "2026-03-18T14:00:06.000Z",
+      "type": "stage_entered",
+      "task_id": "task-4",
+      "agent": "executor-4",
+      "message": "task-4 entered planning stage (pipeline mode \u2014 implementation gated on task-2 approval)"
+    },
+    {
+      "timestamp": "2026-03-18T14:07:05.000Z",
+      "type": "task_completed",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 COMPLETED \u2014 Case Detail UI (metadata, parties, status, deadlines). Total elapsed: ~53 minutes. Planning: ~38 min, implementation: ~6 min, review: ~9 min. 0 retries."
+    },
+    {
+      "timestamp": "2026-03-18T14:07:05.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2-team shut down \u2014 executor-2, reviewer-2, tester-2 all ended"
+    },
+    {
+      "timestamp": "2026-03-18T14:07:05.000Z",
+      "type": "implementation_approved",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 plan approved \u2014 pipeline_mode cleared, implementation unlocked. executor-3 proceeding."
+    },
+    {
+      "timestamp": "2026-03-18T14:07:05.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "executor-3",
+      "message": "task-3 entered implementation stage \u2014 planning elapsed: ~7 minutes"
+    },
+    {
+      "timestamp": "2026-03-18T14:07:05.000Z",
+      "type": "implementation_approved",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4 plan approved \u2014 pipeline_mode cleared, implementation unlocked. executor-4 proceeding."
+    },
+    {
+      "timestamp": "2026-03-18T14:07:05.000Z",
+      "type": "stage_entered",
+      "task_id": "task-4",
+      "agent": "executor-4",
+      "message": "task-4 entered implementation stage \u2014 planning elapsed: ~7 minutes"
+    },
+    {
+      "timestamp": "2026-03-18T14:12:09.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "reviewer-3",
+      "message": "task-3 entered review stage \u2014 implementation complete in ~5 minutes. reviewer-3 now active."
+    },
+    {
+      "timestamp": "2026-03-18T14:18:30.000Z",
+      "type": "pipeline_spawn",
+      "task_id": "task-5",
+      "agent": "pm",
+      "message": "task-5-team pipeline-spawned in planning-only mode \u2014 Grounded Case Chat. Gated on task-3 approval (task-2 already complete) before implementation."
+    },
+    {
+      "timestamp": "2026-03-18T14:18:30.000Z",
+      "type": "stage_entered",
+      "task_id": "task-5",
+      "agent": "executor-5",
+      "message": "task-5 entered planning stage (pipeline mode \u2014 implementation gated on task-3 approval)"
+    },
+    {
+      "timestamp": "2026-03-18T14:19:17.000Z",
+      "type": "stage_entered",
+      "task_id": "task-4",
+      "agent": "reviewer-4",
+      "message": "task-4 entered review stage \u2014 implementation complete in ~12 minutes. reviewer-4 now active."
+    },
+    {
+      "timestamp": "2026-03-18T14:19:17.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "executor-3",
+      "message": "task-3 review FAILED \u2014 1 issue: CASE_ATTACHMENTS_DIR missing from paths.js. Looping back to implementation. Review elapsed: ~7 minutes. retry_count: 1"
+    },
+    {
+      "timestamp": "2026-03-18T14:22:11.000Z",
+      "type": "stage_entered",
+      "task_id": "task-4",
+      "agent": "executor-4",
+      "message": "task-4 review FAILED \u2014 3 issues: template sanitization, missing logAction in export route, 400\u2192404 for missing template. Looping back to implementation. Review elapsed: ~3 minutes. retry_count: 1"
+    },
+    {
+      "timestamp": "2026-03-18T14:22:59.000Z",
+      "type": "task_completed",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 COMPLETED \u2014 Case Document Repository. Total elapsed: ~23 minutes. Planning: ~7 min, implementation: ~16 min (incl. retry fix), review: ~11 min total. retry_count: 1"
+    },
+    {
+      "timestamp": "2026-03-18T14:22:59.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3-team shut down \u2014 executor-3, reviewer-3, tester-3 all ended"
+    },
+    {
+      "timestamp": "2026-03-18T14:22:59.000Z",
+      "type": "implementation_approved",
+      "task_id": "task-5",
+      "agent": "pm",
+      "message": "task-5 plan approved \u2014 pipeline_mode cleared, implementation unlocked. executor-5 proceeding."
+    },
+    {
+      "timestamp": "2026-03-18T14:22:59.000Z",
+      "type": "stage_entered",
+      "task_id": "task-5",
+      "agent": "executor-5",
+      "message": "task-5 entered implementation stage \u2014 planning elapsed: ~4 minutes"
+    },
+    {
+      "timestamp": "2026-03-18T14:26:06.000Z",
+      "type": "stage_entered",
+      "task_id": "task-5",
+      "agent": "reviewer-5",
+      "message": "task-5 entered review stage \u2014 implementation complete in ~3 minutes. reviewer-5 now active."
+    },
+    {
+      "timestamp": "2026-03-18T14:28:37.000Z",
+      "type": "stage_entered",
+      "task_id": "task-5",
+      "agent": "executor-5",
+      "message": "task-5 review FAILED \u2014 1 issue: JSON body parse error handling missing inner try-catch for 400 on malformed JSON. Looping back to implementation. Review elapsed: ~2 minutes. retry_count: 1"
+    },
+    {
+      "timestamp": "2026-03-18T14:30:11.000Z",
+      "type": "task_completed",
+      "task_id": "task-5",
+      "agent": "pm",
+      "message": "task-5 COMPLETED \u2014 Grounded Case Chat. Total elapsed: ~12 minutes. Planning: ~4 min, implementation: ~7 min (incl. retry fix), review: ~4 min total. retry_count: 1"
+    },
+    {
+      "timestamp": "2026-03-18T14:30:11.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-5",
+      "agent": "pm",
+      "message": "task-5-team shut down \u2014 executor-5, reviewer-5, tester-5 all ended"
+    },
+    {
+      "timestamp": "2026-03-18T14:31:26.000Z",
+      "type": "task_completed",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4 COMPLETED \u2014 Template-based Document Generation. Total elapsed: ~31 minutes. Planning: ~7 min, implementation: ~24 min (incl. retry fix), review: ~12 min total. retry_count: 1"
+    },
+    {
+      "timestamp": "2026-03-18T14:31:26.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4-team shut down \u2014 executor-4, reviewer-4, tester-4 all ended"
+    },
+    {
+      "timestamp": "2026-03-18T14:31:26.000Z",
+      "type": "execution_completed",
+      "task_id": null,
+      "agent": "pm",
+      "message": "All 5 tasks completed. Total wall-clock: ~108 minutes. Effective work time: ~92 minutes. Operational report written."
+    }
+  ]
+}

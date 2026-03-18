@@ -1,0 +1,14 @@
+{
+  "name": "022-legal-hub",
+  "description": "Legal Hub — professional case management module for law firms: case registry, document repository, template-based document generation, and grounded AI chat",
+  "plan_file": "documentation/plans/022-legal-hub/README.md",
+  "status": "completed",
+  "started_at": "2026-03-18T12:43:18.000Z",
+  "ended_at": "2026-03-18T14:31:26.000Z",
+  "elapsed_seconds": 6488,
+  "concurrency_limit": 2,
+  "total_tasks": 5,
+  "completed_tasks": 5,
+  "active_tasks": 0,
+  "pending_tasks": 0
+}

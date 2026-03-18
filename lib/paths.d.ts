@@ -3,6 +3,7 @@ export const DOCUMENTS_DIR: any;
 export const GDRIVE_DIR: any;
 export const INVOICES_DIR: any;
 export const CONTRACT_ATTACHMENTS_DIR: any;
+export const CASE_ATTACHMENTS_DIR: any;
 export const DB_DIR: any;
 export const DB_PATH: any;
 export const isRailway: any;

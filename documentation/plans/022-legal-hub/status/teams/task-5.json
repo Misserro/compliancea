@@ -1,0 +1,23 @@
+{
+  "task_id": "task-5",
+  "task_name": "Grounded Case Chat",
+  "team_name": "task-5-team",
+  "goal": "Chat tab with two-step LLM pipeline: Haiku classifier (5 intents) → SQL/vector retrieval scoped to case → Sonnet grounded answer. case-chat.md prompt. CaseChatPanel UI adapted from ContractChatPanel.",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-18T14:18:30.000Z",
+  "ended_at": "2026-03-18T14:30:11.000Z",
+  "elapsed_seconds": 701,
+  "stages": {
+    "planning":       { "started_at": "2026-03-18T14:18:30.000Z", "ended_at": "2026-03-18T14:22:59.000Z", "elapsed_seconds": 269 },
+    "implementation": { "started_at": "2026-03-18T14:22:59.000Z", "ended_at": "2026-03-18T14:30:11.000Z", "elapsed_seconds": 432 },
+    "review":         { "started_at": "2026-03-18T14:26:06.000Z", "ended_at": "2026-03-18T14:30:11.000Z", "elapsed_seconds": 245 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 1,
+  "members": [
+    { "name": "executor-5", "role": "executor", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-18T14:18:30.000Z", "ended_at": "2026-03-18T14:30:11.000Z" },
+    { "name": "reviewer-5", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-18T14:18:30.000Z", "ended_at": "2026-03-18T14:30:11.000Z" },
+    { "name": "tester-5",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-18T14:18:30.000Z", "ended_at": "2026-03-18T14:30:11.000Z" }
+  ]
+}

@@ -140,3 +140,74 @@ export const CONTRACT_DOCUMENT_TYPE_COLORS: Record<string, string> = {
 };
 
 export const POLICIES_TAB_DEFAULT_DOC_TYPES = ["policy", "procedure"] as const;
+
+// ── Legal Hub constants ─────────────────────────────────────────────────────
+
+export const LEGAL_CASE_STATUSES = [
+  "new", "intake", "analysis", "draft_prepared", "filed",
+  "awaiting_response", "hearing_scheduled", "judgment_received",
+  "appeal", "closed",
+] as const;
+
+export const LEGAL_CASE_TYPES = [
+  "civil", "criminal", "administrative", "labor", "family", "commercial",
+] as const;
+
+export const LEGAL_CASE_STATUS_DISPLAY: Record<string, string> = {
+  new: "New",
+  intake: "Intake",
+  analysis: "Analysis",
+  draft_prepared: "Draft Prepared",
+  filed: "Filed",
+  awaiting_response: "Awaiting Response",
+  hearing_scheduled: "Hearing Scheduled",
+  judgment_received: "Judgment Received",
+  appeal: "Appeal",
+  closed: "Closed",
+};
+
+export const LEGAL_CASE_STATUS_COLORS: Record<string, string> = {
+  new: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
+  intake: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  analysis: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+  draft_prepared: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+  filed: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
+  awaiting_response: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+  hearing_scheduled: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200",
+  judgment_received: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  appeal: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  closed: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
+};
+
+export const LEGAL_CASE_TYPE_LABELS: Record<string, string> = {
+  civil: "Civil",
+  criminal: "Criminal",
+  administrative: "Administrative",
+  labor: "Labor",
+  family: "Family",
+  commercial: "Commercial",
+};
+
+export const CASE_DOCUMENT_CATEGORIES = [
+  { value: "pleadings", label: "Pisma procesowe" },
+  { value: "evidence", label: "Dowody" },
+  { value: "correspondence", label: "Korespondencja" },
+  { value: "court_decisions", label: "Orzeczenia" },
+  { value: "powers_of_attorney", label: "Pełnomocnictwa" },
+  { value: "contracts_annexes", label: "Umowy i aneksy" },
+  { value: "invoices_costs", label: "Faktury i koszty" },
+  { value: "internal_notes", label: "Notatki wewnętrzne" },
+  { value: "other", label: "Inne" },
+] as const;
+
+export const CASE_DOCUMENT_CATEGORY_COLORS: Record<string, string> = {
+  pleadings: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  evidence: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+  correspondence: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
+  court_decisions: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+  powers_of_attorney: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200",
+  contracts_annexes: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  invoices_costs: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+  internal_notes: "bg-neutral-100 text-neutral-800 dark:bg-neutral-900 dark:text-neutral-200",
+  other: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
+};

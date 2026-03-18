@@ -292,3 +292,92 @@ export interface NdaAnalysisResult {
   tokenUsage?: TokenUsage;
 }
 
+// ── Legal Hub types ─────────────────────────────────────────────────────────
+
+export interface LegalCase {
+  id: number;
+  reference_number: string | null;
+  internal_number: string | null;
+  title: string;
+  case_type: string;
+  procedure_type: string | null;
+  court: string | null;
+  court_division: string | null;
+  judge: string | null;
+  status: string;
+  status_history_json: string;
+  summary: string | null;
+  claim_description: string | null;
+  claim_value: number | null;
+  claim_currency: string;
+  tags: string;
+  extension_data: string;
+  created_at: string;
+  updated_at: string;
+  next_deadline?: string | null;
+}
+
+export interface CaseParty {
+  id: number;
+  case_id: number;
+  party_type: string;
+  name: string;
+  address: string | null;
+  representative_name: string | null;
+  representative_address: string | null;
+  representative_type: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface CaseDocument {
+  id: number;
+  case_id: number;
+  document_id: number | null;
+  file_path: string | null;
+  file_name: string | null;
+  document_category: string;
+  label: string | null;
+  date_filed: string | null;
+  filing_reference: string | null;
+  added_at: string;
+}
+
+export interface CaseDeadline {
+  id: number;
+  case_id: number;
+  title: string;
+  deadline_type: string;
+  due_date: string;
+  description: string | null;
+  status: string;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface CaseTemplate {
+  id: number;
+  name: string;
+  description: string | null;
+  document_type: string | null;
+  applicable_case_types: string;
+  template_body: string;
+  variables_json: string;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CaseGeneratedDoc {
+  id: number;
+  case_id: number;
+  template_id: number | null;
+  template_name: string | null;
+  document_name: string;
+  generated_content: string;
+  filled_variables_json: string;
+  file_path: string | null;
+  created_at: string;
+  updated_at: string;
+}
+

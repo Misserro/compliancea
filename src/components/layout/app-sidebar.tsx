@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, ClipboardCheck, Settings, MessageSquare, Layers, Shield, LayoutDashboard, Sun, Moon, Monitor, Users, LogOut, ListChecks } from "lucide-react";
+import { FileText, ClipboardCheck, Settings, MessageSquare, Layers, Shield, LayoutDashboard, Sun, Moon, Monitor, Users, LogOut, ListChecks, Scale } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -133,6 +133,39 @@ export function AppSidebar() {
                         {overdueCount}
                       </Badge>
                     )}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Legal Hub */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Legal Hub</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/legal-hub" || (pathname.startsWith("/legal-hub/") && !pathname.startsWith("/legal-hub/templates"))}
+                  tooltip="Cases"
+                >
+                  <Link href="/legal-hub">
+                    <Scale />
+                    <span>Cases</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/legal-hub/templates" || pathname.startsWith("/legal-hub/templates/")}
+                  tooltip="Templates"
+                >
+                  <Link href="/legal-hub/templates">
+                    <FileText />
+                    <span>Templates</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

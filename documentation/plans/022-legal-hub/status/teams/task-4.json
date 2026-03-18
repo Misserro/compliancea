@@ -1,0 +1,23 @@
+{
+  "task_id": "task-4",
+  "task_name": "Template-based Document Generation",
+  "team_name": "task-4-team",
+  "goal": "Generate tab + /legal-hub/templates page: {{variable}} substitution from case data, TipTap editor, save to case_generated_docs, DOCX export.",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-18T14:00:06.000Z",
+  "ended_at": "2026-03-18T14:31:26.000Z",
+  "elapsed_seconds": 1880,
+  "stages": {
+    "planning":       { "started_at": "2026-03-18T14:00:06.000Z", "ended_at": "2026-03-18T14:07:05.000Z", "elapsed_seconds": 419 },
+    "implementation": { "started_at": "2026-03-18T14:07:05.000Z", "ended_at": "2026-03-18T14:31:26.000Z", "elapsed_seconds": 1461 },
+    "review":         { "started_at": "2026-03-18T14:19:17.000Z", "ended_at": "2026-03-18T14:31:26.000Z", "elapsed_seconds": 729 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 1,
+  "members": [
+    { "name": "executor-4", "role": "executor", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-18T14:00:06.000Z", "ended_at": "2026-03-18T14:31:26.000Z" },
+    { "name": "reviewer-4", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-18T14:00:06.000Z", "ended_at": "2026-03-18T14:31:26.000Z" },
+    { "name": "tester-4",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-18T14:00:06.000Z", "ended_at": "2026-03-18T14:31:26.000Z" }
+  ]
+}

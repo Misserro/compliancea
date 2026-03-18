@@ -1,0 +1,23 @@
+{
+  "task_id": "task-3",
+  "task_name": "Case Document Repository",
+  "team_name": "task-3-team",
+  "goal": "Documents tab: upload PDF/file to case, link library doc, category filter, download, optional text extraction for chat searchability.",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-18T14:00:06.000Z",
+  "ended_at": "2026-03-18T14:22:59.000Z",
+  "elapsed_seconds": 1373,
+  "stages": {
+    "planning":       { "started_at": "2026-03-18T14:00:06.000Z", "ended_at": "2026-03-18T14:07:05.000Z", "elapsed_seconds": 419 },
+    "implementation": { "started_at": "2026-03-18T14:07:05.000Z", "ended_at": "2026-03-18T14:22:59.000Z", "elapsed_seconds": 954 },
+    "review":         { "started_at": "2026-03-18T14:12:09.000Z", "ended_at": "2026-03-18T14:22:59.000Z", "elapsed_seconds": 650 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 1,
+  "members": [
+    { "name": "executor-3", "role": "executor", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-18T14:00:06.000Z", "ended_at": "2026-03-18T14:22:59.000Z" },
+    { "name": "reviewer-3", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-18T14:00:06.000Z", "ended_at": "2026-03-18T14:22:59.000Z" },
+    { "name": "tester-3",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-18T14:00:06.000Z", "ended_at": "2026-03-18T14:22:59.000Z" }
+  ]
+}
