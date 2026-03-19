@@ -132,3 +132,6 @@ export function createCaseGeneratedDoc(...args: any[]): any;
 export function updateCaseGeneratedDoc(...args: any[]): any;
 export function deleteCaseGeneratedDoc(...args: any[]): any;
 export function getCaseChunks(...args: any[]): any;
+export function insertChunkWithMeta(...args: any[]): any;
+export function getChunksByCaseId(...args: any[]): any;
+export function getCaseDocumentIndexingStatus(...args: any[]): any;

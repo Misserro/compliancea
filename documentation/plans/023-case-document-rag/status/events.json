@@ -1,0 +1,194 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-03-19T00:00:00Z",
+      "type": "DASHBOARD_INIT",
+      "message": "Project Manager dashboard initialized. 5 tasks pending. Watchdog started (PID 4688)."
+    },
+    {
+      "timestamp": "2026-03-19T00:01:00Z",
+      "type": "SPAWNED",
+      "task": "task-1",
+      "message": "SPAWNED task-1: Page-Aware Ingestion Pipeline. Active teams: 1/2."
+    },
+    {
+      "timestamp": "2026-03-19T00:02:00Z",
+      "type": "STAGE",
+      "task": "task-1",
+      "stage": "planning",
+      "message": "task-1 entered stage: planning."
+    },
+    {
+      "timestamp": "2026-03-19T00:03:00Z",
+      "type": "STAGE",
+      "task": "task-1",
+      "stage": "implementation",
+      "message": "task-1 entered stage: implementation."
+    },
+    {
+      "timestamp": "2026-03-19T00:04:00Z",
+      "type": "STAGE",
+      "task": "task-1",
+      "stage": "review",
+      "message": "task-1 entered stage: review."
+    },
+    {
+      "timestamp": "2026-03-19T00:05:00Z",
+      "type": "PIPELINE-SPAWN",
+      "task": "task-2",
+      "message": "PIPELINE-SPAWN task-2: Hybrid Retrieval Service — planning only, awaiting Task 1 completion. Active teams: 2/2 (at concurrency limit)."
+    },
+    {
+      "timestamp": "2026-03-19T00:06:00Z",
+      "type": "COMPLETED",
+      "task": "task-1",
+      "message": "COMPLETED task-1: Page-Aware Ingestion Pipeline. Completed tasks: 1/5."
+    },
+    {
+      "timestamp": "2026-03-19T00:06:00Z",
+      "type": "SHUTDOWN",
+      "task": "task-1",
+      "message": "SHUTDOWN task-1: team decommissioned. Active teams: 1/2 (slot freed)."
+    },
+    {
+      "timestamp": "2026-03-19T00:06:00Z",
+      "type": "APPROVED-IMPL",
+      "task": "task-2",
+      "message": "APPROVED-IMPL task-2: pipeline_mode set to false, implementation unblocked."
+    },
+    {
+      "timestamp": "2026-03-19T00:06:00Z",
+      "type": "STAGE",
+      "task": "task-2",
+      "stage": "implementation",
+      "message": "task-2 entered stage: implementation."
+    },
+    {
+      "timestamp": "2026-03-19T00:07:00Z",
+      "type": "STAGE",
+      "task": "task-2",
+      "stage": "review",
+      "message": "task-2 entered stage: review."
+    },
+    {
+      "timestamp": "2026-03-19T00:08:00Z",
+      "type": "PIPELINE-SPAWN",
+      "task": "task-3",
+      "message": "PIPELINE-SPAWN task-3: Grounded Answer Generation — planning only, awaiting Task 2 completion. Active teams: 2/2 (at concurrency limit)."
+    },
+    {
+      "timestamp": "2026-03-19T00:09:00Z",
+      "type": "COMPLETED",
+      "task": "task-2",
+      "message": "COMPLETED task-2: Hybrid Retrieval Service. Completed tasks: 2/5."
+    },
+    {
+      "timestamp": "2026-03-19T00:09:00Z",
+      "type": "SHUTDOWN",
+      "task": "task-2",
+      "message": "SHUTDOWN task-2: team decommissioned. Active teams: 1/2 (slot freed)."
+    },
+    {
+      "timestamp": "2026-03-19T00:09:00Z",
+      "type": "APPROVED-IMPL",
+      "task": "task-3",
+      "message": "APPROVED-IMPL task-3: pipeline_mode set to false, implementation unblocked."
+    },
+    {
+      "timestamp": "2026-03-19T00:09:00Z",
+      "type": "STAGE",
+      "task": "task-3",
+      "stage": "implementation",
+      "message": "task-3 entered stage: implementation."
+    },
+    {
+      "timestamp": "2026-03-19T00:10:00Z",
+      "type": "PIPELINE-SPAWN",
+      "task": "task-4",
+      "message": "PIPELINE-SPAWN task-4: Citation Hover Card UI — planning only, awaiting Task 3 completion. Active teams: 2/2 (at concurrency limit)."
+    },
+    {
+      "timestamp": "2026-03-19T00:11:00Z",
+      "type": "STAGE",
+      "task": "task-3",
+      "stage": "review",
+      "message": "task-3 entered stage: review."
+    },
+    {
+      "timestamp": "2026-03-19T00:12:00Z",
+      "type": "COMPLETED",
+      "task": "task-3",
+      "message": "COMPLETED task-3: Grounded Answer Generation. Completed tasks: 3/5."
+    },
+    {
+      "timestamp": "2026-03-19T00:12:00Z",
+      "type": "SHUTDOWN",
+      "task": "task-3",
+      "message": "SHUTDOWN task-3: team decommissioned. Active teams: 1/2 (slot freed)."
+    },
+    {
+      "timestamp": "2026-03-19T00:12:00Z",
+      "type": "APPROVED-IMPL",
+      "task": "task-4",
+      "message": "APPROVED-IMPL task-4: pipeline_mode set to false, implementation unblocked."
+    },
+    {
+      "timestamp": "2026-03-19T00:12:00Z",
+      "type": "STAGE",
+      "task": "task-4",
+      "stage": "implementation",
+      "message": "task-4 entered stage: implementation."
+    },
+    {
+      "timestamp": "2026-03-19T00:12:00Z",
+      "type": "SPAWNED",
+      "task": "task-5",
+      "message": "SPAWNED task-5: Tests and Processing Status. Active teams: 2/2 (at concurrency limit)."
+    },
+    {
+      "timestamp": "2026-03-19T00:12:00Z",
+      "type": "STAGE",
+      "task": "task-5",
+      "stage": "planning",
+      "message": "task-5 entered stage: planning."
+    },
+    {
+      "timestamp": "2026-03-19T00:13:00Z",
+      "type": "STAGE",
+      "task": "task-4",
+      "stage": "review",
+      "message": "task-4 entered stage: review."
+    },
+    {
+      "timestamp": "2026-03-19T00:14:00Z",
+      "type": "STAGE",
+      "task": "task-5",
+      "stage": "review",
+      "message": "task-5 entered stage: review."
+    },
+    {
+      "timestamp": "2026-03-19T00:15:00Z",
+      "type": "COMPLETED",
+      "task": "task-5",
+      "message": "COMPLETED task-5: Tests & Processing Status. Completed tasks: 4/5."
+    },
+    {
+      "timestamp": "2026-03-19T00:15:00Z",
+      "type": "SHUTDOWN",
+      "task": "task-5",
+      "message": "SHUTDOWN task-5: team decommissioned. Active teams: 1/2 (slot freed)."
+    },
+    {
+      "timestamp": "2026-03-19T00:16:00Z",
+      "type": "COMPLETED",
+      "task": "task-4",
+      "message": "COMPLETED task-4: Citation Hover Card UI. Completed tasks: 5/5."
+    },
+    {
+      "timestamp": "2026-03-19T00:16:00Z",
+      "type": "SHUTDOWN",
+      "task": "task-4",
+      "message": "SHUTDOWN task-4: team decommissioned. Active teams: 0/2. ALL TASKS COMPLETE."
+    }
+  ]
+}

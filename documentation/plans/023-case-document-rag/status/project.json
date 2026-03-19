@@ -1,0 +1,56 @@
+{
+  "plan": "023-case-document-rag",
+  "plan_title": "Case Document RAG: Grounded Retrieval & Citation Chat",
+  "initialized_at": "2026-03-19T00:00:00Z",
+  "total_tasks": 5,
+  "completed_tasks": 5,
+  "active_teams": 0,
+  "concurrency_limit": 2,
+  "tasks": {
+    "task-1": {
+      "name": "Page-Aware Ingestion Pipeline",
+      "status": "completed",
+      "dependencies": [],
+      "pipeline_mode": false,
+      "started_at": "2026-03-19T00:01:00Z",
+      "completed_at": "2026-03-19T00:06:00Z",
+      "last_stage": "completed"
+    },
+    "task-2": {
+      "name": "Hybrid Retrieval Service",
+      "status": "completed",
+      "dependencies": ["task-1"],
+      "pipeline_mode": false,
+      "started_at": "2026-03-19T00:05:00Z",
+      "completed_at": "2026-03-19T00:09:00Z",
+      "last_stage": "completed"
+    },
+    "task-3": {
+      "name": "Grounded Answer Generation",
+      "status": "completed",
+      "dependencies": ["task-2"],
+      "pipeline_mode": false,
+      "started_at": "2026-03-19T00:08:00Z",
+      "completed_at": "2026-03-19T00:12:00Z",
+      "last_stage": "completed"
+    },
+    "task-4": {
+      "name": "Citation Hover Card UI",
+      "status": "completed",
+      "dependencies": ["task-3"],
+      "pipeline_mode": false,
+      "started_at": "2026-03-19T00:10:00Z",
+      "completed_at": "2026-03-19T00:16:00Z",
+      "last_stage": "completed"
+    },
+    "task-5": {
+      "name": "Tests & Processing Status",
+      "status": "completed",
+      "dependencies": ["task-1", "task-2", "task-3"],
+      "pipeline_mode": false,
+      "started_at": "2026-03-19T00:12:00Z",
+      "completed_at": "2026-03-19T00:15:00Z",
+      "last_stage": "completed"
+    }
+  }
+}

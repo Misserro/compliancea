@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Plus, Trash2, Download, FileText, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -50,12 +50,40 @@ function getCategoryLabel(value: string): string {
   return cat ? cat.label : value;
 }
 
+type IndexingStatus = "processing" | "indexed" | "failed";
+
+function IndexingBadge({ status }: { status: IndexingStatus | undefined }) {
+  if (!status) return null;
+  if (status === "indexed") {
+    return (
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 ml-2">
+        Indexed
+      </span>
+    );
+  }
+  if (status === "processing") {
+    return (
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 ml-2 animate-pulse">
+        Indexing...
+      </span>
+    );
+  }
+  // failed
+  return (
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 ml-2">
+      Failed
+    </span>
+  );
+}
+
 export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
   const [documents, setDocuments] = useState<CaseDocumentWithJoins[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deletingDocId, setDeletingDocId] = useState<number | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [indexingStatus, setIndexingStatus] = useState<Record<number, IndexingStatus>>({});
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchDocuments = useCallback(async () => {
     try {
@@ -71,9 +99,42 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
     }
   }, [caseId]);
 
+  const fetchIndexingStatus = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/legal-hub/cases/${caseId}/documents/status`);
+      if (!res.ok) return;
+      const data: Array<{ documentId: number; status: IndexingStatus }> = await res.json();
+      const map: Record<number, IndexingStatus> = {};
+      for (const item of data) {
+        map[item.documentId] = item.status;
+      }
+      setIndexingStatus(map);
+    } catch {
+      // Silently skip if endpoint is unavailable
+    }
+  }, [caseId]);
+
   useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
+
+  useEffect(() => {
+    fetchIndexingStatus();
+  }, [fetchIndexingStatus]);
+
+  // Poll every 5s while any document is in "processing" state
+  useEffect(() => {
+    const hasProcessing = Object.values(indexingStatus).some((s) => s === "processing");
+    if (hasProcessing) {
+      pollRef.current = setInterval(fetchIndexingStatus, 5000);
+    }
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, [indexingStatus, fetchIndexingStatus]);
 
   const filteredDocuments = useMemo(() => {
     if (!categoryFilter) return documents;
@@ -224,8 +285,11 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
                     </Badge>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium truncate">
+                    <div className="font-medium truncate flex items-center">
                       {displayName}
+                      {doc.document_id && (
+                        <IndexingBadge status={indexingStatus[doc.document_id]} />
+                      )}
                       {doc.label && (
                         <span className="text-muted-foreground font-normal ml-2">
                           {doc.label}

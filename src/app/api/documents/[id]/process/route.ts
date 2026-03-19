@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
-import { ensureDb, extractTextFromPath } from "@/lib/server-utils";
+import pdfParse from "pdf-parse";
+import { ensureDb, extractTextFromPath, guessType } from "@/lib/server-utils";
 import {
   getDocumentById,
   updateDocumentMetadata,
   updateDocumentProcessed,
   deleteChunksByDocumentId,
-  addChunksBatch,
+  insertChunkWithMeta,
   addLineageEntry,
   insertObligation,
   getObligationById,
@@ -15,7 +16,7 @@ import {
   addPendingReplacement,
   getAppSetting,
 } from "@/lib/db-imports";
-import { chunkText, countWords } from "@/lib/chunker-imports";
+import { chunkText, chunkTextByPages, countWords } from "@/lib/chunker-imports";
 import { getEmbedding, embeddingToBuffer, checkEmbeddingStatus } from "@/lib/embeddings-imports";
 import { computeContentHash, computeFileHash, findDuplicates, findNearDuplicates } from "@/lib/hashing-imports";
 import { extractMetadata } from "@/lib/auto-tagger-imports";
@@ -63,6 +64,17 @@ export async function POST(
       fileHash = computeFileHash(fileBuffer);
     } catch {
       // File hash is optional
+    }
+
+    // Skip reprocessing if content is unchanged and document is already processed
+    if (document.processed === 1 && document.content_hash === contentHash) {
+      return NextResponse.json({
+        message: "Document already processed with identical content — skipping",
+        document: getDocumentById(documentId),
+        chunks: 0,
+        wordCount,
+        skipped: true,
+      });
     }
 
     // Store hashes
@@ -344,31 +356,70 @@ export async function POST(
     // Delete existing chunks if reprocessing
     deleteChunksByDocumentId(documentId);
 
-    // Chunk the text
-    const chunks = chunkText(text);
+    // Determine if this is a PDF for page-aware chunking
+    const fileType = guessType(document.name);
+    let totalChunks = 0;
 
-    if (chunks.length === 0) {
-      return NextResponse.json({ error: "Document produced no chunks" }, { status: 400 });
+    if (fileType === "pdf") {
+      // Page-aware chunking for PDFs
+      const fileBuffer = await fs.readFile(document.path);
+      const pdfData = await pdfParse(fileBuffer);
+      const pageTexts = pdfData.text.split("\f").filter((t: string) => t.trim().length > 0);
+      const pages = pageTexts.map((t: string, i: number) => ({ pageNumber: i + 1, text: t }));
+
+      const pageChunks = chunkTextByPages(pages);
+
+      if (pageChunks.length === 0) {
+        return NextResponse.json({ error: "Document produced no chunks" }, { status: 400 });
+      }
+
+      for (let i = 0; i < pageChunks.length; i++) {
+        const chunk = pageChunks[i];
+        const embedding = await getEmbedding(chunk.content);
+        const embeddingBuffer = embeddingToBuffer(embedding);
+
+        insertChunkWithMeta({
+          documentId,
+          content: chunk.content,
+          chunkIndex: i,
+          embedding: embeddingBuffer,
+          pageNumber: chunk.pageNumber,
+          charOffsetStart: chunk.charOffsetStart,
+          charOffsetEnd: chunk.charOffsetEnd,
+          sectionTitle: chunk.sectionTitle,
+          sentencesJson: JSON.stringify(chunk.sentences),
+        });
+      }
+
+      totalChunks = pageChunks.length;
+    } else {
+      // Standard chunking for non-PDF files
+      const chunks = chunkText(text);
+
+      if (chunks.length === 0) {
+        return NextResponse.json({ error: "Document produced no chunks" }, { status: 400 });
+      }
+
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        const embedding = await getEmbedding(chunk.content);
+        const embeddingBuffer = embeddingToBuffer(embedding);
+
+        insertChunkWithMeta({
+          documentId,
+          content: chunk.content,
+          chunkIndex: i,
+          embedding: embeddingBuffer,
+          pageNumber: null,
+          charOffsetStart: null,
+          charOffsetEnd: null,
+          sectionTitle: null,
+          sentencesJson: null,
+        });
+      }
+
+      totalChunks = chunks.length;
     }
-
-    // Generate embeddings and store chunks
-    const chunksToInsert = [];
-
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
-      const embedding = await getEmbedding(chunk.content);
-      const embeddingBuffer = embeddingToBuffer(embedding);
-
-      chunksToInsert.push({
-        documentId,
-        content: chunk.content,
-        chunkIndex: i,
-        embedding: embeddingBuffer,
-      });
-    }
-
-    // Batch insert chunks
-    addChunksBatch(chunksToInsert);
 
     // Mark document as processed
     updateDocumentProcessed(documentId, wordCount);
@@ -440,7 +491,7 @@ export async function POST(
 
     logAction("document", documentId, "processed", {
       wordCount,
-      chunks: chunks.length,
+      chunks: totalChunks,
       duplicates: duplicateInfo ? duplicates.contentMatches.length : 0,
       nearDuplicates: nearDuplicates.length,
     });
@@ -450,7 +501,7 @@ export async function POST(
     return NextResponse.json({
       message: "Document processed successfully",
       document: updatedDocument,
-      chunks: chunks.length,
+      chunks: totalChunks,
       wordCount,
       autoTags: autoTagResult,
       duplicates: duplicateInfo,

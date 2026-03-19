@@ -128,4 +128,7 @@ export {
   updateCaseGeneratedDoc,
   deleteCaseGeneratedDoc,
   getCaseChunks,
+  insertChunkWithMeta,
+  getChunksByCaseId,
+  getCaseDocumentIndexingStatus,
 } from "../../lib/db.js";

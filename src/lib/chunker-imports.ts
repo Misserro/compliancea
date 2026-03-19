@@ -1,1 +1,1 @@
-export { chunkText, countWords } from "../../lib/chunker.js";
+export { chunkText, chunkTextByPages, countWords } from "../../lib/chunker.js";

@@ -1,20 +1,18 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Send, MessageSquare, Loader2 } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Send, MessageSquare, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-interface Source {
-  documentName: string;
-  documentId: number;
-  score?: number;
-}
+import {
+  AnnotatedAnswer,
+  type StructuredAnswer,
+} from "./annotated-answer";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
-  sources?: Source[];
+  structuredAnswer?: StructuredAnswer | null;
   error?: string;
 }
 
@@ -29,16 +27,16 @@ const EXAMPLE_PROMPTS = [
   "Znajdź informacje w dokumentach sprawy",
 ];
 
-function SourceCard({ source }: { source: Source }) {
+function isStructuredAnswer(data: unknown): data is StructuredAnswer {
   return (
-    <div className="text-xs p-2 rounded border bg-background space-y-0.5">
-      <div className="font-medium truncate">{source.documentName}</div>
-      {source.score != null && (
-        <div className="text-muted-foreground">
-          Trafność: {Math.round(source.score * 100)}%
-        </div>
-      )}
-    </div>
+    typeof data === "object" &&
+    data !== null &&
+    "answerText" in data &&
+    typeof (data as StructuredAnswer).answerText === "string" &&
+    "annotations" in data &&
+    Array.isArray((data as StructuredAnswer).annotations) &&
+    "citations" in data &&
+    Array.isArray((data as StructuredAnswer).citations)
   );
 }
 
@@ -46,6 +44,7 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [indexingCount, setIndexingCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -56,6 +55,43 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Indexing status polling
+  const checkIndexingStatus = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `/api/legal-hub/cases/${caseId}/documents/status`
+      );
+      if (!res.ok) return 0;
+      const data = await res.json();
+      if (!Array.isArray(data)) return 0;
+      return data.filter(
+        (d: { status: string }) => d.status === "processing"
+      ).length;
+    } catch {
+      return 0;
+    }
+  }, [caseId]);
+
+  useEffect(() => {
+    let mounted = true;
+    let timer: ReturnType<typeof setTimeout>;
+
+    async function poll() {
+      const count = await checkIndexingStatus();
+      if (!mounted) return;
+      setIndexingCount(count);
+      if (count > 0) {
+        timer = setTimeout(poll, 10000);
+      }
+    }
+
+    poll();
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
+  }, [checkIndexingStatus]);
 
   async function sendMessage(text: string) {
     const trimmed = text.trim();
@@ -69,7 +105,10 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
     setLoading(true);
 
     try {
-      const history = previousMessages.map((m) => ({ role: m.role, content: m.content }));
+      const history = previousMessages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
 
       const res = await fetch(`/api/legal-hub/cases/${caseId}/chat`, {
         method: "POST",
@@ -82,26 +121,45 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
       if (!res.ok) {
         setMessages([
           ...newMessages,
-          { role: "assistant", content: "", error: data.error || "Wystąpił błąd." },
+          {
+            role: "assistant",
+            content: "",
+            error: data.error || "Wystąpił błąd.",
+          },
         ]);
         return;
       }
 
-      setMessages([
-        ...newMessages,
-        {
-          role: "assistant",
-          content: data.answer || "",
-          sources: data.sources ?? [],
-        },
-      ]);
+      // Detect structured answer format (from grounded RAG pipeline)
+      if (isStructuredAnswer(data)) {
+        setMessages([
+          ...newMessages,
+          {
+            role: "assistant",
+            content: data.answerText,
+            structuredAnswer: data,
+          },
+        ]);
+      } else {
+        // Fallback: plain text response
+        setMessages([
+          ...newMessages,
+          {
+            role: "assistant",
+            content: data.answer || data.answerText || "",
+          },
+        ]);
+      }
     } catch (err) {
       setMessages([
         ...newMessages,
         {
           role: "assistant",
           content: "",
-          error: err instanceof Error ? err.message : "Błąd sieci. Spróbuj ponownie.",
+          error:
+            err instanceof Error
+              ? err.message
+              : "Błąd sieci. Spróbuj ponownie.",
         },
       ]);
     } finally {
@@ -119,6 +177,18 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
         <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
         <span className="font-medium text-sm">Asystent sprawy</span>
       </div>
+
+      {/* Indexing status banner */}
+      {indexingCount > 0 && (
+        <div className="flex items-center gap-2 px-4 py-2 border-b bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 shrink-0">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+          <span className="text-xs">
+            {indexingCount}{" "}
+            {indexingCount === 1 ? "dokument jest" : "dokument(ów) jest"} w
+            trakcie indeksowania — odpowiedzi mogą być niekompletne.
+          </span>
+        </div>
+      )}
 
       {/* Message list */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
@@ -148,25 +218,28 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
           >
             <div
               className={`max-w-[88%] rounded-lg px-3 py-2 text-sm ${
-                msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+                msg.role === "user"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted"
               }`}
             >
               {msg.error ? (
                 <span className="text-destructive text-xs">{msg.error}</span>
-              ) : (
+              ) : msg.structuredAnswer ? (
                 <>
-                  {msg.content && (
-                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                  )}
-                  {(msg.sources ?? []).length > 0 && (
-                    <div className="mt-2 space-y-1.5">
-                      <p className="text-xs text-muted-foreground font-medium">Źródła:</p>
-                      {msg.sources!.map((source, si) => (
-                        <SourceCard key={`${source.documentId}-${si}`} source={source} />
-                      ))}
-                    </div>
+                  <AnnotatedAnswer answer={msg.structuredAnswer} />
+                  {msg.structuredAnswer.confidence === "low" && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Ograniczone dowody — odpowiedź może być niekompletna.
+                    </p>
                   )}
                 </>
+              ) : (
+                msg.content && (
+                  <p className="whitespace-pre-wrap leading-relaxed">
+                    {msg.content}
+                  </p>
+                )
               )}
             </div>
           </div>
