@@ -1,6 +1,6 @@
 export const runtime = "nodejs";
 
-import { NextRequest, NextResponse, after } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { ingestCaseDocumentSafe } from "@/lib/ingest-case-document";
 import crypto from "crypto";
 import path from "path";
@@ -174,8 +174,8 @@ export async function POST(
         documentCategory,
       });
 
-      // Trigger indexing directly after response is sent (no HTTP self-fetch)
-      after(() => ingestCaseDocumentSafe(docId));
+      // Index the document before returning — synchronous, reliable on all deployments
+      await ingestCaseDocumentSafe(docId);
 
       const doc = getCaseDocumentById(newId);
       return NextResponse.json({ case_document: doc }, { status: 201 });

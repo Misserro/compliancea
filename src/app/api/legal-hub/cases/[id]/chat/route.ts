@@ -21,12 +21,14 @@ export const runtime = "nodejs";
 const CLASSIFIER_SYSTEM = `You are an intent classifier for a legal case management assistant. Analyze the user's message and return ONLY valid JSON — no markdown, no explanation, no code blocks.
 
 Intents:
-- "case_info":       Questions about case metadata (court, reference number, claim amount, summary, judge)
-- "party_lookup":    Questions about parties, defendants, plaintiffs, or their representatives
-- "deadline_query":  Questions about hearings, deadlines, due dates, or scheduled events
-- "document_search": Questions about document content, finding specific information in case files
-- "summarize":       Requests to summarize a document or the entire case file
-- "unknown":         Unclear request or not related to this case
+- "case_info":       ONLY for questions about stored case registration fields: court name, case reference number, internal number, claim monetary value, judge name, case type, procedure type, or the case summary text. Use ONLY when the answer is definitely in the registration form, NOT in a document.
+- "party_lookup":    ONLY for questions about party names, addresses, or their legal representatives.
+- "deadline_query":  ONLY for questions about deadlines or hearings that were entered into the system calendar.
+- "document_search": For ALL other questions — document content, contracts, agreements, obligations, evidence, facts, dates mentioned in files, what a document says, anything about case merits. DEFAULT to this when unsure.
+- "summarize":       Requests to summarize a document or the case file.
+- "unknown":         Only when the question is completely unrelated to legal matters or this case.
+
+RULE: When in doubt, always return "document_search". Missing relevant document content is worse than an unnecessary search.
 
 Return exactly this structure:
 {

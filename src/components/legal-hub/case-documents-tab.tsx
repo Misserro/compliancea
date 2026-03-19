@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Plus, Trash2, Download, FileText, Upload } from "lucide-react";
+import { Plus, Trash2, Download, FileText, Upload, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -91,6 +91,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
   const [deletingDocId, setDeletingDocId] = useState<number | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [indexingStatus, setIndexingStatus] = useState<Record<number, IndexingStatusEntry>>({});
+  const [retrying, setRetrying] = useState<Record<number, boolean>>({});
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevIndexingStatus = useRef<Record<number, IndexingStatus>>({});
 
@@ -137,6 +138,27 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
       // Silently skip if endpoint is unavailable
     }
   }, [caseId]);
+
+  const retryIndexing = useCallback(async (caseDocId: number) => {
+    setRetrying((prev) => ({ ...prev, [caseDocId]: true }));
+    // Optimistically mark as processing so badge updates immediately
+    prevIndexingStatus.current[caseDocId] = "processing";
+    setIndexingStatus((prev) => ({ ...prev, [caseDocId]: { status: "processing" } }));
+    try {
+      const res = await fetch(`/api/legal-hub/cases/${caseId}/documents/${caseDocId}/reindex`, { method: "POST" });
+      if (res.ok) {
+        await fetchIndexingStatus();
+      } else {
+        toast.error("Reindex request failed");
+        setIndexingStatus((prev) => ({ ...prev, [caseDocId]: { status: "failed", errorMessage: "Reindex failed" } }));
+      }
+    } catch {
+      toast.error("Reindex request failed");
+      setIndexingStatus((prev) => ({ ...prev, [caseDocId]: { status: "failed", errorMessage: "Reindex failed" } }));
+    } finally {
+      setRetrying((prev) => ({ ...prev, [caseDocId]: false }));
+    }
+  }, [caseId, fetchIndexingStatus]);
 
   useEffect(() => {
     fetchDocuments();
@@ -312,7 +334,20 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
                     <div className="font-medium truncate flex items-center">
                       {displayName}
                       {doc.document_id && (
-                        <IndexingBadge entry={indexingStatus[doc.document_id]} />
+                        <>
+                          <IndexingBadge entry={indexingStatus[doc.document_id]} />
+                          {indexingStatus[doc.document_id]?.status === "failed" && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); retryIndexing(doc.id); }}
+                              disabled={retrying[doc.id]}
+                              className="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 disabled:opacity-50 cursor-pointer"
+                              title="Retry indexing"
+                            >
+                              <RefreshCw className={`h-2.5 w-2.5 ${retrying[doc.id] ? "animate-spin" : ""}`} />
+                              Retry
+                            </button>
+                          )}
+                        </>
                       )}
                       {doc.label && (
                         <span className="text-muted-foreground font-normal ml-2">
