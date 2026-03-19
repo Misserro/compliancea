@@ -18,39 +18,6 @@ import {
 
 export const runtime = "nodejs";
 
-const CLASSIFIER_SYSTEM = `You are an intent classifier for a legal case management assistant. Analyze the user's message and return ONLY valid JSON — no markdown, no explanation, no code blocks.
-
-Intents:
-- "case_info":       ONLY for questions about stored case registration fields: court name, case reference number, internal number, claim monetary value, judge name, case type, procedure type, or the case summary text. Use ONLY when the answer is definitely in the registration form, NOT in a document.
-- "party_lookup":    ONLY for questions about party names, addresses, or their legal representatives.
-- "deadline_query":  ONLY for questions about deadlines or hearings that were entered into the system calendar.
-- "document_search": For ALL other questions — document content, contracts, agreements, obligations, evidence, facts, dates mentioned in files, what a document says, anything about case merits. DEFAULT to this when unsure.
-- "summarize":       Requests to summarize a document or the case file.
-- "unknown":         Only when the question is completely unrelated to legal matters or this case.
-
-RULE: When in doubt, always return "document_search". Missing relevant document content is worse than an unnecessary search.
-
-Return exactly this structure:
-{
-  "intent": "case_info|party_lookup|deadline_query|document_search|summarize|unknown",
-  "disambiguationQuestion": null
-}
-
-If intent is unknown, set disambiguationQuestion to a helpful clarifying question in Polish.`;
-
-type Intent =
-  | "case_info"
-  | "party_lookup"
-  | "deadline_query"
-  | "document_search"
-  | "summarize"
-  | "unknown";
-
-type ClassifierResult = {
-  intent: Intent;
-  disambiguationQuestion?: string | null;
-};
-
 type CaseRow = Record<string, unknown>;
 type PartyRow = Record<string, unknown>;
 type DeadlineRow = Record<string, unknown>;
@@ -111,78 +78,16 @@ export async function POST(
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-6";
 
-    // Step 1: Classify intent with Haiku
-    let classification: ClassifierResult;
-    try {
-      const classifierResp = await anthropic.messages.create({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 256,
-        system: CLASSIFIER_SYSTEM,
-        messages: [{ role: "user", content: message }],
-      });
-      const raw = classifierResp.content
-        .filter((b) => b.type === "text")
-        .map((b) => (b.type === "text" ? b.text : ""))
-        .join("")
-        .replace(/```json?\s*/g, "")
-        .replace(/```\s*/g, "")
-        .trim();
-      classification = JSON.parse(raw);
-    } catch {
-      classification = { intent: "document_search" };
-    }
+    // Step 1: Fetch structured case data (sync DB calls)
+    const parties = getCaseParties(caseId) as PartyRow[];
+    const deadlines = getCaseDeadlines(caseId) as DeadlineRow[];
+    const structuredContext = buildStructuredContext(
+      legalCase,
+      parties,
+      deadlines
+    );
 
-    const { intent, disambiguationQuestion } = classification;
-
-    // Handle unknown intent with disambiguation
-    if (intent === "unknown" && disambiguationQuestion) {
-      return NextResponse.json({
-        answerText: disambiguationQuestion,
-        annotations: [],
-        citations: [],
-        usedDocuments: [],
-        confidence: "high",
-        needsDisambiguation: true,
-      });
-    }
-
-    // Step 2: Route by intent — structured data intents use simple context path
-    if (intent === "case_info") {
-      const contextText = formatCaseInfoContext(legalCase);
-      return respondWithSimpleContext(
-        anthropic,
-        modelName,
-        contextText,
-        message,
-        history
-      );
-    }
-
-    if (intent === "party_lookup") {
-      const parties = getCaseParties(caseId) as PartyRow[];
-      const contextText = formatPartiesContext(parties);
-      return respondWithSimpleContext(
-        anthropic,
-        modelName,
-        contextText,
-        message,
-        history
-      );
-    }
-
-    if (intent === "deadline_query") {
-      const deadlines = getCaseDeadlines(caseId) as DeadlineRow[];
-      const contextText = formatDeadlinesContext(deadlines);
-      return respondWithSimpleContext(
-        anthropic,
-        modelName,
-        contextText,
-        message,
-        history
-      );
-    }
-
-    // Step 3: Grounded RAG pipeline for document_search and summarize
+    // Step 2: Run document retrieval (async)
     const highRisk = isHighRiskQuery(message);
     const retrievalService = new CaseRetrievalService();
     const retrieval = await retrievalService.search(
@@ -193,20 +98,15 @@ export async function POST(
         : {}
     );
 
-    if (retrieval.results.length === 0) {
-      return NextResponse.json({
-        answerText:
-          "Na podstawie dostępnych dokumentów sprawy nie mogę odpowiedzieć na to pytanie.",
-        annotations: [],
-        citations: [],
-        usedDocuments: [],
-        confidence: "low",
-        needsDisambiguation: false,
-      });
-    }
+    // Step 3: Build combined user message
+    const evidenceSection =
+      retrieval.results.length > 0
+        ? buildEvidencePrompt(retrieval.results)
+        : "Brak zindeksowanych dokumentów dla tej sprawy.";
 
-    const evidencePrompt = buildEvidencePrompt(retrieval.results);
+    const userContent = `${message}\n\n[DANE SPRAWY]\n${structuredContext}\n\n[DOKUMENTY SPRAWY]\n${evidenceSection}`;
 
+    // Step 4: Read system prompt and call Claude
     const groundedSystemPrompt = await fs.readFile(
       path.join(process.cwd(), "prompts/case-chat-grounded.md"),
       "utf-8"
@@ -218,8 +118,6 @@ export async function POST(
         role: h.role as "user" | "assistant",
         content: h.content,
       }));
-
-    const userContent = `${message}\n\nDowody:\n${evidencePrompt}`;
 
     const genResponse = await anthropic.messages.create({
       model: modelName,
@@ -239,10 +137,11 @@ export async function POST(
         .map((b) => (b.type === "text" ? b.text : ""))
         .join("");
 
-    // If response was truncated, JSON is likely incomplete — skip parsing
+    // Fix: max_tokens truncation — return clean fallback instead of raw JSON
     if (genResponse.stop_reason === "max_tokens") {
       return NextResponse.json({
-        answerText: rawText,
+        answerText:
+          "Odpowiedź była zbyt długa i została przerwana. Spróbuj zadać bardziej szczegółowe pytanie.",
         annotations: [],
         citations: [],
         usedDocuments: [],
@@ -253,7 +152,7 @@ export async function POST(
 
     const structured = parseCitationResponse(rawText, retrieval.results);
 
-    if (retrieval.lowConfidence) {
+    if (retrieval.lowConfidence || retrieval.results.length === 0) {
       structured.confidence = "low";
     }
 
@@ -264,63 +163,26 @@ export async function POST(
   }
 }
 
-/**
- * Handle non-document intents (case_info, party_lookup, deadline_query)
- * using the original simple system prompt, wrapped in StructuredAnswer format.
- */
-async function respondWithSimpleContext(
-  anthropic: Anthropic,
-  modelName: string,
-  contextText: string,
-  message: string,
-  history: Array<{ role: "user" | "assistant"; content: string }>
-) {
-  if (!contextText.trim()) {
-    return NextResponse.json({
-      answerText:
-        "Nie znaleziono wystarczających informacji w materiałach sprawy.",
-      annotations: [],
-      citations: [],
-      usedDocuments: [],
-      confidence: "low",
-      needsDisambiguation: false,
-    });
+function buildStructuredContext(
+  legalCase: CaseRow,
+  parties: PartyRow[],
+  deadlines: DeadlineRow[]
+): string {
+  const caseInfo = formatCaseInfoContext(legalCase);
+  const partiesInfo = formatPartiesContext(parties);
+  const deadlinesInfo = formatDeadlinesContext(deadlines);
+
+  let context = `=== DANE SPRAWY ===\n\n${caseInfo}`;
+
+  if (partiesInfo) {
+    context += `\n\nSTRONY POSTĘPOWANIA:\n${partiesInfo}`;
   }
 
-  const simpleSystemPrompt = await fs.readFile(
-    path.join(process.cwd(), "prompts/case-chat.md"),
-    "utf-8"
-  );
+  if (deadlinesInfo) {
+    context += `\n\nNADCHODZĄCE TERMINY:\n${deadlinesInfo}`;
+  }
 
-  const historyMessages = history
-    .slice(-HISTORY_TURNS)
-    .map((h) => ({
-      role: h.role as "user" | "assistant",
-      content: h.content,
-    }));
-
-  const userContent = `[DANE SPRAWY]\n${contextText}\n\n[PYTANIE UŻYTKOWNIKA]\n${message}`;
-
-  const genResponse = await anthropic.messages.create({
-    model: modelName,
-    max_tokens: 2048,
-    system: simpleSystemPrompt,
-    messages: [...historyMessages, { role: "user", content: userContent }],
-  });
-
-  const answer = genResponse.content
-    .filter((b) => b.type === "text")
-    .map((b) => (b.type === "text" ? b.text : ""))
-    .join("");
-
-  return NextResponse.json({
-    answerText: answer,
-    annotations: [],
-    citations: [],
-    usedDocuments: [],
-    confidence: "high",
-    needsDisambiguation: false,
-  });
+  return context;
 }
 
 function formatCaseInfoContext(legalCase: CaseRow): string {
@@ -360,7 +222,17 @@ Uwagi: ${p.notes || "brak"}`
 
 function formatDeadlinesContext(deadlines: DeadlineRow[]): string {
   if (deadlines.length === 0) return "";
-  return deadlines
+  const today = new Date().toISOString().slice(0, 10);
+  const upcoming = deadlines
+    .filter((d) => d.status !== "completed" && String(d.due_date || "") >= today)
+    .sort((a, b) => {
+      const dateA = String(a.due_date || "");
+      const dateB = String(b.due_date || "");
+      return dateA.localeCompare(dateB);
+    })
+    .slice(0, 5);
+  if (upcoming.length === 0) return "";
+  return upcoming
     .map(
       (d) =>
         `Termin: ${d.title}
