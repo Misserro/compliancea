@@ -1,6 +1,6 @@
 export const runtime = "nodejs";
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import crypto from "crypto";
 import path from "path";
 import fs from "fs";
@@ -174,10 +174,10 @@ export async function POST(
         documentCategory,
       });
 
-      // Trigger document processing pipeline in background — record any error to DB
+      // Trigger document processing pipeline after response is sent
       const baseUrl = request.nextUrl.origin;
       const cookieHeader = request.headers.get("cookie") || "";
-      (async () => {
+      after(async () => {
         try {
           const processRes = await fetch(`${baseUrl}/api/documents/${docId}/process`, {
             method: "POST",
@@ -194,7 +194,7 @@ export async function POST(
           setDocumentProcessingError(docId, errMsg);
           console.warn("Case document processing trigger failed:", errMsg);
         }
-      })();
+      });
 
       const doc = getCaseDocumentById(newId);
       return NextResponse.json({ case_document: doc }, { status: 201 });

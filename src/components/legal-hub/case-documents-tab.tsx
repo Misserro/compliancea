@@ -73,13 +73,17 @@ function IndexingBadge({ entry }: { entry: IndexingStatusEntry | undefined }) {
       </span>
     );
   }
-  // failed
+  // failed — show reason inline
   return (
-    <span
-      className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 ml-2 cursor-help"
-      title={entry.errorMessage || "Processing failed"}
-    >
-      Failed
+    <span className="inline-flex flex-col ml-2 gap-0.5">
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+        Indexing failed
+      </span>
+      {entry.errorMessage && (
+        <span className="text-[10px] text-muted-foreground leading-tight max-w-[240px]">
+          {entry.errorMessage}
+        </span>
+      )}
     </span>
   );
 }
@@ -116,13 +120,18 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
       const map: Record<number, IndexingStatusEntry> = {};
       for (const item of data) {
         map[item.documentId] = { status: item.status, errorMessage: item.errorMessage };
-        // Detect transitions from "processing" and fire toasts
         const prev = prevIndexingStatus.current[item.documentId];
-        if (prev === "processing" && item.status !== "processing") {
+        if (prev === undefined) {
+          // First time seeing this document — toast if already failed (failed before first poll)
+          if (item.status === "failed") {
+            toast.error(item.errorMessage || "Document indexing failed — please try re-uploading", { duration: 8000 });
+          }
+        } else if (prev === "processing" && item.status !== "processing") {
+          // Transition detected
           if (item.status === "indexed") {
             toast.success("Document indexed and ready for chat");
           } else {
-            toast.error(item.errorMessage || "Document indexing failed — please try re-uploading");
+            toast.error(item.errorMessage || "Document indexing failed — please try re-uploading", { duration: 8000 });
           }
         }
         prevIndexingStatus.current[item.documentId] = item.status;
