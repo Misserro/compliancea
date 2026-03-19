@@ -47,7 +47,7 @@ export function CaseList({
 
   const q = searchQuery.trim().toLowerCase();
   const filteredCases = cases
-    .filter((c) => selectedStatuses.includes(c.status))
+    .filter((c) => selectedStatuses.length === 0 || selectedStatuses.includes(c.status))
     .filter((c) => {
       if (!selectedCaseType) return true;
       return c.case_type === selectedCaseType;

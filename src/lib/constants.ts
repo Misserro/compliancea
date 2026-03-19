@@ -146,7 +146,7 @@ export const POLICIES_TAB_DEFAULT_DOC_TYPES = ["policy", "procedure"] as const;
 export const LEGAL_CASE_STATUSES = [
   "new", "intake", "analysis", "draft_prepared", "filed",
   "awaiting_response", "hearing_scheduled", "judgment_received",
-  "appeal", "closed",
+  "appeal", "active", "closed",
 ] as const;
 
 export const LEGAL_CASE_TYPES = [
@@ -163,6 +163,7 @@ export const LEGAL_CASE_STATUS_DISPLAY: Record<string, string> = {
   hearing_scheduled: "Hearing Scheduled",
   judgment_received: "Judgment Received",
   appeal: "Appeal",
+  active: "Active",
   closed: "Closed",
 };
 
@@ -176,6 +177,7 @@ export const LEGAL_CASE_STATUS_COLORS: Record<string, string> = {
   hearing_scheduled: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200",
   judgment_received: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
   appeal: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  active: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
   closed: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
 };
 

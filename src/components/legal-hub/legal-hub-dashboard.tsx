@@ -16,9 +16,8 @@ export function LegalHubDashboard() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showNewCaseDialog, setShowNewCaseDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([
-    ...LEGAL_CASE_STATUSES,
-  ]);
+  // Empty = no filter = show all cases; checkboxes narrow to specific statuses
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [selectedCaseType, setSelectedCaseType] = useState<string>("");
 
   const toggleStatus = (status: string) => {
@@ -50,7 +49,9 @@ export function LegalHubDashboard() {
         />
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          {/* Status filters */}
+          <span className="text-xs text-muted-foreground shrink-0">
+            {selectedStatuses.length === 0 ? "All statuses shown" : "Showing:"}
+          </span>
           {LEGAL_CASE_STATUSES.map((status) => (
             <label
               key={status}
@@ -65,6 +66,14 @@ export function LegalHubDashboard() {
               {LEGAL_CASE_STATUS_DISPLAY[status] || status}
             </label>
           ))}
+          {selectedStatuses.length > 0 && (
+            <button
+              className="text-xs text-muted-foreground underline ml-1"
+              onClick={() => setSelectedStatuses([])}
+            >
+              Clear
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
