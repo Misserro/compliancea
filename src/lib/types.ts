@@ -364,6 +364,7 @@ export interface CaseTemplate {
   template_body: string;
   variables_json: string;
   is_active: number;
+  is_system_template?: number;
   created_at: string;
   updated_at: string;
 }

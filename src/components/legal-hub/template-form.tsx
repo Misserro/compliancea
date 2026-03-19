@@ -57,6 +57,12 @@ const VARIABLE_REFERENCE = [
     token: "{{deadlines.next.due_date}}",
     description: "Next deadline date",
   },
+  { token: "{{parties.plaintiff.notes}}", description: "Dodatkowe dane powoda (np. NIP/REGON)" },
+  { token: "{{parties.defendant.notes}}", description: "Dodatkowe dane pozwanego (np. NIP/REGON)" },
+  { token: "{{parties.representative.representative_address}}", description: "Adres pełnomocnika / kancelarii" },
+  { token: "{{case.procedure_type}}", description: "Tryb postępowania" },
+  { token: "{{case.case_type}}", description: "Typ sprawy" },
+  { token: "{{case.internal_number}}", description: "Wewnętrzny numer akt" },
 ];
 
 export function TemplateForm({

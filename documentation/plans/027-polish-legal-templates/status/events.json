@@ -1,0 +1,14 @@
+[
+  { "ts": "2026-03-19T13:46:52Z", "event": "SPAWNED",  "team": "task-1-team", "detail": "DB Migration + System Template Seeding" },
+  { "ts": "2026-03-19T13:46:52Z", "event": "STAGE",    "team": "task-1-team", "detail": "planning" },
+  { "ts": "2026-03-19T13:47:48Z", "event": "SPAWNED",  "team": "task-2-team", "detail": "Variable Reference Panel + System Template Protection" },
+  { "ts": "2026-03-19T13:47:48Z", "event": "STAGE",    "team": "task-2-team", "detail": "planning" },
+  { "ts": "2026-03-19T13:48:40Z", "event": "STAGE",    "team": "task-2-team", "detail": "implementation" },
+  { "ts": "2026-03-19T13:49:06Z", "event": "STAGE",    "team": "task-1-team", "detail": "implementation" },
+  { "ts": "2026-03-19T13:49:43Z", "event": "STAGE",     "team": "task-2-team", "detail": "review" },
+  { "ts": "2026-03-19T13:50:35Z", "event": "COMPLETED", "team": "task-2-team", "detail": "Variable Reference Panel + System Template Protection" },
+  { "ts": "2026-03-19T13:50:35Z", "event": "SHUTDOWN",  "team": "task-2-team", "detail": "all members ended" },
+  { "ts": "2026-03-19T13:51:31Z", "event": "STAGE",     "team": "task-1-team", "detail": "review" },
+  { "ts": "2026-03-19T13:53:04Z", "event": "COMPLETED", "team": "task-1-team", "detail": "DB Migration + System Template Seeding" },
+  { "ts": "2026-03-19T13:53:04Z", "event": "SHUTDOWN",  "team": "task-1-team", "detail": "all members ended" }
+]

@@ -90,6 +90,7 @@ export async function PATCH(
 
     const body = await request.json();
 
+    // is_system_template is intentionally excluded — system flag is immutable after seeding
     const allowedKeys = [
       "name",
       "description",
@@ -163,6 +164,13 @@ export async function DELETE(
       return NextResponse.json(
         { error: "Template not found" },
         { status: 404 }
+      );
+    }
+
+    if (existing.is_system_template === 1) {
+      return NextResponse.json(
+        { error: "System templates cannot be deleted" },
+        { status: 403 }
       );
     }
 
