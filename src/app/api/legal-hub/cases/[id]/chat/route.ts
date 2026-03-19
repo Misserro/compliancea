@@ -24,6 +24,138 @@ type DeadlineRow = Record<string, unknown>;
 
 const HISTORY_TURNS = 6;
 
+const CASE_CHAT_TOOLS: Anthropic.Tool[] = [
+  {
+    name: "updateCaseMetadata",
+    description:
+      "Update case registration data such as court, reference number, judge, case type, claim value, etc.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        court: { type: "string" },
+        reference_number: { type: "string" },
+        internal_number: { type: "string" },
+        judge: { type: "string" },
+        case_type: { type: "string" },
+        procedure_type: { type: "string" },
+        court_division: { type: "string" },
+        summary: { type: "string" },
+        claim_description: { type: "string" },
+        claim_value: { type: "number" },
+        claim_currency: { type: "string" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "addParty",
+    description:
+      "Add a new party to the case (plaintiff, defendant, witness, etc.)",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        name: { type: "string" },
+        party_type: {
+          type: "string",
+          enum: ["plaintiff", "defendant", "third_party", "witness", "other"],
+        },
+        address: { type: "string" },
+        representative_name: { type: "string" },
+        representative_address: { type: "string" },
+        representative_type: { type: "string" },
+        notes: { type: "string" },
+      },
+      required: ["name", "party_type"],
+    },
+  },
+  {
+    name: "updateParty",
+    description:
+      "Update an existing party's data. party_id must be the database ID shown in [DANE SPRAWY].",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        party_id: { type: "number" },
+        name: { type: "string" },
+        address: { type: "string" },
+        representative_name: { type: "string" },
+        representative_address: { type: "string" },
+        representative_type: { type: "string" },
+        notes: { type: "string" },
+      },
+      required: ["party_id"],
+    },
+  },
+  {
+    name: "addDeadline",
+    description: "Add a new deadline or hearing date to the case.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        title: { type: "string" },
+        deadline_type: {
+          type: "string",
+          enum: [
+            "hearing",
+            "response_deadline",
+            "appeal_deadline",
+            "filing_deadline",
+            "payment",
+            "other",
+          ],
+        },
+        due_date: { type: "string", description: "ISO date YYYY-MM-DD" },
+        description: { type: "string" },
+      },
+      required: ["title", "deadline_type", "due_date"],
+    },
+  },
+  {
+    name: "updateCaseStatus",
+    description: "Change the case status.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        status: {
+          type: "string",
+          enum: [
+            "active",
+            "signed",
+            "unsigned",
+            "terminated",
+            "closed",
+            "other",
+          ],
+        },
+        note: { type: "string", description: "Optional note for status history" },
+      },
+      required: ["status"],
+    },
+  },
+];
+
+function generateActionLabel(
+  toolName: string,
+  params: Record<string, unknown>
+): string {
+  switch (toolName) {
+    case "updateCaseMetadata": {
+      const fields = Object.keys(params);
+      return `Aktualizacja danych sprawy: ${fields.join(", ")}`;
+    }
+    case "addParty":
+      return `Dodanie strony: ${params.name || "?"} (${params.party_type || "?"})`;
+    case "updateParty":
+      return `Aktualizacja strony ID ${params.party_id}: ${Object.keys(params).filter((k) => k !== "party_id").join(", ")}`;
+    case "addDeadline":
+      return `Dodanie terminu: ${params.title || "?"} ${params.due_date || ""}`;
+    case "updateCaseStatus":
+      return `Zmiana statusu na: ${params.status || "?"}`;
+    default:
+      return `${toolName}`;
+  }
+}
+
 export async function POST(
   request: NextRequest,
   props: { params: Promise<{ id: string }> }
@@ -106,7 +238,7 @@ export async function POST(
 
     const userContent = `${message}\n\n[DANE SPRAWY]\n${structuredContext}\n\n[DOKUMENTY SPRAWY]\n${evidenceSection}`;
 
-    // Step 4: Read system prompt and call Claude
+    // Step 4: Read system prompt and call Claude with tools
     const groundedSystemPrompt = await fs.readFile(
       path.join(process.cwd(), "prompts/case-chat-grounded.md"),
       "utf-8"
@@ -123,19 +255,13 @@ export async function POST(
       model: modelName,
       max_tokens: 4096,
       system: groundedSystemPrompt,
+      tools: CASE_CHAT_TOOLS,
+      tool_choice: { type: "auto" },
       messages: [
         ...historyMessages,
         { role: "user", content: userContent },
-        { role: "assistant", content: "{" },
       ],
     });
-
-    const rawText =
-      "{" +
-      genResponse.content
-        .filter((b) => b.type === "text")
-        .map((b) => (b.type === "text" ? b.text : ""))
-        .join("");
 
     // Fix: max_tokens truncation — return clean fallback instead of raw JSON
     if (genResponse.stop_reason === "max_tokens") {
@@ -149,6 +275,42 @@ export async function POST(
         needsDisambiguation: false,
       });
     }
+
+    // Step 5: Handle response — tool_use blocks or text
+    const toolUseBlocks = genResponse.content.filter(
+      (b) => b.type === "tool_use"
+    );
+    const textBlocks = genResponse.content.filter((b) => b.type === "text");
+
+    if (toolUseBlocks.length > 0) {
+      const proposalText =
+        textBlocks.length > 0 && textBlocks[0].type === "text"
+          ? textBlocks[0].text
+          : "Proponuję następujące zmiany w sprawie:";
+
+      const actions = toolUseBlocks
+        .map((b) => {
+          if (b.type !== "tool_use") return null;
+          const params = b.input as Record<string, unknown>;
+          return {
+            tool: b.name,
+            params,
+            label: generateActionLabel(b.name, params),
+          };
+        })
+        .filter(Boolean);
+
+      return NextResponse.json({
+        type: "action_proposal",
+        proposalText,
+        actions,
+      });
+    }
+
+    // Text-only response — parse as StructuredAnswer
+    const rawText = textBlocks
+      .map((b) => (b.type === "text" ? b.text : ""))
+      .join("");
 
     const structured = parseCitationResponse(rawText, retrieval.results);
 
@@ -209,7 +371,8 @@ function formatPartiesContext(parties: PartyRow[]): string {
   return parties
     .map(
       (p) =>
-        `Strona: ${p.name}
+        `ID: ${p.id}
+Strona: ${p.name}
 Typ: ${p.party_type}
 Adres: ${p.address || "brak"}
 Pełnomocnik: ${p.representative_name || "brak"}

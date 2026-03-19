@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Send, MessageSquare, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,11 +9,16 @@ import {
   AnnotatedAnswer,
   type StructuredAnswer,
 } from "./annotated-answer";
+import {
+  ActionProposalCard,
+  type ActionProposal,
+} from "./action-proposal-card";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   structuredAnswer?: StructuredAnswer | null;
+  actionProposal?: ActionProposal | null;
   error?: string;
 }
 
@@ -40,7 +46,17 @@ function isStructuredAnswer(data: unknown): data is StructuredAnswer {
   );
 }
 
+function isActionProposal(data: unknown): data is ActionProposal {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    (data as Record<string, unknown>).type === "action_proposal" &&
+    Array.isArray((data as Record<string, unknown>).actions)
+  );
+}
+
 export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
+  const router = useRouter();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -140,6 +156,15 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
             structuredAnswer: data,
           },
         ]);
+      } else if (isActionProposal(data)) {
+        setMessages([
+          ...newMessages,
+          {
+            role: "assistant",
+            content: data.proposalText,
+            actionProposal: data,
+          },
+        ]);
       } else {
         // Fallback: plain text response
         setMessages([
@@ -225,6 +250,13 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
             >
               {msg.error ? (
                 <span className="text-destructive text-xs">{msg.error}</span>
+              ) : msg.actionProposal ? (
+                <ActionProposalCard
+                  proposal={msg.actionProposal}
+                  caseId={caseId}
+                  onApplied={() => router.refresh()}
+                  onRejected={() => {}}
+                />
               ) : msg.structuredAnswer ? (
                 <>
                   <AnnotatedAnswer answer={msg.structuredAnswer} />

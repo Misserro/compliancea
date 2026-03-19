@@ -86,7 +86,7 @@ export async function PATCH(
     // Build fields from body with allowlist
     const allowedKeys = [
       "title", "case_type", "reference_number", "internal_number",
-      "procedure_type", "court", "court_division", "judge",
+      "procedure_type", "court", "court_division", "judge", "status",
       "summary", "claim_description", "claim_value", "claim_currency",
       "tags", "extension_data",
     ];
