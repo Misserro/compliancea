@@ -7,13 +7,13 @@ import { getCaseDocumentById, run } from "@/lib/db-imports";
 import { ingestCaseDocumentSafe } from "@/lib/ingest-case-document";
 
 /**
- * POST /api/legal-hub/cases/[id]/documents/[docId]/reindex
+ * POST /api/legal-hub/cases/[id]/documents/[did]/reindex
  * Re-triggers indexing for a specific case document.
  * Used for documents that failed or were uploaded before indexing was working.
  */
 export async function POST(
   _request: NextRequest,
-  props: { params: Promise<{ id: string; docId: string }> }
+  props: { params: Promise<{ id: string; did: string }> }
 ) {
   const session = await auth();
   if (!session?.user) {
@@ -22,11 +22,11 @@ export async function POST(
 
   await ensureDb();
 
-  const { id, docId } = await props.params;
+  const { id, did } = await props.params;
   const caseId = parseInt(id, 10);
-  const caseDocId = parseInt(docId, 10);
+  const caseDocId = parseInt(did, 10);
 
-  if (isNaN(caseId) || isNaN(caseDocId)) {
+  if (isNaN(caseId) || isNaN(caseDocId) || !did) {
     return NextResponse.json({ error: "Invalid IDs" }, { status: 400 });
   }
 
