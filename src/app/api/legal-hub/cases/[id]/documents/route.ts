@@ -15,6 +15,7 @@ import {
   removeCaseDocument,
   addDocument,
   getDocumentById,
+  setDocumentProcessingError,
 } from "@/lib/db-imports";
 import { logAction } from "@/lib/audit-imports";
 import { CASE_ATTACHMENTS_DIR } from "@/lib/paths-imports";
@@ -173,16 +174,27 @@ export async function POST(
         documentCategory,
       });
 
-      // Fire-and-forget: trigger document processing pipeline for embeddings
+      // Trigger document processing pipeline in background — record any error to DB
       const baseUrl = request.nextUrl.origin;
-      fetch(`${baseUrl}/api/documents/${docId}/process`, {
-        method: "POST",
-        headers: {
-          cookie: request.headers.get("cookie") || "",
-        },
-      }).catch((processErr) => {
-        console.warn("Case document processing trigger failed:", processErr);
-      });
+      const cookieHeader = request.headers.get("cookie") || "";
+      (async () => {
+        try {
+          const processRes = await fetch(`${baseUrl}/api/documents/${docId}/process`, {
+            method: "POST",
+            headers: { cookie: cookieHeader },
+          });
+          if (!processRes.ok) {
+            const body = await processRes.json().catch(() => ({}));
+            const errMsg = (body as { error?: string }).error || `Processing failed (HTTP ${processRes.status})`;
+            setDocumentProcessingError(docId, errMsg);
+            console.warn("Case document processing failed:", errMsg);
+          }
+        } catch (processErr) {
+          const errMsg = processErr instanceof Error ? processErr.message : "Processing request failed";
+          setDocumentProcessingError(docId, errMsg);
+          console.warn("Case document processing trigger failed:", errMsg);
+        }
+      })();
 
       const doc = getCaseDocumentById(newId);
       return NextResponse.json({ case_document: doc }, { status: 201 });

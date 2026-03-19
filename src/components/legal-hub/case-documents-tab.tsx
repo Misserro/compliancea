@@ -52,16 +52,21 @@ function getCategoryLabel(value: string): string {
 
 type IndexingStatus = "processing" | "indexed" | "failed";
 
-function IndexingBadge({ status }: { status: IndexingStatus | undefined }) {
-  if (!status) return null;
-  if (status === "indexed") {
+interface IndexingStatusEntry {
+  status: IndexingStatus;
+  errorMessage?: string;
+}
+
+function IndexingBadge({ entry }: { entry: IndexingStatusEntry | undefined }) {
+  if (!entry) return null;
+  if (entry.status === "indexed") {
     return (
       <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 ml-2">
         Indexed
       </span>
     );
   }
-  if (status === "processing") {
+  if (entry.status === "processing") {
     return (
       <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 ml-2 animate-pulse">
         Indexing...
@@ -70,7 +75,10 @@ function IndexingBadge({ status }: { status: IndexingStatus | undefined }) {
   }
   // failed
   return (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 ml-2">
+    <span
+      className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 ml-2 cursor-help"
+      title={entry.errorMessage || "Processing failed"}
+    >
       Failed
     </span>
   );
@@ -82,8 +90,9 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deletingDocId, setDeletingDocId] = useState<number | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("");
-  const [indexingStatus, setIndexingStatus] = useState<Record<number, IndexingStatus>>({});
+  const [indexingStatus, setIndexingStatus] = useState<Record<number, IndexingStatusEntry>>({});
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const prevIndexingStatus = useRef<Record<number, IndexingStatus>>({});
 
   const fetchDocuments = useCallback(async () => {
     try {
@@ -103,10 +112,20 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
     try {
       const res = await fetch(`/api/legal-hub/cases/${caseId}/documents/status`);
       if (!res.ok) return;
-      const data: Array<{ documentId: number; status: IndexingStatus }> = await res.json();
-      const map: Record<number, IndexingStatus> = {};
+      const data: Array<{ documentId: number; status: IndexingStatus; errorMessage?: string }> = await res.json();
+      const map: Record<number, IndexingStatusEntry> = {};
       for (const item of data) {
-        map[item.documentId] = item.status;
+        map[item.documentId] = { status: item.status, errorMessage: item.errorMessage };
+        // Detect transitions from "processing" and fire toasts
+        const prev = prevIndexingStatus.current[item.documentId];
+        if (prev === "processing" && item.status !== "processing") {
+          if (item.status === "indexed") {
+            toast.success("Document indexed and ready for chat");
+          } else {
+            toast.error(item.errorMessage || "Document indexing failed — please try re-uploading");
+          }
+        }
+        prevIndexingStatus.current[item.documentId] = item.status;
       }
       setIndexingStatus(map);
     } catch {
@@ -124,7 +143,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
 
   // Poll every 5s while any document is in "processing" state
   useEffect(() => {
-    const hasProcessing = Object.values(indexingStatus).some((s) => s === "processing");
+    const hasProcessing = Object.values(indexingStatus).some((e) => e.status === "processing");
     if (hasProcessing) {
       pollRef.current = setInterval(fetchIndexingStatus, 5000);
     }
@@ -288,7 +307,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
                     <div className="font-medium truncate flex items-center">
                       {displayName}
                       {doc.document_id && (
-                        <IndexingBadge status={indexingStatus[doc.document_id]} />
+                        <IndexingBadge entry={indexingStatus[doc.document_id]} />
                       )}
                       {doc.label && (
                         <span className="text-muted-foreground font-normal ml-2">

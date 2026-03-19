@@ -131,4 +131,5 @@ export {
   insertChunkWithMeta,
   getChunksByCaseId,
   getCaseDocumentIndexingStatus,
+  setDocumentProcessingError,
 } from "../../lib/db.js";

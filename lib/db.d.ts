@@ -135,3 +135,4 @@ export function getCaseChunks(...args: any[]): any;
 export function insertChunkWithMeta(...args: any[]): any;
 export function getChunksByCaseId(...args: any[]): any;
 export function getCaseDocumentIndexingStatus(...args: any[]): any;
+export function setDocumentProcessingError(id: number, error: string): void;

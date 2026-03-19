@@ -26,27 +26,43 @@ export async function GET(
     return NextResponse.json([], { status: 200 });
   }
 
+  const STUCK_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes
+
   try {
     const rows = getCaseDocumentIndexingStatus(caseId) as Array<{
       documentId: number;
       documentName: string;
       processed: number;
+      processingError: string | null;
       chunksIndexed: number;
+      addedAt: string;
     }>;
 
     const result = rows.map((row) => {
       let status: "processing" | "indexed" | "failed";
-      if (!row.processed) {
-        status = "processing";
-      } else if (row.chunksIndexed > 0) {
+      let errorMessage: string | undefined;
+
+      if (row.processed && row.chunksIndexed > 0) {
         status = "indexed";
-      } else {
+      } else if (row.processingError) {
         status = "failed";
+        errorMessage = row.processingError;
+      } else if (!row.processed) {
+        const addedMs = row.addedAt ? new Date(row.addedAt).getTime() : 0;
+        const isStuck = addedMs > 0 && Date.now() - addedMs > STUCK_TIMEOUT_MS;
+        status = isStuck ? "failed" : "processing";
+        if (isStuck) errorMessage = "Processing timed out — please try re-uploading";
+      } else {
+        // processed=1 but no chunks: image-only PDF or unsupported format
+        status = "failed";
+        errorMessage = "Document processed but no text could be extracted";
       }
+
       return {
         documentId: row.documentId,
         documentName: row.documentName,
         status,
+        ...(errorMessage ? { errorMessage } : {}),
       };
     });
 
