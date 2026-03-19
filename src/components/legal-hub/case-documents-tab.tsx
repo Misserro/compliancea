@@ -73,17 +73,13 @@ function IndexingBadge({ entry }: { entry: IndexingStatusEntry | undefined }) {
       </span>
     );
   }
-  // failed — show reason inline
+  // failed
   return (
-    <span className="inline-flex flex-col ml-2 gap-0.5">
-      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-        Indexing failed
-      </span>
-      {entry.errorMessage && (
-        <span className="text-[10px] text-muted-foreground leading-tight max-w-[240px]">
-          {entry.errorMessage}
-        </span>
-      )}
+    <span
+      className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 ml-2 cursor-help"
+      title={entry.errorMessage || "Indexing failed"}
+    >
+      Indexing failed
     </span>
   );
 }

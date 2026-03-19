@@ -1,6 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse, after } from "next/server";
+import { ingestCaseDocumentSafe } from "@/lib/ingest-case-document";
 import crypto from "crypto";
 import path from "path";
 import fs from "fs";
@@ -15,7 +16,6 @@ import {
   removeCaseDocument,
   addDocument,
   getDocumentById,
-  setDocumentProcessingError,
 } from "@/lib/db-imports";
 import { logAction } from "@/lib/audit-imports";
 import { CASE_ATTACHMENTS_DIR } from "@/lib/paths-imports";
@@ -174,27 +174,8 @@ export async function POST(
         documentCategory,
       });
 
-      // Trigger document processing pipeline after response is sent
-      const baseUrl = request.nextUrl.origin;
-      const cookieHeader = request.headers.get("cookie") || "";
-      after(async () => {
-        try {
-          const processRes = await fetch(`${baseUrl}/api/documents/${docId}/process`, {
-            method: "POST",
-            headers: { cookie: cookieHeader },
-          });
-          if (!processRes.ok) {
-            const body = await processRes.json().catch(() => ({}));
-            const errMsg = (body as { error?: string }).error || `Processing failed (HTTP ${processRes.status})`;
-            setDocumentProcessingError(docId, errMsg);
-            console.warn("Case document processing failed:", errMsg);
-          }
-        } catch (processErr) {
-          const errMsg = processErr instanceof Error ? processErr.message : "Processing request failed";
-          setDocumentProcessingError(docId, errMsg);
-          console.warn("Case document processing trigger failed:", errMsg);
-        }
-      });
+      // Trigger indexing directly after response is sent (no HTTP self-fetch)
+      after(() => ingestCaseDocumentSafe(docId));
 
       const doc = getCaseDocumentById(newId);
       return NextResponse.json({ case_document: doc }, { status: 201 });
