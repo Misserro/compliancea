@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ import { Plus, Pencil, Trash2, RotateCcw, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ORG_STATUS_COLORS } from "@/lib/constants";
 import { CreateOrgDialog } from "@/components/admin/create-org-dialog";
+import { OrgMembersPanel } from "@/components/admin/org-members-panel";
 
 interface Org {
   id: number;
@@ -175,7 +176,8 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
               const isEditing = editingId === org.id;
 
               return (
-                <tr key={org.id} className="hover:bg-muted/30 transition-colors">
+                <React.Fragment key={org.id}>
+                <tr className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 font-medium">
                     {isEditing ? (
                       <Input
@@ -291,6 +293,13 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
                     </div>
                   </td>
                 </tr>
+                {/* Members panel — expands below the row */}
+                <tr>
+                  <td colSpan={6} className="p-0">
+                    <OrgMembersPanel orgId={org.id} orgName={org.name} />
+                  </td>
+                </tr>
+                </React.Fragment>
               );
             })}
             {orgs.length === 0 && (
