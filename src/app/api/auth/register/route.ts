@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { getUserByEmail, createUser, getDefaultOrg, addOrgMember } from "@/lib/db-imports";
+import { getUserByEmail, createUser, getDefaultOrg, addOrgMember, setSuperAdmin } from "@/lib/db-imports";
 import { ensureDb } from "@/lib/server-utils";
 
 export async function POST(req: NextRequest) {
@@ -50,6 +50,11 @@ export async function POST(req: NextRequest) {
   const defaultOrg = getDefaultOrg();
   if (defaultOrg && newUser) {
     addOrgMember(defaultOrg.id as number, newUser.id as number, "member", null);
+  }
+
+  // Grant super admin to all new users
+  if (newUser) {
+    setSuperAdmin(newUser.id as number, 1);
   }
 
   return NextResponse.json({ success: true }, { status: 201 });
