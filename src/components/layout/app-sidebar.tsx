@@ -312,6 +312,21 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 );
               })}
+              {/* Admin panel — visible to super admins only */}
+              {sessionData?.user?.isSuperAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname.startsWith("/admin")}
+                    tooltip="Admin Panel"
+                  >
+                    <Link href="/admin">
+                      <Shield />
+                      <span>Admin Panel</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
