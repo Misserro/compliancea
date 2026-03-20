@@ -113,6 +113,8 @@ Primary table for document library storage.
 | gdrive_file_id | TEXT | Google Drive file ID |
 | gdrive_modified_time | DATETIME | Last modified time in Drive |
 | sync_status | TEXT | Sync status (synced, deleted, error) |
+| storage_backend | TEXT DEFAULT 'local' | Storage backend: `local` or `s3` (added Plan 029) |
+| storage_key | TEXT | S3 object key when storage_backend = 's3' (null for local files) |
 | contracting_company | TEXT | Company party to contract |
 | contracting_vendor | TEXT | Vendor party to contract |
 | signature_date | DATE | Contract signature date |

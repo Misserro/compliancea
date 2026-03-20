@@ -144,6 +144,14 @@ Two modes for handling external documents:
 
 ## Organization Management (Plan 027+)
 
+### Storage Configuration (Plan 029)
+- **Per-org S3 storage** — Each org can configure an S3-compatible bucket (AWS S3, Cloudflare R2, MinIO) as their file storage backend
+- **Coexist approach** — Existing files stay on the local Railway `/data` volume; new uploads go to S3 when configured; download path checks `storage_backend` column to route correctly
+- **Org-namespaced local paths** — Files stored under `DOCUMENTS_DIR/org-{id}/` prefix for multi-tenant isolation (even on local backend)
+- **Encrypted credentials** — S3 access keys encrypted with AES-256-GCM using `STORAGE_ENCRYPTION_KEY` env var before storage in DB
+- **Test before save** — Admin can test S3 connection (bucket access) before committing credentials
+- **R2/MinIO support** — Custom endpoint URL field allows any S3-compatible provider
+
 ### Multi-Tenancy
 - **Org isolation** - All data is scoped to the user's active organization; no cross-org data access
 - **Default org** - A "Default Organization" is auto-created on first run; all existing data is backfilled

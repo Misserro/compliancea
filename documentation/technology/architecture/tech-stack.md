@@ -69,6 +69,16 @@ This document lists all technologies, libraries, and external services used in C
 |---------|---------|
 | sql.js | 1.10.0 | SQLite in-memory with file persistence |
 
+### Storage
+| Library | Purpose |
+|---------|---------|
+| @aws-sdk/client-s3 | ^3.x | S3-compatible object storage (AWS S3, Cloudflare R2, MinIO) |
+| Node.js crypto (built-in) | — | AES-256-GCM encryption for S3 credentials at rest |
+
+**Configuration:**
+- `STORAGE_ENCRYPTION_KEY` — 32-byte base64-encoded key for credential encryption (required when any org uses S3)
+- Per-org S3 config stored in `app_settings` table (encrypted): `s3Bucket`, `s3Region`, `s3AccessKeyId`, `s3SecretEncrypted`, `s3Endpoint` (optional, for R2/MinIO)
+
 ### External APIs
 | Library | Purpose |
 |---------|---------|
