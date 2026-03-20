@@ -1,7 +1,7 @@
 import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { getUserByEmail, createSession, getSessionById, getOrgMemberByUserId, getOrgMemberForOrg } from "@/lib/db-imports";
+import { getUserByEmail, createSession, getSessionById, getOrgMemberByUserId, getOrgMemberForOrg, get } from "@/lib/db-imports";
 import { ensureDb } from "@/lib/server-utils";
 import { authConfig } from "../auth.config";
 
@@ -15,6 +15,7 @@ declare module "next-auth" {
       orgId?: number;
       orgRole?: string;
       orgName?: string;
+      isSuperAdmin?: boolean;
     } & DefaultSession["user"];
   }
   interface User {
@@ -30,6 +31,7 @@ declare module "@auth/core/jwt" {
     orgId?: number;
     orgRole?: string;
     orgName?: string;
+    isSuperAdmin?: boolean;
   }
 }
 
@@ -82,6 +84,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.orgRole = orgMember.role as string;
           token.orgName = orgMember.org_name as string;
         }
+
+        // Look up super admin flag
+        const saRow = get(`SELECT is_super_admin FROM users WHERE id = ?`, [Number(user.id)]);
+        token.isSuperAdmin = !!saRow?.is_super_admin;
       } else if (token.sessionId && token.id) {
         // Subsequent requests: lazy re-hydration in case DB was wiped on redeploy.
         // NOTE: this branch runs on every request (every auth() call), not only after cold starts.
@@ -114,6 +120,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.orgRole = membership.role as string;
           token.orgName = (membership.orgName ?? membership.org_name) as string;
         }
+
+        // Refresh super admin flag (picks up promotions without re-login)
+        const saUser = get(`SELECT is_super_admin FROM users WHERE id = ?`, [Number(token.id)]);
+        token.isSuperAdmin = !!saUser?.is_super_admin;
       }
       return token;
     },
@@ -124,6 +134,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token.orgId)     session.user.orgId     = token.orgId;
       if (token.orgRole)   session.user.orgRole   = token.orgRole;
       if (token.orgName)   session.user.orgName   = token.orgName;
+      session.user.isSuperAdmin = token.isSuperAdmin;
       return session;
     },
   },

@@ -22,7 +22,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   }
 
   // Org membership guard — users with no org are redirected to an error page
-  if (!session.user.orgId) {
+  // Super admins bypass this guard (they may not belong to any org)
+  if (!session.user.orgId && !session.user.isSuperAdmin) {
     redirect("/no-org");
   }
 

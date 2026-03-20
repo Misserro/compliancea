@@ -1,0 +1,23 @@
+{
+  "task_id": "task-1",
+  "task_name": "Super Admin DB, Auth, and Seeding",
+  "team_name": "task-1-team",
+  "goal": "DB migrations (is_super_admin, deleted_at), bootstrap seeding, new DB functions, JWT type augmentation + callbacks, auth.config.ts route protection, org guard bypass",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-20T12:57:31Z",
+  "ended_at": "2026-03-20T13:05:26Z",
+  "elapsed_seconds": 474,
+  "stages": {
+    "planning":       { "started_at": "2026-03-20T12:57:31Z", "ended_at": "2026-03-20T13:01:42Z", "elapsed_seconds": 251 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": "2026-03-20T13:01:42Z", "ended_at": "2026-03-20T13:05:26Z", "elapsed_seconds": 224 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-1",  "role": "executor",  "model": "opus",   "status": "completed", "spawned_at": "2026-03-20T12:57:31Z", "ended_at": "2026-03-20T13:05:26Z" },
+    { "name": "reviewer-1",  "role": "reviewer",  "model": "sonnet", "status": "completed", "spawned_at": "2026-03-20T12:57:31Z", "ended_at": "2026-03-20T13:05:26Z" },
+    { "name": "tester-1",    "role": "tester",    "model": "sonnet", "status": "completed", "spawned_at": "2026-03-20T12:57:31Z", "ended_at": "2026-03-20T13:05:26Z" }
+  ]
+}

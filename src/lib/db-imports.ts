@@ -154,4 +154,11 @@ export {
   revokeOrgInvite,
   getAllOrgMembershipsForUser,
   getOrgMemberForOrg,
+  getAllOrganizations,
+  getActiveOrganizations,
+  createOrganization,
+  softDeleteOrg,
+  restoreOrg,
+  setSuperAdmin,
+  getOrgWithMemberCount,
 } from "../../lib/db.js";

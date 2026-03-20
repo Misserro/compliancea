@@ -1,0 +1,23 @@
+{
+  "task_id": "task-2",
+  "task_name": "Admin API Routes",
+  "team_name": "task-2-team",
+  "goal": "Create all /api/admin/orgs routes with requireSuperAdmin guard: GET list, POST create, GET detail, PATCH rename, DELETE soft-delete, POST restore",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-20T13:02:17Z",
+  "ended_at": "2026-03-20T13:16:09Z",
+  "elapsed_seconds": 832,
+  "stages": {
+    "planning":       { "started_at": "2026-03-20T13:02:17Z", "ended_at": "2026-03-20T13:05:26Z", "elapsed_seconds": 189 },
+    "implementation": { "started_at": "2026-03-20T13:05:26Z", "ended_at": "2026-03-20T13:16:09Z", "elapsed_seconds": 643 },
+    "review":         { "started_at": "2026-03-20T13:08:11Z", "ended_at": "2026-03-20T13:11:47Z", "elapsed_seconds": 216 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 1,
+  "members": [
+    { "name": "executor-2",  "role": "executor",  "model": "opus",   "status": "completed", "spawned_at": "2026-03-20T13:02:17Z", "ended_at": "2026-03-20T13:16:09Z" },
+    { "name": "reviewer-2",  "role": "reviewer",  "model": "sonnet", "status": "completed", "spawned_at": "2026-03-20T13:05:26Z", "ended_at": "2026-03-20T13:16:09Z" },
+    { "name": "tester-2",    "role": "tester",    "model": "sonnet", "status": "completed", "spawned_at": "2026-03-20T13:05:26Z", "ended_at": "2026-03-20T13:16:09Z" }
+  ]
+}
