@@ -144,6 +144,15 @@ Two modes for handling external documents:
 
 ## Organization Management (Plan 027+)
 
+### User Permission System (Plan 031)
+- **Feature-level access control** — Org admins can configure per-user access levels for each feature area: Documents, Contracts, Legal Hub (Cases), Policies, and QA Cards
+- **Action levels** — Four levels per feature: `none` (no access, section hidden), `view` (read-only), `edit` (create + modify), `full` (create + modify + delete)
+- **Owner/admin bypass** — Org owners and admins always have full access to all features; permission checks only apply to `member` role users
+- **Org default template** — Org admin sets a default permission template applied to new members; default is `full` for all features
+- **Per-user overrides** — Org admin can override permissions for any individual member independently of the default template
+- **Immediate enforcement** — Permission changes take effect on the next request (DB re-hydrated on every JWT callback, no re-login required)
+- **UI feature hiding** — Sidebar navigation and page action buttons (upload, create, delete) are conditionally hidden based on the user's effective permission level
+
 ### Global Admin (Plan 030)
 - **Super admin role** — A system-level `is_super_admin` flag on the users table, separate from per-org roles. Super admins operate across all organizations.
 - **Admin panel** — Dedicated `/admin` section (outside the normal app layout) listing all organizations with status, member count, and management actions.

@@ -569,6 +569,33 @@ Tokenized invite records. Table created by Plan 027; invite flow implemented by 
 
 ---
 
+### member_permissions
+
+Per-user feature-level permission overrides. Populated from `org_permission_defaults` when a user joins an org. (Added Plan 031)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| org_id | INTEGER NOT NULL FK → organizations(id) | Owning org |
+| user_id | INTEGER NOT NULL FK → users(id) | Member user |
+| resource | TEXT NOT NULL | Feature area: `documents`, `contracts`, `legal_hub`, `policies`, `qa_cards` |
+| action | TEXT NOT NULL DEFAULT 'full' | Permission level: `none`, `view`, `edit`, `full` |
+
+Primary key: `(org_id, user_id, resource)`
+
+### org_permission_defaults
+
+Org-level default permissions applied to new members. Seeded with `full` for all resources when an org is created. (Added Plan 031)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| org_id | INTEGER NOT NULL FK → organizations(id) | Owning org |
+| resource | TEXT NOT NULL | Feature area (same enum as member_permissions) |
+| action | TEXT NOT NULL DEFAULT 'full' | Default permission level for new members |
+
+Primary key: `(org_id, resource)`
+
+---
+
 ## Storage Size Estimates
 
 **documents**: ~2-5 KB per record (varies with full_text)

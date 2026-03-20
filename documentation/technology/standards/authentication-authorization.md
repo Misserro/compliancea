@@ -159,6 +159,9 @@ declare module "next-auth" {
       orgName?: string;
       // System-level admin flag (Plan 030):
       isSuperAdmin?: boolean;
+      // Feature-level permissions for member role users (Plan 031):
+      // null/undefined = full access (owner/admin bypass); set for 'member' role users
+      permissions?: Record<string, 'none' | 'view' | 'edit' | 'full'> | null;
     } & DefaultSession["user"];
   }
   interface User {
@@ -177,6 +180,8 @@ declare module "@auth/core/jwt" {
     orgName?: string;
     // System-level admin flag (Plan 030):
     isSuperAdmin?: boolean;
+    // Feature-level permissions (Plan 031):
+    permissions?: Record<string, 'none' | 'view' | 'edit' | 'full'> | null;
   }
 }
 ```
