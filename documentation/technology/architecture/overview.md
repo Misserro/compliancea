@@ -73,6 +73,24 @@ compliancea/
 - **Voyage AI** - Text embeddings for semantic search
 - **Google Drive** - Document sync (optional)
 
+## Multi-Tenancy Model
+
+The app uses a **row-level org isolation** model. Every data entity belongs to one organization via an `org_id` foreign key. All database queries are scoped to the active org. A single SQLite file stores all orgs' data — `org_id` filtering is the only isolation boundary.
+
+**Organization model:**
+- `organizations` — firm/workspace identity (name, slug)
+- `org_members` — user↔org relationships with per-org roles (`owner`, `admin`, `member`)
+- `org_invites` — tokenized invite records for email-based onboarding (Plan 028)
+- All data tables carry `org_id NOT NULL REFERENCES organizations(id)`
+
+**JWT session carries** `orgId` and `orgRole` — all API routes extract these to scope queries. On first run, a default org is auto-created and all existing users are enrolled.
+
+**Deployment modes:**
+- *Self-hosted (single-tenant):* one instance, one org, maximum privacy
+- *Hosted SaaS:* multiple orgs in the same instance with row-level isolation
+
+See Plan 027 for the full implementation.
+
 ## Support
 
 For questions or issues, refer to the detailed documentation linked above.
