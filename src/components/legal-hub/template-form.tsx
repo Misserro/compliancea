@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
+import { useState, useRef } from "react";
 import { Copy, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { RichTextEditor, type RichTextEditorHandle } from "@/components/ui/rich-text-editor";
 import type { CaseTemplate } from "@/lib/types";
 
 interface TemplateFormProps {
@@ -82,30 +81,14 @@ export function TemplateForm({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const editor = useEditor({
-    extensions: [StarterKit],
-    content: template?.template_body || "<p>Start writing your template here...</p>",
-    onUpdate: ({ editor: e }) => {
-      setTemplateBody(e.getHTML());
-    },
-  });
-
-  // Update editor content when editing an existing template
-  useEffect(() => {
-    if (editor && template?.template_body) {
-      editor.commands.setContent(template.template_body);
-    }
-  }, [editor, template]);
+  const editorRef = useRef<RichTextEditorHandle>(null);
 
   const handleCopy = async (token: string) => {
     try {
       await navigator.clipboard.writeText(token);
     } catch {
-      // Fallback: insert into editor at cursor position
-      if (editor) {
-        editor.commands.insertContent(token);
-      }
+      // Clipboard unavailable — insert directly into editor
+      editorRef.current?.insertText(token);
     }
   };
 
@@ -208,12 +191,11 @@ export function TemplateForm({
             <label className="text-sm font-medium mb-1 block">
               Template Body <span className="text-destructive">*</span>
             </label>
-            <div className="border rounded-lg overflow-hidden">
-              <EditorContent
-                editor={editor}
-                className="prose prose-sm dark:prose-invert max-w-none p-4 min-h-[300px] focus-within:ring-1 focus-within:ring-ring"
-              />
-            </div>
+            <RichTextEditor
+              ref={editorRef}
+              content={template?.template_body || "<p>Start writing your template here...</p>"}
+              onChange={setTemplateBody}
+            />
             <p className="text-xs text-muted-foreground mt-1">
               Use {"{{variable}}"} placeholders from the reference panel. They
               will be replaced with case data during generation.

@@ -42,6 +42,24 @@ This document lists all technologies, libraries, and external services used in C
 | clsx | 2.1.1 | Conditional classnames |
 | next-themes | 0.4.4 | Theme management |
 
+### Rich Text Editor
+| Library | Version | Purpose |
+|---------|---------|---------|
+| @tiptap/react | ^3.20.0 | React bindings for Tiptap editor |
+| @tiptap/starter-kit | ^3.20.0 | Core editing features (bold, italic, headings, lists) |
+| @tiptap/extension-underline | ^3.x | Underline formatting |
+| @tiptap/extension-text-align | ^3.x | Paragraph alignment (left/center/right/justify) |
+| @tiptap/extension-text-style | ^3.x | Base extension for inline CSS styles (required by font-family and font-size) |
+| @tiptap/extension-font-family | ^3.x | Font family selection |
+| @tiptap/extension-table | ^3.x | Table insertion and editing |
+| @tiptap/extension-table-row | ^3.x | Table row management |
+| @tiptap/extension-table-header | ^3.x | Table header cells |
+| @tiptap/extension-table-cell | ^3.x | Table body cells |
+
+A custom `FontSize` extension (inline, ~20 lines) extends `TextStyle` to support per-character font size via a `font-size` CSS attribute. No separate package required.
+
+Shared component: `src/components/ui/rich-text-editor.tsx` — used by both the template editor (`template-form.tsx`) and the generated document editor (`case-generate-tab.tsx`).
+
 ### User Feedback
 | Library | Version | Purpose |
 |---------|---------|---------|
@@ -63,6 +81,7 @@ This document lists all technologies, libraries, and external services used in C
 | xlsx | 0.18.5 | Parse Excel files |
 | multer | - | File upload handling |
 | formidable | - | Form data parsing |
+| htmlparser2 | ^9.x | HTML traversal for DOCX export (converts Tiptap HTML to docx structures) |
 
 ### Database
 | Library | Purpose |

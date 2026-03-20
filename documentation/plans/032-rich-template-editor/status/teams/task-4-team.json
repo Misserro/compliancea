@@ -1,0 +1,17 @@
+{
+  "team_id": "task-4-team",
+  "task": 4,
+  "description": "Upgrade system templates with professional Polish legal structure",
+  "pipeline_mode": false,
+  "stage": "completed",
+  "retry_count": 0,
+  "spawned_at": "2026-03-20T18:23:00Z",
+  "completed_at": "2026-03-20T18:29:00Z",
+  "shutdown_at": "2026-03-20T18:30:00Z",
+  "last_updated": "2026-03-20T18:30:00Z",
+  "members": {
+    "executor-4": { "role": "executor", "mode": "bg", "started_at": "2026-03-20T18:23:00Z", "ended_at": "2026-03-20T18:29:00Z" },
+    "reviewer-4": { "role": "reviewer", "mode": "bg", "started_at": "2026-03-20T18:23:00Z", "ended_at": "2026-03-20T18:29:00Z" },
+    "tester-4":   { "role": "tester",   "mode": "bg", "started_at": "2026-03-20T18:23:00Z", "ended_at": "2026-03-20T18:29:00Z" }
+  }
+}

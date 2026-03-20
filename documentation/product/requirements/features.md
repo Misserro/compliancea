@@ -142,6 +142,28 @@ Two modes for handling external documents:
 - **Evidence tracking** - Link supporting documents to answers
 - **Version control** - Track answer updates over time
 
+## Legal Hub — Template Authoring (Plan 032)
+
+### Professional Template Editor
+- **Rich text toolbar** — Bold, italic, underline, heading levels (H1/H2/H3), ordered and unordered lists
+- **Text alignment** — Left, center, right, and justified alignment for formal document layout
+- **Font family selection** — Choose from legal-standard typefaces (Times New Roman, Arial, Calibri, etc.)
+- **Font size control** — Per-character font size (range: 8pt–24pt); default 12pt per Polish court standards
+- **Table support** — Insert and edit tables for structured claim breakdowns, cost schedules, and party data
+- **Shared editor component** — Same rich editor used in both template authoring and generated document editing
+
+### Professional DOCX Export
+- **Fidelity export** — All formatting preserved in the exported .docx: bold, italic, underline, headings, lists, tables, alignment, fonts
+- **A4 page layout** — Exported documents use A4 page size with Polish court standard margins (top/bottom 2.5 cm, left 3.5 cm, right 2.5 cm)
+- **Page number footer** — Automatic page numbering in the footer of every exported document
+- **Polish character support** — ą, ę, ź, ż, ó, ś, ć, ń correctly rendered in DOCX output
+
+### System Templates (Law-Firm Grade)
+- **Wezwanie do zapłaty** — Pre-formatted payment demand letter with court header, party blocks, formal salutation, claim section, payment deadline clause, and signature block
+- **Pozew** — Pre-formatted civil complaint with full court heading, article citations, claim enumeration, evidence list, and signature block
+- **Replika** — Pre-formatted reply brief with formal reference to defendant's response, counter-arguments section, and signature block
+- System templates cannot be deleted; serve as professional starting-point templates for all new organizations
+
 ## Organization Management (Plan 027+)
 
 ### User Permission System (Plan 031)

@@ -1,0 +1,18 @@
+{
+  "team_id": "task-2-team",
+  "task": 2,
+  "description": "Wire rich editor into generated document editor",
+  "pipeline_mode": false,
+  "stage": "completed",
+  "retry_count": 0,
+  "spawned_at": "2026-03-20T18:17:00Z",
+  "approved_impl_at": "2026-03-20T18:22:00Z",
+  "completed_at": "2026-03-20T18:25:00Z",
+  "shutdown_at": "2026-03-20T18:26:00Z",
+  "last_updated": "2026-03-20T18:26:00Z",
+  "members": {
+    "executor-2": { "role": "executor", "mode": "bg", "started_at": "2026-03-20T18:17:00Z", "ended_at": "2026-03-20T18:25:00Z" },
+    "reviewer-2": { "role": "reviewer", "mode": "bg", "started_at": "2026-03-20T18:17:00Z", "ended_at": "2026-03-20T18:25:00Z" },
+    "tester-2":   { "role": "tester",   "mode": "bg", "started_at": "2026-03-20T18:17:00Z", "ended_at": "2026-03-20T18:25:00Z" }
+  }
+}

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import {
   FileDown,
   Save,
@@ -50,14 +49,6 @@ export function CaseGenerateTab({
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const editor = useEditor({
-    extensions: [StarterKit],
-    content: "",
-    onUpdate: ({ editor: e }) => {
-      setEditorContent(e.getHTML());
-    },
-  });
 
   // Fetch templates
   useEffect(() => {
@@ -142,9 +133,6 @@ export function CaseGenerateTab({
       // Open in editor
       setActiveDoc(newDoc);
       setEditorContent(newDoc.generated_content);
-      if (editor) {
-        editor.commands.setContent(newDoc.generated_content);
-      }
 
       // Refresh the list
       await fetchGeneratedDocs();
@@ -159,18 +147,12 @@ export function CaseGenerateTab({
   const handleOpenDoc = async (doc: CaseGeneratedDoc) => {
     setActiveDoc(doc);
     setEditorContent(doc.generated_content);
-    if (editor) {
-      editor.commands.setContent(doc.generated_content);
-    }
     setError(null);
   };
 
   const handleCloseEditor = () => {
     setActiveDoc(null);
     setEditorContent("");
-    if (editor) {
-      editor.commands.setContent("");
-    }
   };
 
   const handleSave = async () => {
@@ -458,9 +440,11 @@ export function CaseGenerateTab({
                   </Button>
                 </div>
               </div>
-              <EditorContent
-                editor={editor}
-                className="prose prose-sm dark:prose-invert max-w-none p-4 min-h-[400px]"
+              <RichTextEditor
+                content={editorContent}
+                onChange={setEditorContent}
+                minHeight="400px"
+                className="border-0 rounded-none"
               />
             </div>
           ) : (
