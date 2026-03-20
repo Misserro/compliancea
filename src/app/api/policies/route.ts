@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import { getAllPolicies, getPolicyById, createPolicy } from "@/lib/policies-imports";
+import { hasPermission } from "@/lib/permissions";
 
 export const runtime = "nodejs";
 
@@ -11,6 +12,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const orgId = Number(session.user.orgId);
+  // Permission check (member role only; owner/admin/superAdmin bypass)
+  if (!session.user.isSuperAdmin && session.user.orgRole === 'member') {
+    const perm = (session.user.permissions as Record<string, string> | null)?.['policies'] ?? 'full';
+    if (!hasPermission(perm as any, 'view')) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
 
   await ensureDb();
   try {
@@ -30,6 +38,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const orgId = Number(session.user.orgId);
+  // Permission check (member role only; owner/admin/superAdmin bypass)
+  if (!session.user.isSuperAdmin && session.user.orgRole === 'member') {
+    const perm = (session.user.permissions as Record<string, string> | null)?.['policies'] ?? 'full';
+    if (!hasPermission(perm as any, 'edit')) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
 
   await ensureDb();
   try {

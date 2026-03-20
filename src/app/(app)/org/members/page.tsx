@@ -24,8 +24,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Users, UserMinus, Mail, Copy, X, Clock } from "lucide-react";
+import { Users, UserMinus, Mail, Copy, X, Clock, Shield } from "lucide-react";
 import { ORG_ROLE_COLORS } from "@/lib/constants";
+import { MemberPermissionsDialog } from "@/components/org/member-permissions-dialog";
 
 interface Member {
   userId: number;
@@ -91,6 +92,9 @@ export default function MembersPage() {
   // Pending invites state
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [revokingToken, setRevokingToken] = useState<string | null>(null);
+
+  // Permission dialog state
+  const [permDialogMember, setPermDialogMember] = useState<Member | null>(null);
 
   const orgRole = sessionData?.user?.orgRole;
   const currentUserId = Number(sessionData?.user?.id);
@@ -325,6 +329,16 @@ export default function MembersPage() {
                   {canManage && (
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {member.role === "member" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setPermDialogMember(member)}
+                            title="Manage permissions"
+                          >
+                            <Shield className="size-4" />
+                          </Button>
+                        )}
                         {canChangeRole && (
                           <Select
                             value={member.role}
@@ -536,6 +550,17 @@ export default function MembersPage() {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Permission management dialog -- controlled by permDialogMember state */}
+      {canManage && (
+        <MemberPermissionsDialog
+          member={permDialogMember}
+          open={permDialogMember !== null}
+          onOpenChange={(open) => {
+            if (!open) setPermDialogMember(null);
+          }}
+        />
       )}
     </div>
   );

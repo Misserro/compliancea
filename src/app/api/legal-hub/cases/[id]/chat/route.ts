@@ -15,6 +15,7 @@ import {
   parseCitationResponse,
   isHighRiskQuery,
 } from "@/lib/citation-assembler-imports";
+import { hasPermission } from "@/lib/permissions";
 
 export const runtime = "nodejs";
 
@@ -165,6 +166,13 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const orgId = Number(session.user.orgId);
+  // Permission check (member role only; owner/admin/superAdmin bypass)
+  if (!session.user.isSuperAdmin && session.user.orgRole === 'member') {
+    const perm = (session.user.permissions as Record<string, string> | null)?.['legal_hub'] ?? 'full';
+    if (!hasPermission(perm as any, 'view')) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
 
   await ensureDb();
 

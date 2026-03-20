@@ -1,7 +1,7 @@
 import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { getUserByEmail, createSession, getSessionById, getOrgMemberByUserId, getOrgMemberForOrg, get } from "@/lib/db-imports";
+import { getUserByEmail, createSession, getSessionById, getOrgMemberByUserId, getOrgMemberForOrg, get, getMemberPermissions } from "@/lib/db-imports";
 import { ensureDb } from "@/lib/server-utils";
 import { authConfig } from "../auth.config";
 
@@ -16,6 +16,7 @@ declare module "next-auth" {
       orgRole?: string;
       orgName?: string;
       isSuperAdmin?: boolean;
+      permissions?: Record<string, 'none' | 'view' | 'edit' | 'full'> | null;
     } & DefaultSession["user"];
   }
   interface User {
@@ -32,6 +33,7 @@ declare module "@auth/core/jwt" {
     orgRole?: string;
     orgName?: string;
     isSuperAdmin?: boolean;
+    permissions?: Record<string, 'none' | 'view' | 'edit' | 'full'> | null;
   }
 }
 
@@ -88,6 +90,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // Look up super admin flag
         const saRow = get(`SELECT is_super_admin FROM users WHERE id = ?`, [Number(user.id)]);
         token.isSuperAdmin = !!saRow?.is_super_admin;
+
+        // Load permissions for member role (owner/admin get null = full access)
+        if (orgMember && orgMember.role === 'member') {
+          const perms = getMemberPermissions(Number(orgMember.org_id), Number(user.id));
+          token.permissions = Object.fromEntries((perms as any[]).map((p: any) => [p.resource, p.action]));
+        } else {
+          token.permissions = null;
+        }
       } else if (token.sessionId && token.id) {
         // Subsequent requests: lazy re-hydration in case DB was wiped on redeploy.
         // NOTE: this branch runs on every request (every auth() call), not only after cold starts.
@@ -124,6 +134,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // Refresh super admin flag (picks up promotions without re-login)
         const saUser = get(`SELECT is_super_admin FROM users WHERE id = ?`, [Number(token.id)]);
         token.isSuperAdmin = !!saUser?.is_super_admin;
+
+        // Load permissions for member role (owner/admin get null = full access)
+        if (membership && membership.role === 'member') {
+          const perms = getMemberPermissions(Number(token.orgId), Number(token.id));
+          token.permissions = Object.fromEntries((perms as any[]).map((p: any) => [p.resource, p.action]));
+        } else {
+          token.permissions = null;
+        }
       }
       return token;
     },
@@ -135,6 +153,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token.orgRole)   session.user.orgRole   = token.orgRole;
       if (token.orgName)   session.user.orgName   = token.orgName;
       session.user.isSuperAdmin = token.isSuperAdmin;
+      session.user.permissions = token.permissions;
       return session;
     },
   },

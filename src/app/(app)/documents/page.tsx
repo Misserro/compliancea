@@ -20,6 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DOCUMENT_STATUSES, CONTRACT_STATUSES } from "@/lib/constants";
+import { PERMISSION_LEVELS, type PermissionLevel } from "@/lib/permissions";
+import { useSession } from "next-auth/react";
 import type { Document } from "@/lib/types";
 
 // All filterable statuses: document statuses + contract statuses (deduped)
@@ -27,8 +29,15 @@ const ALL_STATUSES = Array.from(
   new Set([...DOCUMENT_STATUSES, ...CONTRACT_STATUSES])
 ) as string[];
 
+const permLevel = (perms: Record<string, string> | null | undefined, resource: string) =>
+  PERMISSION_LEVELS[(perms?.[resource] ?? 'full') as PermissionLevel] ?? 3;
+
 export default function DocumentsPage() {
   const router = useRouter();
+  const { data: sessionData } = useSession();
+  const permissions = sessionData?.user?.permissions;
+  const canEdit = permLevel(permissions, 'documents') >= 2;
+  const canDelete = permLevel(permissions, 'documents') >= 3;
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [allExpanded, setAllExpanded] = useState(false);
@@ -271,19 +280,23 @@ export default function DocumentsPage() {
         </p>
       </div>
 
-      <UploadSection
-        onUploadComplete={loadDocuments}
-        onStatusMessage={handleStatusMessage}
-      />
+      {canEdit && (
+        <UploadSection
+          onUploadComplete={loadDocuments}
+          onStatusMessage={handleStatusMessage}
+        />
+      )}
 
-      <ActionBar
-        onScanServer={handleScanServer}
-        onScanGDrive={handleScanGDrive}
-        onProcessAll={handleProcessAll}
-        onRetagAll={handleRetagAll}
-        allExpanded={allExpanded}
-        onToggleExpand={() => setAllExpanded(!allExpanded)}
-      />
+      {canEdit && (
+        <ActionBar
+          onScanServer={handleScanServer}
+          onScanGDrive={handleScanGDrive}
+          onProcessAll={handleProcessAll}
+          onRetagAll={handleRetagAll}
+          allExpanded={allExpanded}
+          onToggleExpand={() => setAllExpanded(!allExpanded)}
+        />
+      )}
 
       {/* Search & filter bar */}
       <div className="flex flex-wrap items-center gap-2">
@@ -364,6 +377,8 @@ export default function DocumentsPage() {
             setContractDocId(docId);
             setContractOpen(true);
           }}
+          canEdit={canEdit}
+          canDelete={canDelete}
         />
       )}
 

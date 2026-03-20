@@ -8,8 +8,15 @@ import { AddContractDialog } from "./add-contract-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CONTRACT_STATUS_DISPLAY } from "@/lib/constants";
+import { PERMISSION_LEVELS, type PermissionLevel } from "@/lib/permissions";
+import { useSession } from "next-auth/react";
+
+const permLevel = (perms: Record<string, string> | null | undefined, resource: string) =>
+  PERMISSION_LEVELS[(perms?.[resource] ?? 'full') as PermissionLevel] ?? 3;
 
 export function ContractsTab() {
+  const { data: sessionData } = useSession();
+  const canEdit = permLevel(sessionData?.user?.permissions, 'contracts') >= 2;
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,13 +56,15 @@ export function ContractsTab() {
             <MessageSquare className="h-4 w-4" />
             {chatOpen ? "Close Chat" : "Ask AI"}
           </Button>
-          <button
-            className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded text-sm font-medium hover:bg-primary/90 transition-colors"
-            onClick={() => setShowAddDialog(true)}
-          >
-            <Plus className="w-4 h-4" />
-            Add New Contract
-          </button>
+          {canEdit && (
+            <button
+              className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded text-sm font-medium hover:bg-primary/90 transition-colors"
+              onClick={() => setShowAddDialog(true)}
+            >
+              <Plus className="w-4 h-4" />
+              Add New Contract
+            </button>
+          )}
         </div>
       </div>
 

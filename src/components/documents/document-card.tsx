@@ -31,6 +31,8 @@ interface DocumentCardProps {
   onManageContract: (docId: number) => void;
   processing?: boolean;
   retagging?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 export function DocumentCard({
@@ -44,6 +46,8 @@ export function DocumentCard({
   onManageContract,
   processing = false,
   retagging = false,
+  canEdit = true,
+  canDelete = true,
 }: DocumentCardProps) {
   const [isOpen, setIsOpen] = useState(expanded);
   const [tagsOpen, setTagsOpen] = useState(false);
@@ -157,15 +161,17 @@ export function DocumentCard({
 
             {/* Action buttons */}
             <div className="flex items-center gap-1 shrink-0">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => onEditMetadata(doc)}
-                title="Edit metadata"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
+              {canEdit && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => onEditMetadata(doc)}
+                  title="Edit metadata"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              )}
 
               {doc.processed ? (
                 <>
@@ -178,18 +184,20 @@ export function DocumentCard({
                   >
                     <Download className="h-3.5 w-3.5" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => onRetag(doc.id)}
-                    disabled={retagging}
-                    title="Retag document"
-                  >
-                    <Tags className="h-3.5 w-3.5" />
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => onRetag(doc.id)}
+                      disabled={retagging}
+                      title="Retag document"
+                    >
+                      <Tags className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                 </>
-              ) : (
+              ) : canEdit ? (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -200,7 +208,7 @@ export function DocumentCard({
                 >
                   <Play className="h-3.5 w-3.5" />
                 </Button>
-              )}
+              ) : null}
 
               {isContract && (
                 <Button
@@ -214,19 +222,21 @@ export function DocumentCard({
                 </Button>
               )}
 
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-destructive hover:text-destructive"
-                onClick={() => {
-                  if (confirm(`Delete "${doc.name}"?`)) {
-                    onDelete(doc.id);
-                  }
-                }}
-                title="Delete"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+              {canDelete && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-destructive hover:text-destructive"
+                  onClick={() => {
+                    if (confirm(`Delete "${doc.name}"?`)) {
+                      onDelete(doc.id);
+                    }
+                  }}
+                  title="Delete"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>

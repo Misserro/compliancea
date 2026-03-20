@@ -1,0 +1,23 @@
+{
+  "task_id": "task-2",
+  "task_name": "JWT Integration and API Enforcement",
+  "team_name": "task-2-team",
+  "goal": "src/lib/permissions.ts helper, JWT permissions field in src/auth.ts, permission check added to all ~80 data API routes for member role users",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-20T13:44:11.000Z",
+  "ended_at": "2026-03-20T13:50:45.000Z",
+  "elapsed_seconds": 394,
+  "stages": {
+    "planning":       { "started_at": "2026-03-20T13:44:11.000Z", "ended_at": "2026-03-20T13:44:56.000Z", "elapsed_seconds": 45 },
+    "implementation": { "started_at": "2026-03-20T13:44:56.000Z", "ended_at": "2026-03-20T13:50:45.000Z", "elapsed_seconds": 349 },
+    "review":         { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 1,
+  "members": [
+    { "name": "executor-2", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-20T13:44:11.000Z", "ended_at": "2026-03-20T13:50:45.000Z" },
+    { "name": "reviewer-2", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": null,                        "ended_at": "2026-03-20T13:50:45.000Z" },
+    { "name": "tester-2",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": null,                        "ended_at": "2026-03-20T13:50:45.000Z" }
+  ]
+}

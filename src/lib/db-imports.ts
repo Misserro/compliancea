@@ -161,4 +161,14 @@ export {
   restoreOrg,
   setSuperAdmin,
   getOrgWithMemberCount,
+  // Permission System (Plan 031)
+  PERMISSION_RESOURCES,
+  seedOrgPermissionDefaults,
+  seedMemberPermissionsFromDefaults,
+  getOrgPermissionDefaults,
+  setOrgPermissionDefault,
+  getMemberPermissions,
+  getUserPermissionForResource,
+  setMemberPermission,
+  resetMemberPermissions,
 } from "../../lib/db.js";

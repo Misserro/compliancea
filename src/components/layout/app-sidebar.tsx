@@ -27,6 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { PERMISSION_LEVELS, type PermissionLevel } from "@/lib/permissions";
 
 function ThemeIcon({ theme }: { theme: string | undefined }) {
   if (theme === "dark") return <Moon className="h-4 w-4" />;
@@ -54,6 +55,14 @@ export function AppSidebar() {
   const userName = sessionData?.user?.name || userEmail;
   const orgName = sessionData?.user?.orgName ?? "ComplianceA";
   const currentOrgId = sessionData?.user?.orgId;
+  const permissions = sessionData?.user?.permissions;
+
+  // Permission-based nav visibility: null/undefined = full access (owner/admin)
+  function canView(resource: string): boolean {
+    if (!permissions) return true;
+    const level = PERMISSION_LEVELS[(permissions[resource] ?? 'full') as PermissionLevel] ?? 3;
+    return level >= 1;
+  }
 
   useEffect(() => {
     async function fetchOverdue() {
@@ -172,6 +181,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Contract Hub */}
+        {canView('contracts') && (
         <SidebarGroup>
           <SidebarGroupLabel>Contract Hub</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -211,8 +221,10 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        )}
 
         {/* Legal Hub */}
+        {canView('legal_hub') && (
         <SidebarGroup>
           <SidebarGroupLabel>Legal Hub</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -244,33 +256,40 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        )}
 
         {/* Documents Hub */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Documents Hub</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {[
-                { title: "Documents", href: "/documents", icon: FileText },
-                { title: "Policies", href: "/policies", icon: Shield },
-                { title: "Analyze & Process", href: "/document-tools", icon: Layers },
-                { title: "Ask Library", href: "/ask", icon: MessageSquare },
-              ].map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-                      <Link href={item.href}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {(() => {
+          const docHubItems = [
+            { title: "Documents", href: "/documents", icon: FileText, resource: "documents" },
+            { title: "Policies", href: "/policies", icon: Shield, resource: "policies" },
+            { title: "Analyze & Process", href: "/document-tools", icon: Layers, resource: "documents" },
+            { title: "Ask Library", href: "/ask", icon: MessageSquare, resource: "documents" },
+          ].filter((item) => canView(item.resource));
+
+          return docHubItems.length > 0 ? (
+            <SidebarGroup>
+              <SidebarGroupLabel>Documents Hub</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {docHubItems.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                    return (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+                          <Link href={item.href}>
+                            <item.icon />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ) : null;
+        })()}
 
         {/* Bottom standalones */}
         <SidebarGroup>

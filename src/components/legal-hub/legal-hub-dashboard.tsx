@@ -11,8 +11,15 @@ import {
   LEGAL_CASE_TYPES,
   LEGAL_CASE_TYPE_LABELS,
 } from "@/lib/constants";
+import { PERMISSION_LEVELS, type PermissionLevel } from "@/lib/permissions";
+import { useSession } from "next-auth/react";
+
+const permLevel = (perms: Record<string, string> | null | undefined, resource: string) =>
+  PERMISSION_LEVELS[(perms?.[resource] ?? 'full') as PermissionLevel] ?? 3;
 
 export function LegalHubDashboard() {
+  const { data: sessionData } = useSession();
+  const canEdit = permLevel(sessionData?.user?.permissions, 'legal_hub') >= 2;
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showNewCaseDialog, setShowNewCaseDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -31,13 +38,15 @@ export function LegalHubDashboard() {
       {/* Header row */}
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-lg font-semibold">All Cases</h3>
-        <button
-          className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded text-sm font-medium hover:bg-primary/90 transition-colors"
-          onClick={() => setShowNewCaseDialog(true)}
-        >
-          <Plus className="w-4 h-4" />
-          New Case
-        </button>
+        {canEdit && (
+          <button
+            className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded text-sm font-medium hover:bg-primary/90 transition-colors"
+            onClick={() => setShowNewCaseDialog(true)}
+          >
+            <Plus className="w-4 h-4" />
+            New Case
+          </button>
+        )}
       </div>
 
       {/* Search and filters */}

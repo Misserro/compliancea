@@ -17,6 +17,8 @@ interface DocumentListProps {
   onDelete: (id: number) => void;
   onEditMetadata: (doc: Document) => void;
   onManageContract: (docId: number) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 // Normalise doc_type for display — "agreement" shows as "contract"
@@ -44,6 +46,8 @@ interface DocTypeSectionProps {
   onDelete: (id: number) => void;
   onEditMetadata: (doc: Document) => void;
   onManageContract: (docId: number) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 function DocTypeSection({
@@ -58,6 +62,8 @@ function DocTypeSection({
   onDelete,
   onEditMetadata,
   onManageContract,
+  canEdit,
+  canDelete,
 }: DocTypeSectionProps) {
   const [open, setOpen] = useState(true);
 
@@ -91,6 +97,8 @@ function DocTypeSection({
               onDelete={onDelete}
               onEditMetadata={onEditMetadata}
               onManageContract={onManageContract}
+              canEdit={canEdit}
+              canDelete={canDelete}
             />
           ))}
         </div>
@@ -113,6 +121,8 @@ interface DeptSectionProps {
   onDelete: (id: number) => void;
   onEditMetadata: (doc: Document) => void;
   onManageContract: (docId: number) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 function DeptSection({
@@ -127,6 +137,8 @@ function DeptSection({
   onDelete,
   onEditMetadata,
   onManageContract,
+  canEdit,
+  canDelete,
 }: DeptSectionProps) {
   const [open, setOpen] = useState(true);
 
@@ -158,6 +170,8 @@ function DeptSection({
     onDelete,
     onEditMetadata,
     onManageContract,
+    canEdit,
+    canDelete,
   };
 
   return (
@@ -209,6 +223,8 @@ export function DocumentList({
   onDelete,
   onEditMetadata,
   onManageContract,
+  canEdit,
+  canDelete,
 }: DocumentListProps) {
   const grouped: Record<string, Document[]> = {};
   const uncategorized: Document[] = [];
@@ -241,6 +257,8 @@ export function DocumentList({
     onDelete,
     onEditMetadata,
     onManageContract,
+    canEdit,
+    canDelete,
   };
 
   return (

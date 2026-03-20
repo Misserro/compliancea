@@ -165,3 +165,14 @@ export function softDeleteOrg(...args: any[]): any;
 export function restoreOrg(...args: any[]): any;
 export function setSuperAdmin(...args: any[]): any;
 export function getOrgWithMemberCount(...args: any[]): any;
+
+// Permission System (Plan 031)
+export const PERMISSION_RESOURCES: string[];
+export function seedOrgPermissionDefaults(...args: any[]): any;
+export function seedMemberPermissionsFromDefaults(...args: any[]): any;
+export function getOrgPermissionDefaults(...args: any[]): any;
+export function setOrgPermissionDefault(...args: any[]): any;
+export function getMemberPermissions(...args: any[]): any;
+export function getUserPermissionForResource(...args: any[]): any;
+export function setMemberPermission(...args: any[]): any;
+export function resetMemberPermissions(...args: any[]): any;

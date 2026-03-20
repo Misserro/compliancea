@@ -11,6 +11,7 @@ import {
   getCaseDeadlines,
 } from "@/lib/db-imports";
 import { logAction } from "@/lib/audit-imports";
+import { hasPermission } from "@/lib/permissions";
 
 /**
  * GET /api/legal-hub/cases/[id]
@@ -25,6 +26,13 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const orgId = Number(session.user.orgId);
+  // Permission check (member role only; owner/admin/superAdmin bypass)
+  if (!session.user.isSuperAdmin && session.user.orgRole === 'member') {
+    const perm = (session.user.permissions as Record<string, string> | null)?.['legal_hub'] ?? 'full';
+    if (!hasPermission(perm as any, 'view')) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
 
   await ensureDb();
 
@@ -68,6 +76,13 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const orgId = Number(session.user.orgId);
+  // Permission check (member role only; owner/admin/superAdmin bypass)
+  if (!session.user.isSuperAdmin && session.user.orgRole === 'member') {
+    const perm = (session.user.permissions as Record<string, string> | null)?.['legal_hub'] ?? 'full';
+    if (!hasPermission(perm as any, 'edit')) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
 
   await ensureDb();
 
@@ -145,6 +160,13 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const orgId = Number(session.user.orgId);
+  // Permission check (member role only; owner/admin/superAdmin bypass)
+  if (!session.user.isSuperAdmin && session.user.orgRole === 'member') {
+    const perm = (session.user.permissions as Record<string, string> | null)?.['legal_hub'] ?? 'full';
+    if (!hasPermission(perm as any, 'full')) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
 
   await ensureDb();
 

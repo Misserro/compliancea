@@ -8,6 +8,7 @@ import {
   getObligationsByDocumentId,
 } from "@/lib/db-imports";
 import { ensureDb } from "@/lib/server-utils";
+import { hasPermission } from "@/lib/permissions";
 
 /**
  * GET /api/contracts/[id]
@@ -22,6 +23,13 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const orgId = Number(session.user.orgId);
+  // Permission check (member role only; owner/admin/superAdmin bypass)
+  if (!session.user.isSuperAdmin && session.user.orgRole === 'member') {
+    const perm = (session.user.permissions as Record<string, string> | null)?.['contracts'] ?? 'full';
+    if (!hasPermission(perm as any, 'view')) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
 
   try {
     await ensureDb();
@@ -66,6 +74,13 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const orgId = Number(session.user.orgId);
+  // Permission check (member role only; owner/admin/superAdmin bypass)
+  if (!session.user.isSuperAdmin && session.user.orgRole === 'member') {
+    const perm = (session.user.permissions as Record<string, string> | null)?.['contracts'] ?? 'full';
+    if (!hasPermission(perm as any, 'edit')) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
 
   try {
     await ensureDb();

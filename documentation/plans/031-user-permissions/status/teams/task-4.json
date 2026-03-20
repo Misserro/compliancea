@@ -1,0 +1,23 @@
+{
+  "task_id": "task-4",
+  "task_name": "Permission Management UI",
+  "team_name": "task-4-team",
+  "goal": "Permission dropdowns per member on /org/members page, org default permissions section on /settings/org page, member-permissions-dialog component",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-20T13:52:05.000Z",
+  "ended_at": "2026-03-20T14:06:24.000Z",
+  "elapsed_seconds": 859,
+  "stages": {
+    "planning":       { "started_at": "2026-03-20T13:52:05.000Z", "ended_at": "2026-03-20T13:54:59.000Z", "elapsed_seconds": 174 },
+    "implementation": { "started_at": "2026-03-20T13:54:59.000Z", "ended_at": "2026-03-20T14:06:24.000Z", "elapsed_seconds": 685 },
+    "review":         { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 1,
+  "members": [
+    { "name": "executor-4", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-20T13:52:05.000Z", "ended_at": "2026-03-20T14:06:24.000Z" },
+    { "name": "reviewer-4", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": null,                        "ended_at": "2026-03-20T14:06:24.000Z" },
+    { "name": "tester-4",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": null,                        "ended_at": "2026-03-20T14:06:24.000Z" }
+  ]
+}
