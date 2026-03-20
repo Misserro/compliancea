@@ -32,6 +32,7 @@ export async function GET(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -70,6 +71,7 @@ export async function PATCH(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -126,7 +128,7 @@ export async function PATCH(
     updateCaseTemplate(id, fields);
     logAction("case_template", id, "updated", {
       fields: Object.keys(fields),
-    });
+    }, { userId: Number(session.user.id), orgId });
 
     const template = getCaseTemplateById(id);
     return NextResponse.json({ template });
@@ -149,6 +151,7 @@ export async function DELETE(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -175,7 +178,7 @@ export async function DELETE(
     }
 
     deleteCaseTemplate(id);
-    logAction("case_template", id, "deleted", { name: existing.name });
+    logAction("case_template", id, "deleted", { name: existing.name }, { userId: Number(session.user.id), orgId });
 
     return NextResponse.json({ template: { id } });
   } catch (err: unknown) {

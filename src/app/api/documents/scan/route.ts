@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
+import { auth } from "@/auth";
 import { ensureDb, guessType } from "@/lib/server-utils";
 import { getAllDocuments, getDocumentByPath, addDocument } from "@/lib/db-imports";
 import { DOCUMENTS_DIR } from "@/lib/paths-imports";
@@ -8,6 +9,12 @@ import { DOCUMENTS_DIR } from "@/lib/paths-imports";
 export const runtime = "nodejs";
 
 export async function POST() {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   try {
     const files = await fs.readdir(DOCUMENTS_DIR);
@@ -32,18 +39,18 @@ export async function POST() {
       }
 
       // Check if already in database
-      const existing = getDocumentByPath(filePath);
+      const existing = getDocumentByPath(filePath, orgId);
       if (existing) {
         skipped++;
         continue;
       }
 
       // Add to database
-      addDocument(file, filePath, null);
+      addDocument(file, filePath, null, null, orgId);
       added++;
     }
 
-    const documents = getAllDocuments();
+    const documents = getAllDocuments(orgId);
     return NextResponse.json({
       message: `Scan complete. Added ${added} new document(s), skipped ${skipped}.`,
       added,

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import { getAllDocuments } from "@/lib/db-imports";
 import { scanGDrive, getGDriveStatus } from "@/lib/gdrive-imports";
@@ -6,6 +7,12 @@ import { scanGDrive, getGDriveStatus } from "@/lib/gdrive-imports";
 export const runtime = "nodejs";
 
 export async function POST() {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   try {
     const status = getGDriveStatus();
@@ -17,7 +24,7 @@ export async function POST() {
     }
 
     const result = await scanGDrive();
-    const documents = getAllDocuments();
+    const documents = getAllDocuments(orgId);
 
     let message = `Google Drive scan complete. Added: ${result.added}, Updated: ${result.updated}, Removed: ${result.deleted}, Unchanged: ${result.unchanged}`;
     if (result.errors && result.errors.length > 0) {

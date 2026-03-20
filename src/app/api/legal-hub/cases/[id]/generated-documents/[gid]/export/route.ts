@@ -25,6 +25,7 @@ export async function GET(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -66,7 +67,7 @@ export async function GET(
 
     // Update file_path on the generated doc
     updateCaseGeneratedDoc(gid, { file_path: filePath });
-    logAction("legal_case", caseId, "document_exported", { docId: gid, documentName: doc.document_name });
+    logAction("legal_case", caseId, "document_exported", { docId: gid, documentName: doc.document_name }, { userId: Number(session.user.id), orgId });
 
     // Return the DOCX as a download
     const uint8 = new Uint8Array(buffer);

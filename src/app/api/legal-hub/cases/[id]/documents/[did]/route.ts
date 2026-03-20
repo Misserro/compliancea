@@ -20,6 +20,7 @@ export async function DELETE(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -51,7 +52,7 @@ export async function DELETE(
       }
     }
 
-    logAction("case_document", did, "deleted", { caseId });
+    logAction("case_document", did, "deleted", { caseId }, { userId: Number(session.user.id), orgId });
 
     return NextResponse.json({ case_document: { id: did } });
   } catch (err: unknown) {

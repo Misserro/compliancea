@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { ensureDb } from "@/lib/server-utils";
 import { getUpcomingObligationsAllContracts } from "@/lib/db-imports";
 
 /**
@@ -6,6 +8,13 @@ import { getUpcomingObligationsAllContracts } from "@/lib/db-imports";
  * Get all obligations due in next 30 days across all contracts
  */
 export async function GET(request: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
+  await ensureDb();
   try {
     const { searchParams } = new URL(request.url);
     const daysParam = searchParams.get("days");
@@ -18,7 +27,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const obligations = await getUpcomingObligationsAllContracts(days);
+    const obligations = await getUpcomingObligationsAllContracts(days, orgId);
     return NextResponse.json({ obligations });
   } catch (error) {
     console.error("Error fetching upcoming obligations:", error);

@@ -28,6 +28,7 @@ export async function PATCH(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -88,7 +89,7 @@ export async function PATCH(
     logAction("legal_case", caseId, "deadline_updated", {
       deadlineId: did,
       ...(fields.status ? { status: fields.status } : {}),
-    });
+    }, { userId: Number(session.user.id), orgId });
 
     const updatedDeadline = getCaseDeadlineById(did);
     return NextResponse.json({ data: updatedDeadline });
@@ -113,6 +114,7 @@ export async function DELETE(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -133,7 +135,7 @@ export async function DELETE(
     logAction("legal_case", caseId, "deadline_removed", {
       deadlineId: did,
       title: existing.title,
-    });
+    }, { userId: Number(session.user.id), orgId });
 
     return NextResponse.json({ data: { id: did } });
   } catch (error) {

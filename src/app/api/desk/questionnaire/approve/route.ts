@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import { insertQaCard } from "@/lib/db-imports";
 import { getEmbeddings, embeddingToBuffer } from "@/lib/embeddings-imports";
@@ -7,6 +8,12 @@ import { logAction } from "@/lib/audit-imports";
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
 
   try {
@@ -39,11 +46,12 @@ export async function POST(request: NextRequest) {
         evidenceJson: JSON.stringify(item.evidence || []),
         sourceQuestionnaire: sourceQuestionnaire || item.sourceQuestionnaire || null,
         questionEmbedding: embedding,
-      });
+      orgId,
+    });
       saved++;
     }
 
-    logAction("qa_cards", null, "batch_approved", { saved, sourceQuestionnaire });
+    logAction("qa_cards", null, "batch_approved", { saved, sourceQuestionnaire }, { userId: Number(session.user.id), orgId });
 
     return NextResponse.json({ saved, message: `${saved} Q&A card(s) saved successfully` });
   } catch (err: unknown) {

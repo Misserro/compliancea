@@ -22,6 +22,7 @@ export async function POST(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -78,7 +79,7 @@ export async function POST(
       from: oldStatus,
       to: newStatus,
       note: body.note || null,
-    });
+    }, { userId: Number(session.user.id), orgId });
 
     return NextResponse.json({
       data: { status: newStatus, status_history: statusHistory },

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import fs from "fs/promises";
 import path from "path";
 
@@ -17,6 +18,12 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; contractDocId: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id, contractDocId } = await params;
   const contractId = parseInt(id, 10);

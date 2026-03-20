@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import {
   getDocumentById,
@@ -15,6 +16,12 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id } = await params;
   const docId = parseInt(id, 10);
@@ -31,7 +38,7 @@ export async function POST(
       );
     }
 
-    const doc = getDocumentById(docId);
+    const doc = getDocumentById(docId, orgId);
     if (!doc) {
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
@@ -92,8 +99,7 @@ export async function POST(
               description: dd.details || ob.summary || ob.description,
               dueDate: dd.date,
               owner: ob.owner,
-              escalationTo: null,
-            });
+              escalationTo: null, orgId });
             tasksCreated++;
           }
         }
@@ -116,7 +122,7 @@ export async function POST(
       activatedCount: activated.length,
       deactivatedCount: deactivated.length,
       tasksCreated,
-    });
+    }, { userId: Number(session.user.id), orgId });
 
     const actionLabels: Record<string, string> = {
       sign: "signed",

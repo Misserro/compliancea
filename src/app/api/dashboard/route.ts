@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import {
   getAllDocuments,
@@ -11,13 +12,19 @@ import {
 export const runtime = "nodejs";
 
 export async function GET() {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   try {
-    const docs = getAllDocuments() as Array<{ doc_type: string | null; processed: number }>;
-    const allObligations = getAllObligations() as Array<{ status: string }>;
-    const overdue = getOverdueObligations() as Array<{ id: number; title: string; due_date: string; document_name: string }>;
-    const upcoming = getUpcomingObligations(30) as Array<{ id: number; title: string; due_date: string; document_name: string }>;
-    const contracts = getContractsWithSummaries() as Array<{
+    const docs = getAllDocuments(orgId) as Array<{ doc_type: string | null; processed: number }>;
+    const allObligations = getAllObligations(orgId) as Array<{ status: string }>;
+    const overdue = getOverdueObligations(orgId) as Array<{ id: number; title: string; due_date: string; document_name: string }>;
+    const upcoming = getUpcomingObligations(30, orgId) as Array<{ id: number; title: string; due_date: string; document_name: string }>;
+    const contracts = getContractsWithSummaries(orgId) as Array<{
       id: number; name: string; status: string; expiry_date: string | null;
       activeObligations: number | null;
     }>;

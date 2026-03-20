@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") || undefined;
     const caseType = searchParams.get("caseType") || undefined;
 
-    const cases = getLegalCases({ search, status, caseType });
+    const cases = getLegalCases({ search, status, caseType , orgId });
     return NextResponse.json({ cases });
   } catch (err: unknown) {
     console.error("Error fetching legal cases:", err);
@@ -47,6 +48,7 @@ export async function POST(request: NextRequest) {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -85,9 +87,10 @@ export async function POST(request: NextRequest) {
       claimCurrency: body.claim_currency || "PLN",
       tags: body.tags || [],
       extensionData: body.extension_data || {},
+      orgId,
     });
 
-    logAction("legal_case", newId, "created", { title, case_type: caseType });
+    logAction("legal_case", newId, "created", { title, case_type: caseType }, { userId: Number(session.user.id), orgId });
 
     const newCase = getLegalCaseById(newId);
     return NextResponse.json({ case: newCase }, { status: 201 });

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import fs from "fs";
 
 import { ensureDb } from "@/lib/server-utils";
@@ -11,6 +12,12 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; contractDocId: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id, contractDocId } = await params;
   const contractId = parseInt(id, 10);
@@ -37,7 +44,7 @@ export async function DELETE(
       }
     }
 
-    logAction("contract_document", contractDocIdNum, "deleted", { contractId });
+    logAction("contract_document", contractDocIdNum, "deleted", { contractId }, { userId: Number(session.user.id), orgId });
 
     return NextResponse.json({ message: "Contract document deleted" });
   } catch (err: unknown) {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import crypto from "crypto";
 import path from "path";
 import fs from "fs";
@@ -30,6 +31,12 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id } = await params;
   const contractId = parseInt(id, 10);
@@ -38,7 +45,7 @@ export async function GET(
   }
 
   try {
-    const contract = getContractById(contractId);
+    const contract = getContractById(contractId, orgId);
     if (!contract) {
       return NextResponse.json({ error: "Contract not found" }, { status: 404 });
     }
@@ -57,6 +64,12 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id } = await params;
   const contractId = parseInt(id, 10);
@@ -65,7 +78,7 @@ export async function POST(
   }
 
   try {
-    const contract = getContractById(contractId);
+    const contract = getContractById(contractId, orgId);
     if (!contract) {
       return NextResponse.json({ error: "Contract not found" }, { status: 404 });
     }
@@ -170,7 +183,7 @@ export async function POST(
       paymentConfirmationPath,
     });
 
-    logAction("invoice", newId, "created", { contractId, amount, currency });
+    logAction("invoice", newId, "created", { contractId, amount, currency }, { userId: Number(session.user.id), orgId });
 
     const invoice = getInvoiceById(newId);
     return NextResponse.json({ invoice }, { status: 201 });

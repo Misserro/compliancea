@@ -1,18 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import { getAllObligations, getOverdueObligations, getUpcomingObligations } from "@/lib/db-imports";
 
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   try {
     const { searchParams } = new URL(request.url);
     const filter = searchParams.get("filter") || "active"; // active | finalized | all
 
-    const allObligations = getAllObligations();
-    const overdue = getOverdueObligations();
-    const upcoming = getUpcomingObligations(30);
+    const allObligations = getAllObligations(orgId);
+    const overdue = getOverdueObligations(orgId);
+    const upcoming = getUpcomingObligations(30, orgId);
 
     let obligations;
     if (filter === "active") {

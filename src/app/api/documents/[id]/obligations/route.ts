@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import { getDocumentById, getObligationsByDocumentId, getObligationById, insertObligation, spawnDueObligations } from "@/lib/db-imports";
 import { logAction } from "@/lib/audit-imports";
@@ -9,12 +10,18 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id } = await params;
   const docId = parseInt(id, 10);
 
   try {
-    const doc = getDocumentById(docId);
+    const doc = getDocumentById(docId, orgId);
     if (!doc) {
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
@@ -33,12 +40,18 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id } = await params;
   const docId = parseInt(id, 10);
   try {
     if (isNaN(docId)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
-    const doc = getDocumentById(docId);
+    const doc = getDocumentById(docId, orgId);
     if (!doc) return NextResponse.json({ error: "Document not found" }, { status: 404 });
     const body = await request.json();
     if (!body.title) return NextResponse.json({ error: "title is required" }, { status: 400 });
@@ -77,8 +90,9 @@ export async function POST(
       complianceJurisdiction: body.complianceJurisdiction || null,
       operationalServiceType: body.operationalServiceType || null,
       operationalSlaMetric: body.operationalSlaMetric || null,
-    });
-    logAction("obligation", newId, "created", { documentId: docId, title: body.title });
+        orgId,
+      });
+    logAction("obligation", newId, "created", { documentId: docId, title: body.title }, { userId: Number(session.user.id), orgId });
     const created = getObligationById(newId);
     return NextResponse.json({ obligation: created }, { status: 201 });
   } catch (err: unknown) {

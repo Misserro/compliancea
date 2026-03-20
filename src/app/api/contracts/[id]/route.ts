@@ -1,6 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import {
   getContractById,
   updateContractMetadata,
@@ -16,6 +17,12 @@ export async function GET(
   request: Request,
   props: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   try {
     await ensureDb();
     const params = await props.params;
@@ -24,7 +31,7 @@ export async function GET(
       return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
     }
 
-    const contract = await getContractById(id);
+    const contract = await getContractById(id, orgId);
     if (!contract) {
       return NextResponse.json({ error: "Contract not found" }, { status: 404 });
     }
@@ -54,6 +61,12 @@ export async function PATCH(
   request: Request,
   props: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   try {
     await ensureDb();
     const params = await props.params;
@@ -88,7 +101,7 @@ export async function PATCH(
 
     await updateContractMetadata(id, metadata);
 
-    const updatedContract = await getContractById(id);
+    const updatedContract = await getContractById(id, orgId);
     if (!updatedContract) {
       return NextResponse.json(
         { error: "Contract not found after update — doc_type may not have been written" },

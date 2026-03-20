@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import { getLegalHoldById, releaseLegalHold } from "@/lib/db-imports";
 import { logAction } from "@/lib/audit-imports";
@@ -9,6 +10,12 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id } = await params;
   const holdId = parseInt(id, 10);
@@ -20,7 +27,7 @@ export async function POST(
     }
 
     releaseLegalHold(holdId);
-    logAction("legal_hold", holdId, "released", { matterName: hold.matter_name });
+    logAction("legal_hold", holdId, "released", { matterName: hold.matter_name }, { userId: Number(session.user.id), orgId });
 
     const updated = getLegalHoldById(holdId);
     return NextResponse.json({ message: "Legal hold released", hold: updated });

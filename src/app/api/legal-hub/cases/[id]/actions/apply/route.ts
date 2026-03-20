@@ -25,6 +25,7 @@ export async function POST(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -59,7 +60,7 @@ export async function POST(
         switch (tool) {
           case "updateCaseMetadata": {
             updateLegalCase(caseId, params);
-            logAction("legal_case", caseId, "ai_mutation", { tool, params });
+            logAction("legal_case", caseId, "ai_mutation", { tool, params }, { userId: Number(session.user.id), orgId });
             applied.push(`Updated case metadata: ${Object.keys(params).join(", ")}`);
             break;
           }
@@ -75,7 +76,7 @@ export async function POST(
               representativeType: (params.representative_type as string) || null,
               notes: (params.notes as string) || null,
             });
-            logAction("legal_case", caseId, "ai_mutation", { tool, params });
+            logAction("legal_case", caseId, "ai_mutation", { tool, params }, { userId: Number(session.user.id), orgId });
             applied.push(`Added party: ${params.name} (${params.party_type})`);
             break;
           }
@@ -93,7 +94,7 @@ export async function POST(
               updateFields.representative_type = params.representative_type;
             if (params.notes !== undefined) updateFields.notes = params.notes;
             updateCaseParty(partyId, updateFields);
-            logAction("legal_case", caseId, "ai_mutation", { tool, params });
+            logAction("legal_case", caseId, "ai_mutation", { tool, params }, { userId: Number(session.user.id), orgId });
             applied.push(`Updated party ID ${partyId}`);
             break;
           }
@@ -106,7 +107,7 @@ export async function POST(
               dueDate: params.due_date as string,
               description: (params.description as string) || null,
             });
-            logAction("legal_case", caseId, "ai_mutation", { tool, params });
+            logAction("legal_case", caseId, "ai_mutation", { tool, params }, { userId: Number(session.user.id), orgId });
             applied.push(`Added deadline: ${params.title} (${params.due_date})`);
             break;
           }
@@ -137,7 +138,7 @@ export async function POST(
               status_history_json: JSON.stringify(history),
             });
 
-            logAction("legal_case", caseId, "ai_mutation", { tool, params });
+            logAction("legal_case", caseId, "ai_mutation", { tool, params }, { userId: Number(session.user.id), orgId });
             applied.push(`Updated status to: ${newStatus}`);
             break;
           }

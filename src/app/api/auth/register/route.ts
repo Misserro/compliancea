@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { getUserByEmail, createUser } from "@/lib/db-imports";
+import { getUserByEmail, createUser, getDefaultOrg, addOrgMember } from "@/lib/db-imports";
 import { ensureDb } from "@/lib/server-utils";
 
 export async function POST(req: NextRequest) {
@@ -44,7 +44,13 @@ export async function POST(req: NextRequest) {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  createUser(normalizedEmail, name ?? null, passwordHash);
+  const newUser = createUser(normalizedEmail, name ?? null, passwordHash);
+
+  // Auto-enroll the new user in the default organization
+  const defaultOrg = getDefaultOrg();
+  if (defaultOrg && newUser) {
+    addOrgMember(defaultOrg.id as number, newUser.id as number, "member", null);
+  }
 
   return NextResponse.json({ success: true }, { status: 201 });
 }

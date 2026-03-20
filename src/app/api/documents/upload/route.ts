@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
+import { auth } from "@/auth";
 import { ensureDb, saveUploadedFile } from "@/lib/server-utils";
 import { getDocumentByPath, addDocument, getDocumentById } from "@/lib/db-imports";
 import { DOCUMENTS_DIR } from "@/lib/paths-imports";
@@ -9,6 +10,12 @@ export const runtime = "nodejs";
 const DEPARTMENTS = ["Finance", "Compliance", "Operations", "HR", "Board", "IT"];
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   try {
     const formData = await request.formData();
@@ -42,14 +49,14 @@ export async function POST(request: NextRequest) {
     const { filePath, fileName } = await saveUploadedFile(file, destDir);
 
     // Check if already in database
-    const existing = getDocumentByPath(filePath);
+    const existing = getDocumentByPath(filePath, orgId);
     if (existing) {
       return NextResponse.json({ error: "Document already exists in library" }, { status: 409 });
     }
 
     // Add to database
-    const documentId = addDocument(fileName, filePath, folder || null, category || null);
-    const document = getDocumentById(documentId);
+    const documentId = addDocument(fileName, filePath, folder || null, category || null, orgId);
+    const document = getDocumentById(documentId, orgId);
 
     return NextResponse.json({
       message: "Document uploaded successfully",

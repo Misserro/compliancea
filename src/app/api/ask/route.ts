@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import Anthropic from "@anthropic-ai/sdk";
 import fs from "fs/promises";
 import path from "path";
@@ -10,6 +11,12 @@ import { searchDocuments, formatSearchResultsForCitations, getSourceDocuments, e
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
 
   let inputTokens = 0;
@@ -21,7 +28,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "ANTHROPIC_API_KEY is not set." }, { status: 500 });
     }
 
-    const settings = getSettings();
+    const settings = getSettings(orgId);
     const body = await request.json();
     const { question, documentIds, topK = 5, includeHistorical = false } = body;
     const activeOnly = !includeHistorical;
@@ -40,7 +47,7 @@ export async function POST(request: NextRequest) {
     if (targetDocumentIds.length === 0) {
       try {
         const queryTagResult = await extractQueryTags(question);
-        const tagMatchedIds = scoreDocumentsByTags(queryTagResult.tags, 15, activeOnly);
+        const tagMatchedIds = scoreDocumentsByTags(queryTagResult.tags, 15, activeOnly, orgId);
         if (tagMatchedIds.length > 0) {
           targetDocumentIds = tagMatchedIds;
           tagPreFilterUsed = true;
@@ -58,8 +65,8 @@ export async function POST(request: NextRequest) {
     // When searching the entire library (no specific docs selected), apply activeOnly filter.
     // When specific documents are selected by the user, search exactly those.
     const searchOptions = targetDocumentIds.length > 0 && !tagPreFilterUsed
-      ? { documentIds: targetDocumentIds, topK }
-      : { documentIds: targetDocumentIds, topK, activeOnly };
+      ? { documentIds: targetDocumentIds, topK, orgId }
+      : { documentIds: targetDocumentIds, topK, activeOnly, orgId };
     let searchResults = await searchDocuments(question, searchOptions);
 
     // Apply relevance threshold if enabled
@@ -127,7 +134,7 @@ export async function POST(request: NextRequest) {
       answer,
       tagPreFilterUsed,
       sources: sources.map((s: { documentId: number; documentName: string; maxScore: number }) => {
-        const doc = getDocumentById(s.documentId) as Record<string, unknown> | null;
+        const doc = getDocumentById(s.documentId, orgId) as Record<string, unknown> | null;
         return {
           documentId: s.documentId,
           documentName: s.documentName,

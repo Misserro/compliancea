@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import fs from "fs/promises";
 import path from "path";
 import { ensureDb } from "@/lib/server-utils";
@@ -11,12 +12,18 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id } = await params;
   const documentId = parseInt(id, 10);
 
   try {
-    const document = getDocumentById(documentId);
+    const document = getDocumentById(documentId, orgId);
     if (!document) {
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }

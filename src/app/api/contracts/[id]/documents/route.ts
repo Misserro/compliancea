@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import crypto from "crypto";
 import path from "path";
 import fs from "fs";
@@ -29,6 +30,12 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id } = await params;
   const contractId = parseInt(id, 10);
@@ -37,7 +44,7 @@ export async function GET(
   }
 
   try {
-    const contract = getContractById(contractId);
+    const contract = getContractById(contractId, orgId);
     if (!contract) {
       return NextResponse.json({ error: "Contract not found" }, { status: 404 });
     }
@@ -55,6 +62,12 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id } = await params;
   const contractId = parseInt(id, 10);
@@ -63,7 +76,7 @@ export async function POST(
   }
 
   try {
-    const contract = getContractById(contractId);
+    const contract = getContractById(contractId, orgId);
     if (!contract) {
       return NextResponse.json({ error: "Contract not found" }, { status: 404 });
     }
@@ -131,7 +144,7 @@ export async function POST(
         label,
       });
 
-      logAction("contract_document", newId, "created", { contractId, mode: "upload", documentType });
+      logAction("contract_document", newId, "created", { contractId, mode: "upload", documentType }, { userId: Number(session.user.id), orgId });
 
       const doc = getContractDocumentById(newId);
       return NextResponse.json({ document: doc }, { status: 201 });
@@ -148,7 +161,7 @@ export async function POST(
       return NextResponse.json({ error: "Invalid document_id" }, { status: 400 });
     }
 
-    const linkedDoc = getDocumentById(documentId);
+    const linkedDoc = getDocumentById(documentId, orgId);
     if (!linkedDoc) {
       return NextResponse.json({ error: "Document not found in library" }, { status: 404 });
     }
@@ -160,7 +173,7 @@ export async function POST(
       label,
     });
 
-    logAction("contract_document", newId, "created", { contractId, mode: "link", documentId, documentType });
+    logAction("contract_document", newId, "created", { contractId, mode: "link", documentId, documentType }, { userId: Number(session.user.id), orgId });
 
     const doc = getContractDocumentById(newId);
     return NextResponse.json({ document: doc }, { status: 201 });

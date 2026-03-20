@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import fs from "fs";
 
 import { ensureDb } from "@/lib/server-utils";
@@ -17,6 +18,12 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; invoiceId: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id, invoiceId } = await params;
   const contractId = parseInt(id, 10);
@@ -68,7 +75,7 @@ export async function PATCH(
     }
 
     updateInvoice(invoiceIdNum, updates);
-    logAction("invoice", invoiceIdNum, "updated", updates);
+    logAction("invoice", invoiceIdNum, "updated", updates, { userId: Number(session.user.id), orgId });
 
     const updated = getInvoiceById(invoiceIdNum);
     return NextResponse.json({ invoice: updated });
@@ -82,6 +89,12 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; invoiceId: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id, invoiceId } = await params;
   const contractId = parseInt(id, 10);
@@ -115,7 +128,7 @@ export async function DELETE(
       }
     }
 
-    logAction("invoice", invoiceIdNum, "deleted", { contractId });
+    logAction("invoice", invoiceIdNum, "deleted", { contractId }, { userId: Number(session.user.id), orgId });
 
     return NextResponse.json({ message: "Invoice deleted" });
   } catch (err: unknown) {

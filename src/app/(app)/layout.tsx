@@ -21,6 +21,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     redirect("/login");
   }
 
+  // Org membership guard — users with no org are redirected to an error page
+  if (!session.user.orgId) {
+    redirect("/no-org");
+  }
+
   // Update last_seen_at (no saveDb call — touchSession bypasses run() helper by design)
   touchSession(session.user.sessionId!);
 

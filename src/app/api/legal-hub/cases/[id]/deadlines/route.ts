@@ -27,6 +27,7 @@ export async function GET(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -60,6 +61,7 @@ export async function POST(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -109,7 +111,7 @@ export async function POST(
       title,
       deadline_type: deadlineType,
       due_date: dueDate,
-    });
+    }, { userId: Number(session.user.id), orgId });
 
     const newDeadline = getCaseDeadlineById(newId);
     return NextResponse.json({ data: newDeadline }, { status: 201 });

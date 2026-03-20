@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import Anthropic from "@anthropic-ai/sdk";
 import fs from "fs/promises";
 import path from "path";
@@ -78,6 +79,12 @@ type ContractRow = Record<string, unknown>;
 type ObligationRow = Record<string, unknown>;
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
 
   try {
@@ -154,7 +161,7 @@ export async function POST(request: NextRequest) {
     if (intent === "summarize") {
       const contractId = selectedContractId ?? null;
       if (contractId) {
-        const doc = getDocumentById(contractId) as ContractRow | null;
+        const doc = getDocumentById(contractId, orgId) as ContractRow | null;
         if (doc) {
           contracts = [doc];
           const fullText = (doc.full_text as string) || "";
@@ -181,9 +188,9 @@ Expiry: ${doc.expiry_date || "not set"}
           appliedFilters.contractId = contractId;
         }
       } else if (params.contractName) {
-        const found = searchContractsByText(params.contractName, 3) as ContractRow[];
+        const found = searchContractsByText(params.contractName, 3, orgId) as ContractRow[];
         if (found.length === 1) {
-          const doc = getDocumentById(found[0].id as number) as ContractRow | null;
+          const doc = getDocumentById(found[0].id as number, orgId) as ContractRow | null;
           if (doc) {
             contracts = [doc];
             const fullText = (doc.full_text as string) || "";
@@ -230,8 +237,7 @@ Expiry: ${doc.expiry_date || "not set"}
         overdue: params.overdue,
         category: safeCategory,
         contractIds: selectedContractId ? [selectedContractId] : undefined,
-        limit: 20,
-      }) as ObligationRow[];
+        limit: 20, orgId }) as ObligationRow[];
       appliedFilters.dueWithinDays = safeDaysLimit;
       appliedFilters.overdue = params.overdue;
       appliedFilters.category = safeCategory;
@@ -247,8 +253,7 @@ Expiry: ${doc.expiry_date || "not set"}
         expiryAfter: params.expiryAfter ?? undefined,
         missingExpiry: params.missingExpiry,
         hasTag: params.hasTag ?? undefined,
-        limit: 20,
-      }) as ContractRow[];
+        limit: 20, orgId }) as ContractRow[];
       appliedFilters.company = params.company;
       appliedFilters.vendor = params.vendor;
       appliedFilters.status = safeStatus;
@@ -257,13 +262,12 @@ Expiry: ${doc.expiry_date || "not set"}
       contextText = formatContractsContext(contracts);
     } else {
       const keyword = params.keyword || params.contractName || message;
-      contracts = searchContractsByText(keyword, 10) as ContractRow[];
+      contracts = searchContractsByText(keyword, 10, orgId) as ContractRow[];
       if (params.company || params.vendor) {
         const filtered = searchContractsByFilters({
           company: params.company ?? undefined,
           vendor: params.vendor ?? undefined,
-          limit: 10,
-        }) as ContractRow[];
+          limit: 10, orgId }) as ContractRow[];
         if (filtered.length > 0) contracts = filtered;
       }
       appliedFilters.keyword = keyword;

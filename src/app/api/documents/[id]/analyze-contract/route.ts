@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import {
   getDocumentById,
@@ -16,6 +17,12 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id } = await params;
   const docId = parseInt(id, 10);
@@ -25,7 +32,7 @@ export async function POST(
       return NextResponse.json({ error: "ANTHROPIC_API_KEY is not set." }, { status: 500 });
     }
 
-    const doc = getDocumentById(docId);
+    const doc = getDocumentById(docId, orgId);
     if (!doc) {
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
@@ -102,7 +109,8 @@ export async function POST(
             detailsJson: splitDetailsJson,
             penalties: ob.penalties,
             stage: ob.stage,
-          });
+        orgId,
+      });
 
           const created = getObligationById(obligationId);
           createdObligations.push(created);
@@ -114,8 +122,7 @@ export async function POST(
               description: dd.details || ob.summary,
               dueDate: dd.date,
               owner: ob.suggested_owner,
-              escalationTo: null,
-            });
+              escalationTo: null, orgId });
             tasksCreated++;
           }
         }
@@ -149,7 +156,8 @@ export async function POST(
           detailsJson,
           penalties: ob.penalties,
           stage: ob.stage,
-        });
+        orgId,
+      });
 
         const created = getObligationById(obligationId);
         createdObligations.push(created);
@@ -163,8 +171,7 @@ export async function POST(
                 description: dd.details || ob.summary,
                 dueDate: dd.date,
                 owner: ob.suggested_owner,
-                escalationTo: null,
-              });
+                escalationTo: null, orgId });
               tasksCreated++;
             }
           }
@@ -175,7 +182,7 @@ export async function POST(
     logAction("document", docId, "contract_analyzed", {
       obligationsCount: createdObligations.length,
       tasksCreated,
-    });
+    }, { userId: Number(session.user.id), orgId });
 
     return NextResponse.json({
       parties: result.parties,

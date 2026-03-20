@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import { getObligationById, updateObligation, getDocumentById } from "@/lib/db-imports";
 import { logAction } from "@/lib/audit-imports";
@@ -9,6 +10,12 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id } = await params;
   const obId = parseInt(id, 10);
@@ -25,7 +32,7 @@ export async function POST(
       return NextResponse.json({ error: "documentId is required" }, { status: 400 });
     }
 
-    const evidenceDoc = getDocumentById(documentId);
+    const evidenceDoc = getDocumentById(documentId, orgId);
     if (!evidenceDoc) {
       return NextResponse.json({ error: "Evidence document not found" }, { status: 404 });
     }
@@ -39,7 +46,7 @@ export async function POST(
     });
 
     updateObligation(obId, { evidence_json: JSON.stringify(evidence) });
-    logAction("obligation", obId, "evidence_added", { documentId, documentName: evidenceDoc.name });
+    logAction("obligation", obId, "evidence_added", { documentId, documentName: evidenceDoc.name }, { userId: Number(session.user.id), orgId });
 
     const updated = getObligationById(obId);
     return NextResponse.json({ message: "Evidence added", obligation: updated });

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import fs from "fs/promises";
 import pdfParse from "pdf-parse";
 import { ensureDb, extractTextFromPath, guessType } from "@/lib/server-utils";
@@ -31,12 +32,18 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id } = await params;
   const documentId = parseInt(id, 10);
 
   try {
-    const document = getDocumentById(documentId);
+    const document = getDocumentById(documentId, orgId);
     if (!document) {
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
@@ -70,7 +77,7 @@ export async function POST(
     if (document.processed === 1 && document.content_hash === contentHash) {
       return NextResponse.json({
         message: "Document already processed with identical content — skipping",
-        document: getDocumentById(documentId),
+        document: getDocumentById(documentId, orgId),
         chunks: 0,
         wordCount,
         skipped: true,
@@ -91,7 +98,7 @@ export async function POST(
       for (const dup of duplicates.contentMatches) {
         addLineageEntry(documentId, dup.id, "duplicate_of", 1.0);
       }
-      logAction("document", documentId, "duplicate_detected", duplicateInfo);
+      logAction("document", documentId, "duplicate_detected", duplicateInfo, { userId: Number(session.user.id), orgId });
     }
 
     // Auto-tag document metadata
@@ -117,7 +124,7 @@ export async function POST(
       }
 
       // Set status based on document type
-      const currentDoc = getDocumentById(documentId);
+      const currentDoc = getDocumentById(documentId, orgId);
       const isContractType = autoTagResult.doc_type === "contract" || autoTagResult.doc_type === "agreement";
       if (isContractType) {
         if (!currentDoc.status || currentDoc.status === "draft") {
@@ -148,14 +155,14 @@ export async function POST(
         in_force: autoTagResult.in_force,
         suggested_status: autoTagResult.suggested_status,
         tagCount: autoTagResult.tags.length,
-      });
+      }, { userId: Number(session.user.id), orgId });
     } catch (tagErr: unknown) {
       const msg = tagErr instanceof Error ? tagErr.message : "Unknown error";
       console.warn("Auto-tagging failed:", msg);
     }
 
     // ---- CONTRACT-SPECIFIC PIPELINE ----
-    const taggedDoc = getDocumentById(documentId);
+    const taggedDoc = getDocumentById(documentId, orgId);
     const isContract = taggedDoc.doc_type === "contract" || taggedDoc.doc_type === "agreement";
 
     if (isContract) {
@@ -236,7 +243,8 @@ export async function POST(
                 detailsJson: splitDetailsJson,
                 penalties: ob.penalties,
                 stage: ob.stage,
-              });
+        orgId,
+      });
 
               const created = getObligationById(obligationId);
               createdObligations.push(created);
@@ -247,8 +255,7 @@ export async function POST(
                   description: dd.details || ob.summary,
                   dueDate: dd.date,
                   owner: ob.suggested_owner,
-                  escalationTo: null,
-                });
+                  escalationTo: null, orgId });
                 tasksCreated++;
               }
             }
@@ -282,7 +289,8 @@ export async function POST(
               detailsJson,
               penalties: ob.penalties,
               stage: ob.stage,
-            });
+        orgId,
+      });
 
             const created = getObligationById(obligationId);
             createdObligations.push(created);
@@ -295,8 +303,7 @@ export async function POST(
                     description: dd.details || ob.summary,
                     dueDate: dd.date,
                     owner: ob.suggested_owner,
-                    escalationTo: null,
-                  });
+                    escalationTo: null, orgId });
                   tasksCreated++;
                 }
               }
@@ -313,7 +320,7 @@ export async function POST(
             active: (createdObligations as Array<{ stage: string }>).filter(o => o.stage === "active").length,
             terminated: (createdObligations as Array<{ stage: string }>).filter(o => o.stage === "terminated").length,
           },
-        });
+        }, { userId: Number(session.user.id), orgId });
       } catch (contractErr: unknown) {
         const msg = contractErr instanceof Error ? contractErr.message : "Unknown error";
         console.warn("Contract obligation extraction failed:", msg);
@@ -325,9 +332,9 @@ export async function POST(
         isContract: true,
         obligations: createdObligations.length,
         duplicates: duplicateInfo ? duplicates.contentMatches.length : 0,
-      });
+      }, { userId: Number(session.user.id), orgId });
 
-      const updatedDocument = getDocumentById(documentId);
+      const updatedDocument = getDocumentById(documentId, orgId);
 
       return NextResponse.json({
         message: "Contract processed successfully — obligations extracted",
@@ -429,7 +436,7 @@ export async function POST(
     const policiesDocTypes: string[] = policiesSettingRaw
       ? JSON.parse(policiesSettingRaw)
       : ['policy', 'procedure'];
-    const finalDoc = getDocumentById(documentId);
+    const finalDoc = getDocumentById(documentId, orgId);
     if (finalDoc.doc_type && policiesDocTypes.includes(finalDoc.doc_type)) {
       updateDocumentMetadata(documentId, { full_text: text });
     }
@@ -437,7 +444,7 @@ export async function POST(
     // Version detection: find likely predecessor document
     try {
       if (finalDoc.doc_type && policiesDocTypes.includes(finalDoc.doc_type)) {
-        const existingDocs = getAllDocuments().filter(
+        const existingDocs = getAllDocuments(orgId).filter(
           (d: { id: number; doc_type: string | null; superseded_by: number | null }) =>
             d.id !== documentId &&
             d.doc_type === finalDoc.doc_type &&
@@ -457,7 +464,7 @@ export async function POST(
           logAction('document', documentId, 'version_candidate_detected', {
             candidateId: bestCandidate.id,
             confidence: bestCandidate.score,
-          });
+          }, { userId: Number(session.user.id), orgId });
         }
       }
     } catch (versionErr) {
@@ -468,10 +475,10 @@ export async function POST(
     // Evaluate policy rules
     let policyResult = null;
     try {
-      const enrichedDoc = getDocumentById(documentId);
-      const triggeredActions = evaluateDocument(enrichedDoc);
+      const enrichedDoc = getDocumentById(documentId, orgId);
+      const triggeredActions = evaluateDocument(enrichedDoc, orgId);
       if (triggeredActions.length > 0) {
-        policyResult = applyActions(documentId, triggeredActions);
+        policyResult = applyActions(documentId, triggeredActions, { userId: Number(session.user.id), orgId });
       }
     } catch (policyErr: unknown) {
       const msg = policyErr instanceof Error ? policyErr.message : "Unknown error";
@@ -494,9 +501,9 @@ export async function POST(
       chunks: totalChunks,
       duplicates: duplicateInfo ? duplicates.contentMatches.length : 0,
       nearDuplicates: nearDuplicates.length,
-    });
+    }, { userId: Number(session.user.id), orgId });
 
-    const updatedDocument = getDocumentById(documentId);
+    const updatedDocument = getDocumentById(documentId, orgId);
 
     return NextResponse.json({
       message: "Document processed successfully",

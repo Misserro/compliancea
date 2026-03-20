@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import { finalizeObligation } from "@/lib/db-imports";
 import { logAction } from "@/lib/audit-imports";
@@ -13,6 +14,12 @@ export async function POST(
   request: NextRequest,
   props: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   try {
     const params = await props.params;
@@ -34,7 +41,7 @@ export async function POST(
 
     const obligation = await finalizeObligation(id, { note, documentId });
 
-    logAction("obligation", id, "finalized", { note: note ?? null, documentId: documentId ?? null });
+    logAction("obligation", id, "finalized", { note: note ?? null, documentId: documentId ?? null }, { userId: Number(session.user.id), orgId });
 
     return NextResponse.json({ obligation });
   } catch (error: unknown) {

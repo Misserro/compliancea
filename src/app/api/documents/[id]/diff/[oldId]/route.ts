@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb, extractTextFromPath } from "@/lib/server-utils";
 import { getDocumentDiff, getDocumentById, addDocumentDiff, updateDocumentMetadata } from "@/lib/db-imports";
 import { computeLineDiff } from "@/lib/diff-imports";
@@ -22,6 +23,12 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string; oldId: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id, oldId } = await params;
   const newDocumentId = parseInt(id, 10);
@@ -31,8 +38,8 @@ export async function GET(
     let stored = getDocumentDiff(oldDocumentId, newDocumentId);
 
     if (!stored) {
-      const oldDoc = getDocumentById(oldDocumentId);
-      const newDoc = getDocumentById(newDocumentId);
+      const oldDoc = getDocumentById(oldDocumentId, orgId);
+      const newDoc = getDocumentById(newDocumentId, orgId);
 
       const oldText = await resolveFullText(oldDoc);
       const newText = await resolveFullText(newDoc);

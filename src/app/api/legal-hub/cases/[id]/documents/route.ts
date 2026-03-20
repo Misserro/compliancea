@@ -44,6 +44,7 @@ export async function GET(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -80,6 +81,7 @@ export async function POST(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -154,7 +156,7 @@ export async function POST(
       fs.writeFileSync(filePath, buffer);
 
       // Add to documents table for text extraction + embeddings pipeline
-      const docId = addDocument(safeName, filePath, "case-attachments", null);
+      const docId = addDocument(safeName, filePath, "case-attachments", null, orgId);
 
       // Create case_documents link with document_id set
       const newId = addCaseDocument({
@@ -172,7 +174,7 @@ export async function POST(
         caseId,
         mode: "upload",
         documentCategory,
-      });
+      }, { userId: Number(session.user.id), orgId });
 
       // Index the document before returning — synchronous, reliable on all deployments
       await ingestCaseDocumentSafe(docId);
@@ -195,7 +197,7 @@ export async function POST(
       return NextResponse.json({ error: "Invalid document_id" }, { status: 400 });
     }
 
-    const linkedDoc = getDocumentById(documentId);
+    const linkedDoc = getDocumentById(documentId, orgId);
     if (!linkedDoc) {
       return NextResponse.json(
         { error: "Document not found in library" },
@@ -218,7 +220,7 @@ export async function POST(
       mode: "link",
       documentId,
       documentCategory,
-    });
+    }, { userId: Number(session.user.id), orgId });
 
     const doc = getCaseDocumentById(newId);
     return NextResponse.json({ case_document: doc }, { status: 201 });

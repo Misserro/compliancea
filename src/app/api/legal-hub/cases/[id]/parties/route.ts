@@ -24,6 +24,7 @@ export async function GET(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -57,6 +58,7 @@ export async function POST(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -100,7 +102,7 @@ export async function POST(
       partyId: newId,
       name,
       party_type: partyType,
-    });
+    }, { userId: Number(session.user.id), orgId });
 
     const newParty = getCasePartyById(newId);
     return NextResponse.json({ data: newParty }, { status: 201 });

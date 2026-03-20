@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import fs from "fs/promises";
 import { ensureDb, extractTextFromBuffer, guessType, guessTypeFromMime, writeTempFile, cleanupTempFile } from "@/lib/server-utils";
 import { parseQuestionnaire, matchExistingCards, draftAnswers } from "@/lib/questionnaire-imports";
@@ -22,6 +23,12 @@ async function extractTextFromFile(file: File): Promise<string> {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
 
   try {
@@ -143,7 +150,7 @@ export async function POST(request: NextRequest) {
       total: questions.length,
       autoFilled: autoFilledCount,
       drafted: questions.length - autoFilledCount,
-    });
+    }, { userId: Number(session.user.id), orgId });
 
     return NextResponse.json({
       questions: responseQuestions,

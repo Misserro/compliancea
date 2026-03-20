@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import { getObligationById, getChunksByDocumentId } from "@/lib/db-imports";
 import { checkObligationCompliance } from "@/lib/contracts-imports";
@@ -10,6 +11,12 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id } = await params;
   const obId = parseInt(id, 10);
@@ -41,7 +48,7 @@ export async function POST(
     logAction("obligation", obId, "compliance_checked", {
       met: result.met,
       confidence: result.confidence,
-    });
+    }, { userId: Number(session.user.id), orgId });
 
     return NextResponse.json({
       met: result.met,

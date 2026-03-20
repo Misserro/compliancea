@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import { getOpenTaskCount } from "@/lib/db-imports";
 import { getLastRunTime } from "@/lib/maintenance-imports";
@@ -7,11 +8,17 @@ import { getGDriveStatus } from "@/lib/gdrive-imports";
 export const runtime = "nodejs";
 
 export async function GET() {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   try {
     return NextResponse.json({
       lastRun: getLastRunTime(),
-      openTasks: getOpenTaskCount(),
+      openTasks: getOpenTaskCount(orgId),
       gdriveStatus: getGDriveStatus(),
     });
   } catch (err: unknown) {

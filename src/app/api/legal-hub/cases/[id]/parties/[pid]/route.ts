@@ -24,6 +24,7 @@ export async function PATCH(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -70,7 +71,7 @@ export async function PATCH(
     }
 
     updateCaseParty(pid, fields);
-    logAction("legal_case", caseId, "party_updated", { partyId: pid });
+    logAction("legal_case", caseId, "party_updated", { partyId: pid }, { userId: Number(session.user.id), orgId });
 
     const updatedParty = getCasePartyById(pid);
     return NextResponse.json({ data: updatedParty });
@@ -95,6 +96,7 @@ export async function DELETE(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -115,7 +117,7 @@ export async function DELETE(
     logAction("legal_case", caseId, "party_removed", {
       partyId: pid,
       name: existing.name,
-    });
+    }, { userId: Number(session.user.id), orgId });
 
     return NextResponse.json({ data: { id: pid } });
   } catch (error) {

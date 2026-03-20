@@ -1,0 +1,144 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-03-20T09:34:56Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution started — 027-org-foundation: 3 tasks, concurrency limit 2"
+    },
+    {
+      "timestamp": "2026-03-20T09:36:59Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1-team spawned: Org Schema, Auth Org Context, and Settings Persistence — members: executor-1 (opus), reviewer-1 (sonnet), tester-1 (sonnet)"
+    },
+    {
+      "timestamp": "2026-03-20T09:37:04Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-20T09:46:05Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "reviewer-1",
+      "message": "task-1 entered review stage — planning+implementation completed in ~9 minutes"
+    },
+    {
+      "timestamp": "2026-03-20T09:48:31Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 retry #1 — review failed, executor-1 returning to implementation to address reviewer-1 feedback"
+    },
+    {
+      "timestamp": "2026-03-20T09:51:11Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 completed — total ~14 minutes, 1 review retry. Tasks 2 and 3 now unblocked."
+    },
+    {
+      "timestamp": "2026-03-20T09:53:18Z",
+      "type": "team_shutdown",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1-team shut down — all members ended"
+    },
+    {
+      "timestamp": "2026-03-20T09:53:18Z",
+      "type": "team_spawned",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2-team spawned: Full Data Isolation — Query Layer and API Route Org Scoping — members: executor-2 (opus), reviewer-2 (sonnet), tester-2 (sonnet)"
+    },
+    {
+      "timestamp": "2026-03-20T09:53:18Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "executor-2",
+      "message": "task-2 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-20T09:53:18Z",
+      "type": "team_spawned",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3-team spawned: Org Management UI — Sidebar Context, Settings Page, Members View — members: executor-3 (opus), reviewer-3 (sonnet), tester-3 (sonnet)"
+    },
+    {
+      "timestamp": "2026-03-20T09:53:18Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "executor-3",
+      "message": "task-3 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-20T10:00:49Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "reviewer-3",
+      "message": "task-3 entered review stage — planning+implementation completed in ~7.5 minutes"
+    },
+    {
+      "timestamp": "2026-03-20T10:02:35Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "executor-3",
+      "message": "task-3 retry #1 — review failed after ~1.75 minutes, executor-3 returning to implementation"
+    },
+    {
+      "timestamp": "2026-03-20T10:12:26Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "reviewer-2",
+      "message": "task-2 entered review stage — planning+implementation completed in ~19 minutes (expected for largest task: ~100 query updates + all API routes)"
+    },
+    {
+      "timestamp": "2026-03-20T10:15:35Z",
+      "type": "task_completed",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 completed — total ~22 minutes, 1 review retry resolved cleanly"
+    },
+    {
+      "timestamp": "2026-03-20T10:15:35Z",
+      "type": "team_shutdown",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3-team shut down — all members ended"
+    },
+    {
+      "timestamp": "2026-03-20T10:20:41Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "executor-2",
+      "message": "task-2 retry #1 — review failed after ~8 minutes, executor-2 returning to implementation to address reviewer-2 feedback"
+    },
+    {
+      "timestamp": "2026-03-20T10:22:15Z",
+      "type": "task_completed",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 completed — total ~29 minutes, 1 review retry resolved in ~1.5 minutes. All 3 tasks complete."
+    },
+    {
+      "timestamp": "2026-03-20T10:22:15Z",
+      "type": "team_shutdown",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2-team shut down — all members ended"
+    },
+    {
+      "timestamp": "2026-03-20T10:23:35Z",
+      "type": "execution_completed",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution completed — 3/3 tasks, 0 escalations, 0 incidents. Total wall-clock ~47 minutes."
+    }
+  ]
+}

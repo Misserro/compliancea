@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import Anthropic from "@anthropic-ai/sdk";
 import { ensureDb, extractTextFromBuffer, guessType, guessTypeFromMime } from "@/lib/server-utils";
 import { getSettings } from "@/lib/settings-imports";
@@ -25,6 +26,12 @@ async function extractTextFromFile(file: File): Promise<string> {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
 
   let inputTokens = 0;
@@ -42,7 +49,7 @@ export async function POST(request: NextRequest) {
       "utf-8"
     );
 
-    const settings = getSettings();
+    const settings = getSettings(orgId);
     const formData = await request.formData();
 
     // Get the external document
@@ -152,7 +159,7 @@ export async function POST(request: NextRequest) {
         .join("");
 
       // Use semantic search to find relevant chunks
-      let searchResults = await searchDocuments(extractedQuestions, libraryDocumentIds, 15);
+      let searchResults = await searchDocuments(extractedQuestions, { documentIds: libraryDocumentIds, topK: 15, orgId });
 
       // Estimate Voyage tokens
       voyageTokens = Math.ceil(extractedQuestions.length / 4);

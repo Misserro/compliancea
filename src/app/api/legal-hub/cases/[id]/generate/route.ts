@@ -26,6 +26,7 @@ export async function POST(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -87,7 +88,7 @@ export async function POST(
       templateId: template.id,
       templateName: template.name,
       documentName,
-    });
+    }, { userId: Number(session.user.id), orgId });
 
     const generated_document = getCaseGeneratedDocById(newId);
     return NextResponse.json({ generated_document }, { status: 201 });

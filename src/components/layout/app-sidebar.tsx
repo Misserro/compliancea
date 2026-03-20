@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, ClipboardCheck, Settings, MessageSquare, Layers, Shield, LayoutDashboard, Sun, Moon, Monitor, Users, LogOut, ListChecks, Scale } from "lucide-react";
+import { FileText, ClipboardCheck, Settings, MessageSquare, Layers, Shield, LayoutDashboard, Sun, Moon, Monitor, Users, LogOut, ListChecks, Scale, Building2 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -36,7 +36,7 @@ export function AppSidebar() {
   const { data: sessionData } = useSession();
   const userEmail = sessionData?.user?.email ?? "";
   const userName = sessionData?.user?.name || userEmail;
-  const isAdmin = sessionData?.user?.role === "admin";
+  const orgName = sessionData?.user?.orgName ?? "ComplianceA";
 
   useEffect(() => {
     async function fetchOverdue() {
@@ -73,8 +73,8 @@ export function AppSidebar() {
       <SidebarHeader className="border-b px-6 py-4">
         <div className="flex items-center gap-2">
           <SidebarTrigger className="-ml-2" />
-          <h1 className="text-lg font-semibold tracking-tight">
-            ComplianceA
+          <h1 className="text-lg font-semibold tracking-tight truncate">
+            {orgName}
           </h1>
         </div>
       </SidebarHeader>
@@ -206,7 +206,8 @@ export function AppSidebar() {
             <SidebarMenu>
               {[
                 { title: "Settings", href: "/settings", icon: Settings },
-                ...(isAdmin ? [{ title: "Users", href: "/users", icon: Users }] : []),
+                { title: "Organization", href: "/settings/org", icon: Building2 },
+                { title: "Members", href: "/org/members", icon: Users },
               ].map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                 return (
@@ -228,9 +229,9 @@ export function AppSidebar() {
         {userEmail && (
           <div className="px-2 py-2 border-b mb-1">
             <p className="text-sm font-medium truncate">{userName}</p>
-            {userName !== userEmail && (
-              <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
-            )}
+            <p className="text-xs text-muted-foreground truncate">
+              {orgName}
+            </p>
             <Button
               variant="ghost"
               size="sm"

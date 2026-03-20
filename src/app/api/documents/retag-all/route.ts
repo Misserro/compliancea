@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import { getAllDocuments, getChunksByDocumentId, updateDocumentMetadata } from "@/lib/db-imports";
 import { extractMetadata } from "@/lib/auto-tagger-imports";
@@ -7,13 +8,19 @@ import { logAction } from "@/lib/audit-imports";
 export const runtime = "nodejs";
 
 export async function POST() {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json({ error: "ANTHROPIC_API_KEY is not set." }, { status: 500 });
     }
 
-    const docs = getAllDocuments().filter((d: { processed: number }) => d.processed);
+    const docs = getAllDocuments(orgId).filter((d: { processed: number }) => d.processed);
     let retagged = 0;
     let failed = 0;
     const errors: { id: number; name: string; error: string }[] = [];
@@ -75,7 +82,7 @@ export async function POST() {
       }
     }
 
-    logAction("system", null, "retag_all", { retagged, failed, total: docs.length });
+    logAction("system", null, "retag_all", { retagged, failed, total: docs.length }, { userId: Number(session.user.id), orgId });
     return NextResponse.json({ message: `Retagged ${retagged}/${docs.length} documents`, retagged, failed, errors });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import {
   getDocumentById,
@@ -15,6 +16,12 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id } = await params;
   const newDocumentId = parseInt(id, 10);
@@ -31,12 +38,12 @@ export async function POST(
       return NextResponse.json({ error: "A document cannot replace itself" }, { status: 400 });
     }
 
-    const oldDoc = getDocumentById(oldDocumentId);
+    const oldDoc = getDocumentById(oldDocumentId, orgId);
     if (!oldDoc) {
       return NextResponse.json({ error: "Old document not found" }, { status: 404 });
     }
 
-    const newDoc = getDocumentById(newDocumentId);
+    const newDoc = getDocumentById(newDocumentId, orgId);
     if (!newDoc) {
       return NextResponse.json({ error: "New document not found" }, { status: 404 });
     }
@@ -55,7 +62,7 @@ export async function POST(
       oldDocumentId,
       oldVersion: archivedDoc.version,
       newVersion: promotedDoc.version,
-    });
+    }, { userId: Number(session.user.id), orgId });
 
     return NextResponse.json({
       message: `Document set as v${promotedDoc.version}, previous version archived`,

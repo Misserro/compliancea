@@ -22,6 +22,7 @@ export async function GET(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -60,6 +61,7 @@ export async function PATCH(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -102,7 +104,7 @@ export async function PATCH(
     }
 
     updateCaseGeneratedDoc(gid, fields);
-    logAction("legal_case", caseId, "generated_doc_updated", { docId: gid });
+    logAction("legal_case", caseId, "generated_doc_updated", { docId: gid }, { userId: Number(session.user.id), orgId });
 
     const generated_document = getCaseGeneratedDocById(gid);
     return NextResponse.json({ generated_document });
@@ -125,6 +127,7 @@ export async function DELETE(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -145,7 +148,7 @@ export async function DELETE(
     }
 
     deleteCaseGeneratedDoc(gid);
-    logAction("legal_case", caseId, "generated_doc_deleted", { docId: gid });
+    logAction("legal_case", caseId, "generated_doc_deleted", { docId: gid }, { userId: Number(session.user.id), orgId });
 
     return NextResponse.json({ generated_document: { id: gid } });
   } catch (err: unknown) {

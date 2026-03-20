@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import { getDocumentById, getChunksByDocumentId, updateDocumentMetadata } from "@/lib/db-imports";
 import { extractMetadata } from "@/lib/auto-tagger-imports";
@@ -7,6 +8,12 @@ import { logAction } from "@/lib/audit-imports";
 export const runtime = "nodejs";
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -19,7 +26,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: "Invalid document ID" }, { status: 400 });
     }
 
-    const doc = getDocumentById(docId);
+    const doc = getDocumentById(docId, orgId);
     if (!doc) {
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
@@ -72,7 +79,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
     updateDocumentMetadata(docId, metadataUpdate);
 
-    logAction("system", docId, "retag_document", { tags: autoTagResult.tags.length });
+    logAction("system", docId, "retag_document", { tags: autoTagResult.tags.length }, { userId: Number(session.user.id), orgId });
 
     return NextResponse.json({
       message: `Retagged "${doc.name}" with ${autoTagResult.tags.length} tags`,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import { getObligationById, updateObligation } from "@/lib/db-imports";
 import { logAction } from "@/lib/audit-imports";
@@ -9,6 +10,12 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   await ensureDb();
   const { id } = await params;
   const obId = parseInt(id, 10);
@@ -41,7 +48,7 @@ export async function PATCH(
     }
 
     updateObligation(obId, updates);
-    logAction("obligation", obId, "updated", updates);
+    logAction("obligation", obId, "updated", updates, { userId: Number(session.user.id), orgId });
 
     const updated = getObligationById(obId);
     return NextResponse.json({ message: "Obligation updated", obligation: updated });

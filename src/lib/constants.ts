@@ -202,6 +202,12 @@ export const CASE_DOCUMENT_CATEGORIES = [
   { value: "other", label: "Inne" },
 ] as const;
 
+export const ORG_ROLE_COLORS: Record<string, string> = {
+  owner: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+  admin: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  member: "bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200",
+};
+
 export const CASE_DOCUMENT_CATEGORY_COLORS: Record<string, string> = {
   pleadings: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
   evidence: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",

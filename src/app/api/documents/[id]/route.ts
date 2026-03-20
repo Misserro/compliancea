@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import {
   getDocumentById,
@@ -14,12 +15,18 @@ export async function GET(
   _request: Request,
   props: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   try {
     await ensureDb();
     const params = await props.params;
     const docId = parseInt(params.id, 10);
     if (isNaN(docId)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
-    const doc = getDocumentById(docId);
+    const doc = getDocumentById(docId, orgId);
     if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json({ document: doc });
   } catch (error) {
@@ -32,6 +39,12 @@ export async function DELETE(
   _request: Request,
   props: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const orgId = Number(session.user.orgId);
+
   try {
     await ensureDb();
     const params = await props.params;
@@ -40,7 +53,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
     }
 
-    const doc = getDocumentById(id);
+    const doc = getDocumentById(id, orgId);
     if (!doc) {
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
@@ -62,7 +75,7 @@ export async function DELETE(
     // Persist changes
     saveDb();
 
-    logAction("document", id, "deleted", { name: doc.name });
+    logAction("document", id, "deleted", { name: doc.name }, { userId: Number(session.user.id), orgId });
 
     return NextResponse.json({ success: true });
   } catch (error) {

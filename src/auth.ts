@@ -1,7 +1,7 @@
 import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { getUserByEmail, createSession, getSessionById } from "@/lib/db-imports";
+import { getUserByEmail, createSession, getSessionById, getOrgMemberByUserId } from "@/lib/db-imports";
 import { ensureDb } from "@/lib/server-utils";
 import { authConfig } from "../auth.config";
 
@@ -12,6 +12,9 @@ declare module "next-auth" {
       id: string;
       role: string;
       sessionId?: string;
+      orgId?: number;
+      orgRole?: string;
+      orgName?: string;
     } & DefaultSession["user"];
   }
   interface User {
@@ -24,6 +27,9 @@ declare module "@auth/core/jwt" {
     id?: string;
     role?: string;
     sessionId?: string;
+    orgId?: number;
+    orgRole?: string;
+    orgName?: string;
   }
 }
 
@@ -68,6 +74,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         await ensureDb();
         createSession(sessionId, Number(user.id));
         token.sessionId = sessionId;
+
+        // Look up org membership for the user
+        const orgMember = getOrgMemberByUserId(Number(user.id));
+        if (orgMember) {
+          token.orgId = orgMember.org_id as number;
+          token.orgRole = orgMember.role as string;
+          token.orgName = orgMember.org_name as string;
+        }
       } else if (token.sessionId && token.id) {
         // Subsequent requests: lazy re-hydration in case DB was wiped on redeploy.
         // NOTE: this branch runs on every request (every auth() call), not only after cold starts.
@@ -77,6 +91,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!existing) {
           createSession(token.sessionId, Number(token.id));
         }
+
+        // Always refresh org context so that role/name changes are picked up immediately
+        const orgMember = getOrgMemberByUserId(Number(token.id));
+        if (orgMember) {
+          token.orgId = orgMember.org_id as number;
+          token.orgRole = orgMember.role as string;
+          token.orgName = orgMember.org_name as string;
+        }
       }
       return token;
     },
@@ -84,6 +106,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token.id)        session.user.id        = token.id;
       if (token.role)      session.user.role      = token.role;
       if (token.sessionId) session.user.sessionId = token.sessionId;
+      if (token.orgId)     session.user.orgId     = token.orgId;
+      if (token.orgRole)   session.user.orgRole   = token.orgRole;
+      if (token.orgName)   session.user.orgName   = token.orgName;
       return session;
     },
   },

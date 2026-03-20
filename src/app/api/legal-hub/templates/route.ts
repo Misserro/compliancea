@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
         ? Number(isActiveParam)
         : undefined;
 
-    const templates = getCaseTemplates({ search, documentType, isActive });
+    const templates = getCaseTemplates({ search, documentType, isActive , orgId });
     return NextResponse.json({ templates });
   } catch (err: unknown) {
     console.error("Error fetching templates:", err);
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = Number(session.user.orgId);
 
   await ensureDb();
 
@@ -90,9 +92,10 @@ export async function POST(request: NextRequest) {
       applicableCaseTypes: body.applicable_case_types || [],
       templateBody,
       variablesJson: body.variables_json || [],
+      orgId,
     });
 
-    logAction("case_template", newId, "created", { name });
+    logAction("case_template", newId, "created", { name }, { userId: Number(session.user.id), orgId });
 
     const template = getCaseTemplateById(newId);
     return NextResponse.json({ template }, { status: 201 });
