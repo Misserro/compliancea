@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { FileText, ClipboardCheck, Settings, MessageSquare, Layers, Shield, LayoutDashboard, Sun, Moon, Monitor, Users, LogOut, ListChecks, Scale, Building2 } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { FileText, ClipboardCheck, Settings, MessageSquare, Layers, Shield, LayoutDashboard, Sun, Moon, Monitor, Users, LogOut, ListChecks, Scale, Building2, Check, ChevronDown } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -21,6 +21,12 @@ import { useTheme } from "next-themes";
 import { useSession, signOut } from "next-auth/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 function ThemeIcon({ theme }: { theme: string | undefined }) {
   if (theme === "dark") return <Moon className="h-4 w-4" />;
@@ -29,14 +35,25 @@ function ThemeIcon({ theme }: { theme: string | undefined }) {
 }
 
 
+interface OrgMembership {
+  orgId: number;
+  orgName: string;
+  orgSlug: string;
+  role: string;
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [overdueCount, setOverdueCount] = useState(0);
+  const [memberships, setMemberships] = useState<OrgMembership[]>([]);
+  const [isSwitching, setIsSwitching] = useState(false);
   const { theme, setTheme } = useTheme();
-  const { data: sessionData } = useSession();
+  const { data: sessionData, update } = useSession();
   const userEmail = sessionData?.user?.email ?? "";
   const userName = sessionData?.user?.name || userEmail;
   const orgName = sessionData?.user?.orgName ?? "ComplianceA";
+  const currentOrgId = sessionData?.user?.orgId;
 
   useEffect(() => {
     async function fetchOverdue() {
@@ -54,6 +71,32 @@ export function AppSidebar() {
     const interval = setInterval(fetchOverdue, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    async function fetchMemberships() {
+      try {
+        const res = await fetch("/api/org/memberships");
+        if (res.ok) {
+          const data = await res.json();
+          setMemberships(data.memberships ?? []);
+        }
+      } catch {
+        // ignore — single-org fallback
+      }
+    }
+    fetchMemberships();
+  }, []);
+
+  async function handleOrgSwitch(targetOrgId: number) {
+    if (isSwitching) return;
+    setIsSwitching(true);
+    try {
+      await update({ switchToOrgId: targetOrgId });
+      router.refresh();
+    } finally {
+      setIsSwitching(false);
+    }
+  }
 
   function cycleTheme() {
     if (!theme) return;
@@ -73,9 +116,38 @@ export function AppSidebar() {
       <SidebarHeader className="border-b px-6 py-4">
         <div className="flex items-center gap-2">
           <SidebarTrigger className="-ml-2" />
-          <h1 className="text-lg font-semibold tracking-tight truncate">
-            {orgName}
-          </h1>
+          {memberships.length > 1 ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                disabled={isSwitching}
+                className="flex items-center gap-1 text-lg font-semibold tracking-tight truncate outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 rounded-md px-1 -mx-1"
+              >
+                {orgName}
+                <ChevronDown className="size-4 text-muted-foreground shrink-0" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {memberships.map((m) => (
+                  <DropdownMenuItem
+                    key={m.orgId}
+                    onClick={() => {
+                      if (Number(m.orgId) !== Number(currentOrgId)) {
+                        handleOrgSwitch(m.orgId);
+                      }
+                    }}
+                  >
+                    <span className="truncate">{m.orgName}</span>
+                    {Number(m.orgId) === Number(currentOrgId) && (
+                      <Check className="ml-auto size-4 text-muted-foreground" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <h1 className="text-lg font-semibold tracking-tight truncate">
+              {orgName}
+            </h1>
+          )}
         </div>
       </SidebarHeader>
       <SidebarContent className="px-2 py-4">

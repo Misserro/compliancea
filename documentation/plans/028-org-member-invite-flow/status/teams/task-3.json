@@ -1,0 +1,23 @@
+{
+  "task_id": "task-3",
+  "task_name": "Invite UI on Members Page",
+  "team_name": "task-3-team",
+  "goal": "Invite form with copy-link display and pending invites table with revoke on /org/members page; visible to owners/admins only",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-20T10:58:09.000Z",
+  "ended_at": "2026-03-20T11:07:57.000Z",
+  "elapsed_seconds": 588,
+  "stages": {
+    "planning":       { "started_at": "2026-03-20T10:58:09.000Z", "ended_at": "2026-03-20T11:00:43.000Z", "elapsed_seconds": 154 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": "2026-03-20T11:00:43.000Z", "ended_at": "2026-03-20T11:07:57.000Z", "elapsed_seconds": 434 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-3", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-20T10:58:09.000Z", "ended_at": "2026-03-20T11:07:57.000Z" },
+    { "name": "reviewer-3", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-20T10:58:09.000Z", "ended_at": "2026-03-20T11:07:57.000Z" },
+    { "name": "tester-3",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-20T10:58:09.000Z", "ended_at": "2026-03-20T11:07:57.000Z" }
+  ]
+}

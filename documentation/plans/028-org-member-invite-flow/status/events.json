@@ -1,0 +1,179 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-03-20T10:45:20.000Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan 028-org-member-invite-flow execution started. 4 tasks, concurrency limit 2. Wave 1: task-1 + task-4. Wave 2: task-2 + task-3 (after task-1 completes)."
+    },
+    {
+      "timestamp": "2026-03-20T10:47:25.000Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1-team spawned: executor-1 (opus), reviewer-1 (sonnet), tester-1 (sonnet)"
+    },
+    {
+      "timestamp": "2026-03-20T10:47:25.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-20T10:47:25.000Z",
+      "type": "team_spawned",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4-team spawned: executor-4 (opus), reviewer-4 (sonnet), tester-4 (sonnet)"
+    },
+    {
+      "timestamp": "2026-03-20T10:47:25.000Z",
+      "type": "stage_entered",
+      "task_id": "task-4",
+      "agent": "executor-4",
+      "message": "task-4 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-20T10:50:09.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "reviewer-1",
+      "message": "task-1 entered review stage (planning ~3m; implementation stage not reported separately)"
+    },
+    {
+      "timestamp": "2026-03-20T10:51:38.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 retry #1 — review failed, executor-1 reworking implementation (review took ~90s)"
+    },
+    {
+      "timestamp": "2026-03-20T10:52:05.000Z",
+      "type": "stage_entered",
+      "task_id": "task-4",
+      "agent": "reviewer-4",
+      "message": "task-4 entered review stage (planning ~5m)"
+    },
+    {
+      "timestamp": "2026-03-20T10:53:36.000Z",
+      "type": "stage_entered",
+      "task_id": "task-4",
+      "agent": "executor-4",
+      "message": "task-4 retry #1 — review failed, executor-4 reworking implementation (review took ~91s)"
+    },
+    {
+      "timestamp": "2026-03-20T10:54:49.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 retry #2 — second review failure, executor-1 reworking again (cumulative review time ~280s)"
+    },
+    {
+      "timestamp": "2026-03-20T10:56:19.000Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 completed after 2 retries. Total elapsed ~9m. Wave 2 (task-2 + task-3) now unblocked."
+    },
+    {
+      "timestamp": "2026-03-20T10:56:19.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1-team decommissioned: executor-1, reviewer-1, tester-1 ended"
+    },
+    {
+      "timestamp": "2026-03-20T10:58:09.000Z",
+      "type": "team_spawned",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2-team spawned: executor-2 (opus), reviewer-2 (sonnet), tester-2 (sonnet)"
+    },
+    {
+      "timestamp": "2026-03-20T10:58:09.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "executor-2",
+      "message": "task-2 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-20T10:58:09.000Z",
+      "type": "team_spawned",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3-team spawned: executor-3 (opus), reviewer-3 (sonnet), tester-3 (sonnet)"
+    },
+    {
+      "timestamp": "2026-03-20T10:58:09.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "executor-3",
+      "message": "task-3 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-20T10:59:15.000Z",
+      "type": "task_completed",
+      "task_id": "task-4",
+      "agent": "executor-4",
+      "message": "task-4 completed after 1 retry. Total elapsed ~12m."
+    },
+    {
+      "timestamp": "2026-03-20T10:59:15.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4-team decommissioned: executor-4, reviewer-4, tester-4 ended"
+    },
+    {
+      "timestamp": "2026-03-20T11:00:43.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "reviewer-3",
+      "message": "task-3 entered review stage (planning ~2m34s)"
+    },
+    {
+      "timestamp": "2026-03-20T11:03:39.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "reviewer-2",
+      "message": "task-2 entered review stage (planning ~5m30s)"
+    },
+    {
+      "timestamp": "2026-03-20T11:06:35.000Z",
+      "type": "task_completed",
+      "task_id": "task-2",
+      "agent": "executor-2",
+      "message": "task-2 completed with 0 retries — first-pass review success. Total elapsed ~8m26s."
+    },
+    {
+      "timestamp": "2026-03-20T11:06:35.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2-team decommissioned: executor-2, reviewer-2, tester-2 ended"
+    },
+    {
+      "timestamp": "2026-03-20T11:07:57.000Z",
+      "type": "task_completed",
+      "task_id": "task-3",
+      "agent": "executor-3",
+      "message": "task-3 completed with 0 retries — first-pass review success. Total elapsed ~9m48s."
+    },
+    {
+      "timestamp": "2026-03-20T11:07:57.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3-team decommissioned: executor-3, reviewer-3, tester-3 ended"
+    },
+    {
+      "timestamp": "2026-03-20T11:07:57.000Z",
+      "type": "execution_completed",
+      "task_id": null,
+      "agent": "pm",
+      "message": "All 4 tasks completed. Total wall-clock time ~22m37s. 3 retries total across plan."
+    }
+  ]
+}

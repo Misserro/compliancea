@@ -1,16 +1,50 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [inviteOrgName, setInviteOrgName] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const inviteToken = searchParams.get("invite");
+
+  // Store invite token and pre-fill email from invite data
+  useEffect(() => {
+    if (!inviteToken) return;
+
+    try {
+      sessionStorage.setItem("pendingInviteToken", inviteToken);
+    } catch {
+      // sessionStorage may not be available
+    }
+
+    // Fetch invite details to pre-fill email
+    async function fetchInvite() {
+      try {
+        const res = await fetch(`/api/invites/${inviteToken}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.valid && data.email) {
+            setEmail(data.email);
+          }
+          if (data.orgName) {
+            setInviteOrgName(data.orgName);
+          }
+        }
+      } catch {
+        // Non-critical — user can still type email manually
+      }
+    }
+
+    fetchInvite();
+  }, [inviteToken]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,7 +77,19 @@ export default function RegisterPage() {
       if (result?.error) {
         router.push("/login");
       } else {
-        router.push("/dashboard");
+        // Check for pending invite token — redirect to invite page instead of dashboard
+        let pendingToken: string | null = null;
+        try {
+          pendingToken = sessionStorage.getItem("pendingInviteToken");
+        } catch {
+          // sessionStorage may not be available
+        }
+
+        if (pendingToken) {
+          router.push(`/invite/${pendingToken}`);
+        } else {
+          router.push("/dashboard");
+        }
       }
     } catch {
       setError("Something went wrong. Please try again.");
@@ -61,6 +107,13 @@ export default function RegisterPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {inviteToken && (
+          <p className="rounded-md bg-primary/10 px-3 py-2 text-sm text-primary">
+            You&apos;ve been invited to join{inviteOrgName ? ` ${inviteOrgName}` : " an organization"}.
+            Create an account to accept.
+          </p>
+        )}
+
         {error && (
           <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {error}
@@ -109,16 +162,36 @@ export default function RegisterPage() {
           disabled={loading}
           className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
-          {loading ? "Creating account…" : "Create account"}
+          {loading ? "Creating account\u2026" : "Create account"}
         </button>
       </form>
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
-        <a href="/login" className="text-primary hover:underline">
+        <a
+          href={inviteToken ? `/login?invite=${inviteToken}` : "/login"}
+          className="text-primary hover:underline"
+        >
           Sign in
         </a>
       </p>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full max-w-sm space-y-6 rounded-lg border bg-card p-8 shadow-sm">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">Create account</h1>
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <RegisterForm />
+    </Suspense>
   );
 }

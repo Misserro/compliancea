@@ -9,7 +9,10 @@ export const authConfig: NextAuthConfig = {
     error: "/login",
   },
   callbacks: {
-    authorized({ auth }) {
+    authorized({ auth, request: { nextUrl } }) {
+      const { pathname } = nextUrl;
+      // Allow public access to invite landing pages without auth
+      if (pathname.startsWith("/invite")) return true;
       return !!auth?.user;
     },
   },

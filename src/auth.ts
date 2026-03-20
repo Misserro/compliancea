@@ -1,7 +1,7 @@
 import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { getUserByEmail, createSession, getSessionById, getOrgMemberByUserId } from "@/lib/db-imports";
+import { getUserByEmail, createSession, getSessionById, getOrgMemberByUserId, getOrgMemberForOrg } from "@/lib/db-imports";
 import { ensureDb } from "@/lib/server-utils";
 import { authConfig } from "../auth.config";
 
@@ -65,7 +65,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         // First sign-in: persist id/role and create a new session row
         token.id = user.id;
@@ -92,12 +92,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           createSession(token.sessionId, Number(token.id));
         }
 
-        // Always refresh org context so that role/name changes are picked up immediately
-        const orgMember = getOrgMemberByUserId(Number(token.id));
-        if (orgMember) {
-          token.orgId = orgMember.org_id as number;
-          token.orgRole = orgMember.role as string;
-          token.orgName = orgMember.org_name as string;
+        // Refresh org context — preserve chosen org across requests
+        let membership: any = null;
+        if (trigger === "update" && session?.switchToOrgId) {
+          // Explicit org switch request from client via useSession().update()
+          membership = getOrgMemberForOrg(Number(token.id), Number(session.switchToOrgId));
+        } else if (token.orgId) {
+          // Re-fetch current active org (preserves chosen org across requests)
+          membership = getOrgMemberForOrg(Number(token.id), Number(token.orgId));
+          // If removed from org, fall back to first remaining org
+          if (!membership) membership = getOrgMemberByUserId(Number(token.id));
+        } else {
+          // No org set yet — pick first
+          membership = getOrgMemberByUserId(Number(token.id));
+        }
+
+        if (membership) {
+          // getOrgMemberForOrg returns camelCase (orgId, orgName)
+          // getOrgMemberByUserId returns snake_case (org_id, org_name)
+          token.orgId = (membership.orgId ?? membership.org_id) as number;
+          token.orgRole = membership.role as string;
+          token.orgName = (membership.orgName ?? membership.org_name) as string;
         }
       }
       return token;

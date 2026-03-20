@@ -1,15 +1,28 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const inviteToken = searchParams.get("invite");
+
+  // Store invite token in sessionStorage when present
+  useEffect(() => {
+    if (inviteToken) {
+      try {
+        sessionStorage.setItem("pendingInviteToken", inviteToken);
+      } catch {
+        // sessionStorage may not be available
+      }
+    }
+  }, [inviteToken]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,7 +40,19 @@ export default function LoginPage() {
     if (result?.error) {
       setError("Invalid email or password");
     } else {
-      router.push("/dashboard");
+      // Check for pending invite token — redirect to invite page instead of dashboard
+      let pendingToken: string | null = null;
+      try {
+        pendingToken = sessionStorage.getItem("pendingInviteToken");
+      } catch {
+        // sessionStorage may not be available
+      }
+
+      if (pendingToken) {
+        router.push(`/invite/${pendingToken}`);
+      } else {
+        router.push("/dashboard");
+      }
     }
   }
 
@@ -41,6 +66,12 @@ export default function LoginPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {inviteToken && (
+          <p className="rounded-md bg-primary/10 px-3 py-2 text-sm text-primary">
+            You&apos;ve been invited to join an organization. Log in to accept.
+          </p>
+        )}
+
         {error && (
           <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {error}
@@ -76,16 +107,36 @@ export default function LoginPage() {
           disabled={loading}
           className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
-          {loading ? "Signing in…" : "Sign in"}
+          {loading ? "Signing in\u2026" : "Sign in"}
         </button>
       </form>
 
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
-        <a href="/register" className="text-primary hover:underline">
+        <a
+          href={inviteToken ? `/register?invite=${inviteToken}` : "/register"}
+          className="text-primary hover:underline"
+        >
           Register
         </a>
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full max-w-sm space-y-6 rounded-lg border bg-card p-8 shadow-sm">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

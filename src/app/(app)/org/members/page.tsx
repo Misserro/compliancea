@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -23,7 +24,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Users, UserMinus } from "lucide-react";
+import { Users, UserMinus, Mail, Copy, X, Clock } from "lucide-react";
 import { ORG_ROLE_COLORS } from "@/lib/constants";
 
 interface Member {
@@ -32,6 +33,14 @@ interface Member {
   email: string;
   role: string;
   joinedAt: string;
+}
+
+interface PendingInvite {
+  token: string;
+  email: string;
+  role: string;
+  expiresAt: string;
+  createdAt: string;
 }
 
 function formatDate(dateStr: string): string {
@@ -46,11 +55,42 @@ function formatDate(dateStr: string): string {
   }
 }
 
+function formatRelativeExpiry(dateStr: string): string {
+  try {
+    const now = new Date();
+    const expires = new Date(dateStr);
+    const diffMs = expires.getTime() - now.getTime();
+
+    if (diffMs <= 0) return "Expired";
+
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 1) return `Expires in ${diffDays} days`;
+    if (diffDays === 1) return "Expires tomorrow";
+    if (diffHours > 1) return `Expires in ${diffHours} hours`;
+    if (diffHours === 1) return "Expires in 1 hour";
+    return "Expires soon";
+  } catch {
+    return dateStr;
+  }
+}
+
 export default function MembersPage() {
   const { data: sessionData } = useSession();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+
+  // Invite creation state
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("member");
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteResult, setInviteResult] = useState<{ inviteUrl: string } | null>(null);
+
+  // Pending invites state
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+  const [revokingToken, setRevokingToken] = useState<string | null>(null);
 
   const orgRole = sessionData?.user?.orgRole;
   const currentUserId = Number(sessionData?.user?.id);
@@ -73,9 +113,27 @@ export default function MembersPage() {
     }
   }, []);
 
+  const loadInvites = useCallback(async () => {
+    try {
+      const res = await fetch("/api/org/invites");
+      if (res.ok) {
+        const data = await res.json();
+        setPendingInvites(data.invites);
+      }
+    } catch {
+      // Silently fail -- invite list is non-critical
+    }
+  }, []);
+
   useEffect(() => {
     loadMembers();
   }, [loadMembers]);
+
+  useEffect(() => {
+    if (canManage) {
+      loadInvites();
+    }
+  }, [canManage, loadInvites]);
 
   async function handleRoleChange(userId: number, newRole: string) {
     setUpdatingId(userId);
@@ -118,6 +176,67 @@ export default function MembersPage() {
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setUpdatingId(null);
+    }
+  }
+
+  async function handleGenerateInvite(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmedEmail = inviteEmail.trim();
+    if (!trimmedEmail) {
+      toast.error("Email is required");
+      return;
+    }
+
+    setInviteLoading(true);
+    setInviteResult(null);
+    try {
+      const res = await fetch("/api/org/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmedEmail, role: inviteRole }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setInviteResult({ inviteUrl: data.inviteUrl });
+        setInviteEmail("");
+        loadInvites();
+      } else {
+        toast.error(data.error || "Failed to generate invite");
+      }
+    } catch (err) {
+      toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
+    } finally {
+      setInviteLoading(false);
+    }
+  }
+
+  async function handleCopyLink() {
+    if (!inviteResult) return;
+    try {
+      await navigator.clipboard.writeText(inviteResult.inviteUrl);
+      toast.success("Link copied!");
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  }
+
+  async function handleRevokeInvite(token: string) {
+    setRevokingToken(token);
+    try {
+      const res = await fetch(`/api/org/invites/${token}`, {
+        method: "DELETE",
+      });
+      if (res.ok || res.status === 204) {
+        setPendingInvites((prev) => prev.filter((inv) => inv.token !== token));
+        toast.success("Invite revoked");
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to revoke invite");
+      }
+    } catch (err) {
+      toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
+    } finally {
+      setRevokingToken(null);
     }
   }
 
@@ -279,6 +398,145 @@ export default function MembersPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Invite Creation Section -- visible to owners and admins only */}
+      {canManage && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Invite Member</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Generate a shareable invite link for a new member.
+            </p>
+          </div>
+
+          <form onSubmit={handleGenerateInvite} className="flex items-end gap-3">
+            <div className="flex-1 max-w-sm">
+              <Input
+                type="email"
+                placeholder="Email address"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                disabled={inviteLoading}
+              />
+            </div>
+            <Select value={inviteRole} onValueChange={setInviteRole} disabled={inviteLoading}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="member">member</SelectItem>
+                <SelectItem value="admin">admin</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button type="submit" disabled={inviteLoading}>
+              <Mail className="size-4" />
+              {inviteLoading ? "Generating..." : "Generate invite link"}
+            </Button>
+          </form>
+
+          {/* Invite result block */}
+          {inviteResult && (
+            <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-3">
+              <Input
+                readOnly
+                value={inviteResult.inviteUrl}
+                className="flex-1 bg-transparent"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCopyLink}
+              >
+                <Copy className="size-4" />
+                Copy
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setInviteResult(null)}
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Pending Invites Section -- only shown when there are pending invites */}
+      {canManage && pendingInvites.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold tracking-tight">Pending Invites</h2>
+
+          <div className="rounded-lg border overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium">Email</th>
+                  <th className="text-left px-4 py-3 font-medium">Role</th>
+                  <th className="text-left px-4 py-3 font-medium">Expires</th>
+                  <th className="px-4 py-3 font-medium text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {pendingInvites.map((invite) => (
+                  <tr key={invite.token} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3 text-muted-foreground">{invite.email}</td>
+                    <td className="px-4 py-3">
+                      <Badge
+                        variant="outline"
+                        className={ORG_ROLE_COLORS[invite.role] || ""}
+                      >
+                        {invite.role}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="size-3" />
+                        {formatRelativeExpiry(invite.expiresAt)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            disabled={revokingToken === invite.token}
+                          >
+                            {revokingToken === invite.token ? "Revoking..." : "Revoke"}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Revoke invite</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to revoke the invite for{" "}
+                              <strong>{invite.email}</strong>? The invite link will
+                              become invalid immediately.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleRevokeInvite(invite.token)}
+                              className="bg-destructive text-white hover:bg-destructive/90"
+                            >
+                              Revoke
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

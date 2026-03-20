@@ -1,0 +1,23 @@
+{
+  "task_id": "task-2",
+  "task_name": "Invite Acceptance Flow",
+  "team_name": "task-2-team",
+  "goal": "Public /invite/[token] landing page, POST /api/invites/[token]/accept endpoint, login/register invite awareness, middleware exclusion for /invite/",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-20T10:58:09.000Z",
+  "ended_at": "2026-03-20T11:06:35.000Z",
+  "elapsed_seconds": 506,
+  "stages": {
+    "planning":       { "started_at": "2026-03-20T10:58:09.000Z", "ended_at": "2026-03-20T11:03:39.000Z", "elapsed_seconds": 330 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": "2026-03-20T11:03:39.000Z", "ended_at": "2026-03-20T11:06:35.000Z", "elapsed_seconds": 176 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-2", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-20T10:58:09.000Z", "ended_at": "2026-03-20T11:06:35.000Z" },
+    { "name": "reviewer-2", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-20T10:58:09.000Z", "ended_at": "2026-03-20T11:06:35.000Z" },
+    { "name": "tester-2",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-20T10:58:09.000Z", "ended_at": "2026-03-20T11:06:35.000Z" }
+  ]
+}
