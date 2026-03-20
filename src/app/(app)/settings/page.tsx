@@ -1,14 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { AIConfigSection } from "@/components/settings/ai-config-section";
 import { GDriveSection } from "@/components/settings/gdrive-section";
+import { StorageSection } from "@/components/settings/storage-section";
 import { PoliciesSection } from "@/components/settings/policies-section";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Settings } from "@/lib/types";
 
 export default function SettingsPage() {
+  const { data: sessionData } = useSession();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -99,6 +102,11 @@ export default function SettingsPage() {
       </Card>
 
       <GDriveSection />
+
+      <StorageSection
+        orgId={Number(sessionData?.user?.orgId)}
+        orgRole={sessionData?.user?.orgRole || ""}
+      />
     </div>
   );
 }

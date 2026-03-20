@@ -1,0 +1,137 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-03-20T11:31:52.000Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution started — 029-storage-layer, 3 tasks, concurrency limit 2"
+    },
+    {
+      "timestamp": "2026-03-20T11:32:43.000Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "Task-1 team spawned: executor-1 (opus), reviewer-1 (sonnet), tester-1 (sonnet) — Storage Config Layer"
+    },
+    {
+      "timestamp": "2026-03-20T11:32:43.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-20T11:37:40.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 entered review stage — planning ~5m, reviewer-1 now active"
+    },
+    {
+      "timestamp": "2026-03-20T11:39:33.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 retry #1 — review failed after ~2m, executor-1 back to implementing fixes"
+    },
+    {
+      "timestamp": "2026-03-20T11:43:51.000Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 completed — total ~11m, 1 retry, planning ~5m, review ~2m, fix ~4m"
+    },
+    {
+      "timestamp": "2026-03-20T11:43:51.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1-team shut down — all members ended"
+    },
+    {
+      "timestamp": "2026-03-20T11:45:52.000Z",
+      "type": "team_spawned",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "Task-2 team spawned: executor-2 (opus), reviewer-2 (sonnet), tester-2 (sonnet) — Storage Driver and All File I/O Routes"
+    },
+    {
+      "timestamp": "2026-03-20T11:45:52.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-20T11:45:52.000Z",
+      "type": "team_spawned",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "Task-3 team spawned: executor-3 (opus), reviewer-3 (sonnet), tester-3 (sonnet) — S3 Config Settings UI"
+    },
+    {
+      "timestamp": "2026-03-20T11:45:52.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-20T11:49:08.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 entered review stage — planning ~3m, reviewer-3 now active"
+    },
+    {
+      "timestamp": "2026-03-20T11:50:06.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 retry #1 — review failed after ~1m, executor-3 back to implementing fixes"
+    },
+    {
+      "timestamp": "2026-03-20T11:54:56.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 retry #1 — review failed after ~3m (planning ~6m), executor-2 back to implementing fixes"
+    },
+    {
+      "timestamp": "2026-03-20T11:55:33.000Z",
+      "type": "task_completed",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 completed — total ~10m, 1 retry, planning ~3m, review ~1m, fix ~5m"
+    },
+    {
+      "timestamp": "2026-03-20T11:55:33.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3-team shut down — all members ended"
+    },
+    {
+      "timestamp": "2026-03-20T12:05:06.000Z",
+      "type": "task_completed",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 completed — total ~19m, 1 retry, planning ~6m, review ~3m, fix ~10m"
+    },
+    {
+      "timestamp": "2026-03-20T12:05:06.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2-team shut down — all members ended"
+    },
+    {
+      "timestamp": "2026-03-20T12:05:06.000Z",
+      "type": "execution_completed",
+      "task_id": null,
+      "agent": "pm",
+      "message": "All 3 tasks completed — plan 029-storage-layer execution complete, total wall-clock ~33m"
+    }
+  ]
+}

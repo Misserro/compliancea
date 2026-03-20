@@ -1,0 +1,23 @@
+{
+  "task_id": "task-3",
+  "task_name": "S3 Config Settings UI",
+  "team_name": "task-3-team",
+  "goal": "StorageSection component; settings page shows S3 config for owner/admin; test+save flow; remove config with AlertDialog; member role sees no section",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-20T11:45:52.000Z",
+  "ended_at": "2026-03-20T11:55:33.000Z",
+  "elapsed_seconds": 581,
+  "stages": {
+    "planning":       { "started_at": "2026-03-20T11:45:52.000Z", "ended_at": "2026-03-20T11:49:08.000Z", "elapsed_seconds": 196 },
+    "implementation": { "started_at": "2026-03-20T11:50:06.000Z", "ended_at": "2026-03-20T11:55:33.000Z", "elapsed_seconds": 327 },
+    "review":         { "started_at": "2026-03-20T11:49:08.000Z", "ended_at": "2026-03-20T11:50:06.000Z", "elapsed_seconds": 58 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 1,
+  "members": [
+    { "name": "executor-3",  "role": "executor",  "model": "opus",   "status": "completed", "spawned_at": "2026-03-20T11:45:52.000Z", "ended_at": "2026-03-20T11:55:33.000Z" },
+    { "name": "reviewer-3",  "role": "reviewer",  "model": "sonnet", "status": "completed", "spawned_at": "2026-03-20T11:45:52.000Z", "ended_at": "2026-03-20T11:55:33.000Z" },
+    { "name": "tester-3",    "role": "tester",    "model": "sonnet", "status": "completed", "spawned_at": "2026-03-20T11:45:52.000Z", "ended_at": "2026-03-20T11:55:33.000Z" }
+  ]
+}

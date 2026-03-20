@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import { auth } from "@/auth";
 import { ensureDb, saveUploadedFile } from "@/lib/server-utils";
-import { getDocumentByPath, addDocument, getDocumentById } from "@/lib/db-imports";
+import { getDocumentByPath, addDocument, getDocumentById, setDocumentStorage, saveDb } from "@/lib/db-imports";
+import { logAction } from "@/lib/audit-imports";
 import { DOCUMENTS_DIR } from "@/lib/paths-imports";
 
 export const runtime = "nodejs";
@@ -46,16 +47,25 @@ export async function POST(request: NextRequest) {
     }
 
     const destDir = folder ? path.join(DOCUMENTS_DIR, folder) : DOCUMENTS_DIR;
-    const { filePath, fileName } = await saveUploadedFile(file, destDir);
+    const { filePath, fileName, storageBackend, storageKey } = await saveUploadedFile(file, destDir, orgId);
 
-    // Check if already in database
-    const existing = getDocumentByPath(filePath, orgId);
+    // Check if already in database (only for local files with a path)
+    const existing = filePath ? getDocumentByPath(filePath, orgId) : null;
     if (existing) {
       return NextResponse.json({ error: "Document already exists in library" }, { status: 409 });
     }
 
     // Add to database
     const documentId = addDocument(fileName, filePath, folder || null, category || null, orgId);
+
+    // Store storage metadata
+    if (storageBackend) {
+      setDocumentStorage(documentId, storageBackend, storageKey || null);
+    }
+
+    saveDb();
+    logAction("document", documentId, "uploaded", { name: fileName, storageBackend: storageBackend || "local" }, { userId: Number(session.user.id), orgId });
+
     const document = getDocumentById(documentId, orgId);
 
     return NextResponse.json({

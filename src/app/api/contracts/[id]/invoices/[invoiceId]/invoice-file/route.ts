@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import fs from "fs/promises";
 import path from "path";
 
 import { ensureDb } from "@/lib/server-utils";
 import { getInvoiceById } from "@/lib/db-imports";
-import { INVOICES_DIR } from "@/lib/paths-imports";
+import { getFile } from "@/lib/storage-imports";
 
 export const runtime = "nodejs";
 
@@ -41,28 +40,21 @@ export async function GET(
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    if (!invoice.invoice_file_path) {
+    if (!invoice.invoice_file_path && !invoice.invoice_storage_key) {
       return NextResponse.json({ error: "No invoice file attached" }, { status: 404 });
     }
 
-    // Path traversal prevention
-    const resolvedPath = path.resolve(invoice.invoice_file_path);
-    const resolvedInvoicesDir = path.resolve(INVOICES_DIR);
-    if (!resolvedPath.startsWith(resolvedInvoicesDir)) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
+    // Read file via storage driver (handles S3 and local)
+    const fileBuffer = await getFile(
+      orgId,
+      invoice.invoice_storage_backend || "local",
+      invoice.invoice_storage_key,
+      invoice.invoice_file_path
+    );
 
-    // Verify file exists
-    try {
-      await fs.access(resolvedPath);
-    } catch {
-      return NextResponse.json({ error: "Invoice file not found on disk" }, { status: 404 });
-    }
-
-    const fileBuffer = await fs.readFile(resolvedPath);
-    const ext = path.extname(resolvedPath).toLowerCase();
+    const fileName = path.basename(invoice.invoice_file_path || invoice.invoice_storage_key || "file");
+    const ext = path.extname(fileName).toLowerCase();
     const contentType = MIME_TYPES[ext] || "application/octet-stream";
-    const fileName = path.basename(resolvedPath);
 
     return new NextResponse(fileBuffer, {
       headers: {

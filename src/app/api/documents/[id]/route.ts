@@ -8,6 +8,7 @@ import {
   saveDb,
 } from "@/lib/db-imports";
 import { logAction } from "@/lib/audit-imports";
+import { deleteFile } from "@/lib/storage-imports";
 
 export const runtime = "nodejs";
 
@@ -57,6 +58,9 @@ export async function DELETE(
     if (!doc) {
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
+
+    // Delete file from storage (S3 or local)
+    await deleteFile(orgId, doc.storage_backend, doc.storage_key, doc.path);
 
     // Delete associated tasks linked to obligations (before deleting obligations)
     run(

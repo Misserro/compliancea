@@ -1,0 +1,23 @@
+{
+  "task_id": "task-2",
+  "task_name": "Storage Driver and All File I/O Routes",
+  "team_name": "task-2-team",
+  "goal": "lib/storage.js driver; saveUploadedFile extended with orgId; upload route stores storage metadata; all 5 download routes + delete route storage-aware; 0 regressions",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-20T11:45:52.000Z",
+  "ended_at": "2026-03-20T12:05:06.000Z",
+  "elapsed_seconds": 1154,
+  "stages": {
+    "planning":       { "started_at": "2026-03-20T11:45:52.000Z", "ended_at": "2026-03-20T11:52:00.000Z", "elapsed_seconds": 368 },
+    "implementation": { "started_at": "2026-03-20T11:54:56.000Z", "ended_at": "2026-03-20T12:05:06.000Z", "elapsed_seconds": 610 },
+    "review":         { "started_at": "2026-03-20T11:52:00.000Z", "ended_at": "2026-03-20T11:54:56.000Z", "elapsed_seconds": 176 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 1,
+  "members": [
+    { "name": "executor-2",  "role": "executor",  "model": "opus",   "status": "completed", "spawned_at": "2026-03-20T11:45:52.000Z", "ended_at": "2026-03-20T12:05:06.000Z" },
+    { "name": "reviewer-2",  "role": "reviewer",  "model": "sonnet", "status": "completed", "spawned_at": "2026-03-20T11:45:52.000Z", "ended_at": "2026-03-20T12:05:06.000Z" },
+    { "name": "tester-2",    "role": "tester",    "model": "sonnet", "status": "completed", "spawned_at": "2026-03-20T11:45:52.000Z", "ended_at": "2026-03-20T12:05:06.000Z" }
+  ]
+}

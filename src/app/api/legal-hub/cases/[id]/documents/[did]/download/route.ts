@@ -1,13 +1,12 @@
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs/promises";
 import path from "path";
 
 import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import { getCaseDocumentById } from "@/lib/db-imports";
-import { CASE_ATTACHMENTS_DIR } from "@/lib/paths-imports";
+import { getFile } from "@/lib/storage-imports";
 
 const MIME_TYPES: Record<string, string> = {
   ".pdf": "application/pdf",
@@ -56,35 +55,25 @@ export async function GET(
       return NextResponse.redirect(redirectUrl);
     }
 
-    // Direct upload — serve file from disk
-    if (!doc.file_path) {
+    // Direct upload -- serve file
+    if (!doc.file_path && !doc.storage_key) {
       return NextResponse.json(
         { error: "No file attached to this document" },
         { status: 404 }
       );
     }
 
-    // Path traversal prevention
-    const resolvedPath = path.resolve(doc.file_path);
-    const resolvedDocsDir = path.resolve(CASE_ATTACHMENTS_DIR);
-    if (!resolvedPath.startsWith(resolvedDocsDir)) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
+    // Read file via storage driver (handles S3 and local)
+    const fileBuffer = await getFile(
+      orgId,
+      doc.storage_backend || "local",
+      doc.storage_key,
+      doc.file_path
+    );
 
-    // Verify file exists on disk
-    try {
-      await fs.access(resolvedPath);
-    } catch {
-      return NextResponse.json(
-        { error: "File not found on disk" },
-        { status: 404 }
-      );
-    }
-
-    const fileBuffer = await fs.readFile(resolvedPath);
-    const ext = path.extname(resolvedPath).toLowerCase();
+    const fileName = doc.file_name || path.basename(doc.file_path || doc.storage_key || "file");
+    const ext = path.extname(fileName).toLowerCase();
     const contentType = MIME_TYPES[ext] || "application/octet-stream";
-    const fileName = doc.file_name || path.basename(resolvedPath);
 
     return new NextResponse(fileBuffer, {
       headers: {

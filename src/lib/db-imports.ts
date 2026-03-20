@@ -9,6 +9,7 @@ export {
   getDocumentById,
   getDocumentByPath,
   addDocument,
+  setDocumentStorage,
   updateDocumentCategory,
   updateDocumentProcessed,
   deleteDocument,

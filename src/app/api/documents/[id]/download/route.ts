@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import fs from "fs/promises";
 import path from "path";
 import { ensureDb } from "@/lib/server-utils";
 import { getDocumentById } from "@/lib/db-imports";
-import { DOCUMENTS_DIR } from "@/lib/paths-imports";
+import { getFile } from "@/lib/storage-imports";
 
 export const runtime = "nodejs";
 
@@ -28,25 +27,17 @@ export async function GET(
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
-    // Security: verify path is within DOCUMENTS_DIR
-    const resolvedPath = path.resolve(document.path);
-    const resolvedDocsDir = path.resolve(DOCUMENTS_DIR);
-    if (!resolvedPath.startsWith(resolvedDocsDir)) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
+    // Read file via storage driver (handles S3 and local)
+    const fileBuffer = await getFile(
+      orgId,
+      document.storage_backend || "local",
+      document.storage_key,
+      document.path
+    );
 
-    // Verify file exists
-    try {
-      await fs.access(resolvedPath);
-    } catch {
-      return NextResponse.json({ error: "Document file not found on disk" }, { status: 404 });
-    }
-
-    // Read file
-    const fileBuffer = await fs.readFile(resolvedPath);
-
-    // Determine MIME type
-    const ext = path.extname(resolvedPath).toLowerCase();
+    // Determine MIME type from filename/path
+    const fileName = document.name || path.basename(document.path || document.storage_key || "file");
+    const ext = path.extname(fileName).toLowerCase();
     const mimeTypes: Record<string, string> = {
       ".pdf": "application/pdf",
       ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

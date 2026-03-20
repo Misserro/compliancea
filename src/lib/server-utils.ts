@@ -6,6 +6,7 @@ import mammoth from "mammoth";
 
 import { initDb } from "../../lib/db.js";
 import { DOCUMENTS_DIR } from "../../lib/paths.js";
+import { putFile } from "../../lib/storage.js";
 
 let dbInitialized = false;
 
@@ -57,11 +58,24 @@ export async function extractTextFromPath(filePath: string): Promise<string> {
 export async function saveUploadedFile(
   file: File,
   destDir: string,
-): Promise<{ filePath: string; fileName: string }> {
-  fsSync.mkdirSync(destDir, { recursive: true });
+  orgId?: number,
+): Promise<{ filePath: string; fileName: string; storageBackend?: string; storageKey?: string | null }> {
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const filePath = path.join(destDir, safeName);
   const buffer = Buffer.from(await file.arrayBuffer());
+
+  if (orgId !== undefined) {
+    const result = await putFile(orgId, "documents", safeName, buffer, file.type);
+    return {
+      filePath: result.localPath ?? result.storageKey ?? "",
+      fileName: safeName,
+      storageBackend: result.storageBackend,
+      storageKey: result.storageKey,
+    };
+  }
+
+  // Legacy fallback: no orgId provided
+  fsSync.mkdirSync(destDir, { recursive: true });
+  const filePath = path.join(destDir, safeName);
   await fs.writeFile(filePath, buffer);
   return { filePath, fileName: safeName };
 }

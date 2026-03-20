@@ -8,6 +8,7 @@ export function getAllDocuments(...args: any[]): any;
 export function getDocumentById(...args: any[]): any;
 export function getDocumentByPath(...args: any[]): any;
 export function addDocument(...args: any[]): any;
+export function setDocumentStorage(...args: any[]): any;
 export function updateDocumentCategory(...args: any[]): any;
 export function updateDocumentProcessed(...args: any[]): any;
 export function deleteDocument(...args: any[]): any;

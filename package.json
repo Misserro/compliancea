@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "@aws-sdk/client-s3": "^3.1013.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-checkbox": "^1.1.4",
     "@radix-ui/react-collapsible": "^1.1.3",
