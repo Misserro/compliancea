@@ -144,6 +144,15 @@ Two modes for handling external documents:
 
 ## Organization Management (Plan 027+)
 
+### Global Admin (Plan 030)
+- **Super admin role** — A system-level `is_super_admin` flag on the users table, separate from per-org roles. Super admins operate across all organizations.
+- **Admin panel** — Dedicated `/admin` section (outside the normal app layout) listing all organizations with status, member count, and management actions.
+- **Org creation** — Super admin can create new organizations (name + slug) and optionally invite the first org owner via the existing invite link system.
+- **Org soft-delete** — Super admin can mark an org for deletion; org becomes immediately inaccessible to all members. Data retained for 30 days, then permanently deleted.
+- **Org restore** — Within the 30-day window, super admin can restore a soft-deleted org.
+- **Super admin seeding** — First super admin is bootstrapped via `SUPER_ADMIN_EMAIL` env var during `initDb()`. Subsequent super admins must be promoted via the admin panel.
+- **No data access** — Super admin can manage org lifecycle but cannot read org documents, cases, or contracts (management only; no org membership assumed).
+
 ### Storage Configuration (Plan 029)
 - **Per-org S3 storage** — Each org can configure an S3-compatible bucket (AWS S3, Cloudflare R2, MinIO) as their file storage backend
 - **Coexist approach** — Existing files stay on the local Railway `/data` volume; new uploads go to S3 when configured; download path checks `storage_backend` column to route correctly

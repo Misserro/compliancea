@@ -144,7 +144,7 @@ Vaulta uses JWT-based sessions (NextAuth default) with a supplementary session t
 
 ## Session Type Augmentation
 
-The NextAuth session and JWT types are augmented in `src/auth.ts`:
+The NextAuth session and JWT types are augmented in `src/auth.ts`. The current full shape (updated through Plan 030) is:
 
 ```typescript
 declare module "next-auth" {
@@ -153,6 +153,12 @@ declare module "next-auth" {
       id: string;
       role: string;
       sessionId?: string;
+      // Per-org context (Plans 027-028):
+      orgId?: string;
+      orgRole?: string;
+      orgName?: string;
+      // System-level admin flag (Plan 030):
+      isSuperAdmin?: boolean;
     } & DefaultSession["user"];
   }
   interface User {
@@ -165,6 +171,12 @@ declare module "@auth/core/jwt" {
     id?: string;
     role?: string;
     sessionId?: string;
+    // Per-org context (Plans 027-028):
+    orgId?: string;
+    orgRole?: string;
+    orgName?: string;
+    // System-level admin flag (Plan 030):
+    isSuperAdmin?: boolean;
   }
 }
 ```

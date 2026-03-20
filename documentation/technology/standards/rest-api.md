@@ -255,8 +255,8 @@ ensureDb() -> validate input -> check existence -> mutate -> saveDb() -> logActi
 2. **Validate input** -- parse body, check required fields, validate enums, check allowlist.
 3. **Check existence** -- for PATCH/DELETE, verify the resource exists (404 if not). For POST, check for conflicts (409 if duplicate).
 4. **Mutate** -- call the database function.
-5. **saveDb()** -- persist SQLite changes to disk after every mutation.
-6. **logAction()** -- record the mutation in the audit log: `logAction(resource, id, verb, details)`.
+5. **saveDb()** -- persist SQLite changes to disk after every mutation. **CRITICAL: `saveDb()` MUST be called BEFORE `logAction()`**. If `logAction` throws after `saveDb()`, the mutation is safe on disk. If `saveDb` is called after `logAction`, a crash between the two leaves the DB inconsistent.
+6. **logAction()** -- record the mutation in the audit log: `logAction(resource, id, verb, details)`. Always called AFTER `saveDb()`.
 7. **Re-fetch** -- query the resource again to get the canonical post-mutation state.
 8. **Respond** -- return the fresh resource in the standard envelope.
 

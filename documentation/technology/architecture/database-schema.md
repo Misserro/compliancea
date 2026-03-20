@@ -537,6 +537,7 @@ Firm/workspace identity. One row per tenant.
 | name | TEXT NOT NULL | Display name (e.g. "Acme Legal") |
 | slug | TEXT UNIQUE NOT NULL | URL-safe identifier (e.g. "acme-legal") |
 | created_at | DATETIME DEFAULT CURRENT_TIMESTAMP | Creation timestamp |
+| deleted_at | DATETIME | Soft-delete timestamp (null = active; set = pending deletion, hard-deleted after 30 days) — added Plan 030 |
 
 ### org_members
 
