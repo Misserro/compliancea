@@ -142,6 +142,38 @@ Two modes for handling external documents:
 - **Evidence tracking** - Link supporting documents to answers
 - **Version control** - Track answer updates over time
 
+## Organization Management (Plan 027+)
+
+### Multi-Tenancy
+- **Org isolation** - All data is scoped to the user's active organization; no cross-org data access
+- **Default org** - A "Default Organization" is auto-created on first run; all existing data is backfilled
+- **Session context** - JWT carries `orgId`, `orgRole`, and `orgName`; enforced on every request
+
+### Org Settings
+- **Name editing** - Owners and admins can rename the organization
+- **Org details** - View org name, slug, creation date, and member count at `/settings/org`
+- **Sidebar identity** - Active org name displayed in sidebar header
+
+### Member Management
+- **Members list** - View all org members with roles and join dates at `/org/members`
+- **Role management** - Owners can set any role; admins can toggle `member` ↔ `admin`
+- **Remove members** - Owners and admins can remove members; cannot remove self
+- **No-org guard** - Users without org membership are redirected to `/no-org`
+
+### Member Invite Flow (Plan 028)
+- **Copy-link invites** - Owners and admins generate shareable invite links (no email required)
+- **Role assignment** - Invite specifies the role the recipient will receive (`member` or `admin`)
+- **7-day expiry** - Invite links expire after 7 days; re-invite generates a new token
+- **Pending invite management** - List, revoke, and re-invite from the members page
+- **Existing user acceptance** - Clicking an invite link while logged in auto-enrolls the user
+- **New user acceptance** - Clicking an invite link while logged out prompts registration then auto-enrolls
+- **Single-use tokens** - Each invite token is consumed on acceptance and cannot be reused
+
+### Org Switcher (Plan 028)
+- **Multi-org membership** - A user may belong to multiple orgs (e.g. accepted multiple invites)
+- **Sidebar switcher** - Dropdown in sidebar header to switch active org; only shown when user has 2+ orgs
+- **Session switch** - Switching org updates JWT context (`orgId`, `orgRole`, `orgName`) without re-login
+
 ## User Workflows
 
 ### Workflow 1: Document Ingestion

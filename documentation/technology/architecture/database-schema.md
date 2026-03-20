@@ -519,6 +519,53 @@ Junction table linking additional documents (amendments, addenda, exhibits) to c
 
 ---
 
+---
+
+## Multi-Tenancy Tables (Plan 027+)
+
+These tables were introduced in Plan 027 to support the multi-tenant organization model. All data tables carry an `org_id` FK referencing `organizations`.
+
+### organizations
+
+Firm/workspace identity. One row per tenant.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INTEGER PRIMARY KEY AUTOINCREMENT | Unique org identifier |
+| name | TEXT NOT NULL | Display name (e.g. "Acme Legal") |
+| slug | TEXT UNIQUE NOT NULL | URL-safe identifier (e.g. "acme-legal") |
+| created_at | DATETIME DEFAULT CURRENT_TIMESTAMP | Creation timestamp |
+
+### org_members
+
+Maps users to orgs with a per-org role. A user may belong to multiple orgs.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INTEGER PRIMARY KEY AUTOINCREMENT | Row identifier |
+| org_id | INTEGER NOT NULL FK → organizations(id) | Owning org |
+| user_id | INTEGER NOT NULL FK → users(id) | Member user |
+| role | TEXT NOT NULL DEFAULT 'member' | Role: `owner`, `admin`, `member` |
+| joined_at | DATETIME DEFAULT CURRENT_TIMESTAMP | Enrolment timestamp |
+| invited_by | INTEGER FK → users(id) | User who sent the invite (nullable) |
+
+Constraint: `UNIQUE(org_id, user_id)` — one membership record per user per org.
+
+### org_invites
+
+Tokenized invite records. Table created by Plan 027; invite flow implemented by Plan 028.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| token | TEXT PRIMARY KEY | Cryptographically random UUID invite token |
+| org_id | INTEGER NOT NULL FK → organizations(id) | Inviting org |
+| email | TEXT NOT NULL | Invited email address |
+| role | TEXT NOT NULL DEFAULT 'member' | Role to assign on acceptance |
+| expires_at | DATETIME NOT NULL | Token expiry (7 days from creation) |
+| accepted_at | DATETIME | Set when invite is consumed (null = pending) |
+
+---
+
 ## Storage Size Estimates
 
 **documents**: ~2-5 KB per record (varies with full_text)
