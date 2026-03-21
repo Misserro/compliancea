@@ -5,6 +5,7 @@ import { Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import type { LegalCase } from "@/lib/types";
 import { LEGAL_CASE_TYPES, LEGAL_CASE_TYPE_LABELS } from "@/lib/constants";
+import { calculateCourtFee } from "@/lib/court-fee";
 
 interface CaseMetadataFormProps {
   legalCase: LegalCase;
@@ -339,6 +340,25 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
               : "\u2014"}
           </div>
         </div>
+        {legalCase.case_type === "civil" && (() => {
+          const courtFee = calculateCourtFee(legalCase.claim_value);
+          return (
+            <div>
+              <div className="text-muted-foreground text-xs font-medium mb-1">Court Fee</div>
+              <div>
+                {legalCase.claim_currency !== "PLN" ? (
+                  <span className="text-muted-foreground text-xs">
+                    Court fee calculation applies to PLN claims only
+                  </span>
+                ) : courtFee !== null ? (
+                  `${courtFee.toLocaleString()} PLN (auto)`
+                ) : (
+                  "\u2014"
+                )}
+              </div>
+            </div>
+          );
+        })()}
         {legalCase.summary && (
           <div className="md:col-span-2 lg:col-span-3">
             <div className="text-muted-foreground text-xs font-medium mb-1">Summary</div>

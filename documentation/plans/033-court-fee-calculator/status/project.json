@@ -1,0 +1,14 @@
+{
+  "name": "033-court-fee-calculator",
+  "description": "Add automatic Polish civil court fee calculator derived from claim_value — displayed as read-only derived field, never stored",
+  "plan_file": "documentation/plans/033-court-fee-calculator/README.md",
+  "status": "executing",
+  "started_at": "2026-03-21T00:00:00.000Z",
+  "ended_at": null,
+  "elapsed_seconds": 0,
+  "concurrency_limit": 1,
+  "total_tasks": 2,
+  "completed_tasks": 1,
+  "active_tasks": 1,
+  "pending_tasks": 0
+}

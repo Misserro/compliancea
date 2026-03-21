@@ -1,0 +1,39 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-03-21T00:00:00.000Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan 033-court-fee-calculator execution started. 2 tasks, sequential dependency (Task 2 depends on Task 1). Concurrency limit: 1."
+    },
+    {
+      "timestamp": "2026-03-21T08:00:37.000Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "Task 1 completed: Court Fee Calculation Utility + Unit Tests. src/lib/court-fee.ts and tests/unit/court-fee.test.ts created and passing."
+    },
+    {
+      "timestamp": "2026-03-21T08:00:37.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "Task 1 team shut down. All members decommissioned."
+    },
+    {
+      "timestamp": "2026-03-21T08:00:37.000Z",
+      "type": "team_spawned",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "Task 2 team spawned: Court Fee Row in Case Metadata Form. Members: executor-2 (opus), reviewer-2 (sonnet), tester-2 (sonnet)."
+    },
+    {
+      "timestamp": "2026-03-21T08:00:37.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "executor-2",
+      "message": "Task 2 entered planning stage."
+    }
+  ]
+}
