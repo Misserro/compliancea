@@ -13,6 +13,20 @@ interface CaseMetadataFormProps {
   onSaved: () => void;
 }
 
+const REPRESENTING_LABELS: Record<string, string> = {
+  plaintiff: "Plaintiff",
+  defendant: "Defendant",
+};
+
+function parseExtensionData(extStr: string): Record<string, unknown> {
+  try {
+    const obj = JSON.parse(extStr);
+    return typeof obj === "object" && obj !== null ? obj : {};
+  } catch {
+    return {};
+  }
+}
+
 export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFormProps) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -26,6 +40,8 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
     }
   };
 
+  const extData = parseExtensionData(legalCase.extension_data);
+
   const [form, setForm] = useState({
     title: legalCase.title || "",
     case_type: legalCase.case_type || "",
@@ -34,7 +50,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
     procedure_type: legalCase.procedure_type || "",
     court: legalCase.court || "",
     court_division: legalCase.court_division || "",
-    judge: legalCase.judge || "",
+    representing_side: (extData.representing_side as string) || "",
     summary: legalCase.summary || "",
     claim_description: legalCase.claim_description || "",
     claim_value: legalCase.claim_value?.toString() || "",
@@ -43,6 +59,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
   });
 
   const resetForm = () => {
+    const currentExtData = parseExtensionData(legalCase.extension_data);
     setForm({
       title: legalCase.title || "",
       case_type: legalCase.case_type || "",
@@ -51,7 +68,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
       procedure_type: legalCase.procedure_type || "",
       court: legalCase.court || "",
       court_division: legalCase.court_division || "",
-      judge: legalCase.judge || "",
+      representing_side: (currentExtData.representing_side as string) || "",
       summary: legalCase.summary || "",
       claim_description: legalCase.claim_description || "",
       claim_value: legalCase.claim_value?.toString() || "",
@@ -63,6 +80,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
   const handleSave = async () => {
     setSaving(true);
     try {
+      const currentExtData = parseExtensionData(legalCase.extension_data);
       const payload: Record<string, unknown> = {
         title: form.title.trim() || null,
         case_type: form.case_type,
@@ -71,7 +89,6 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
         procedure_type: form.procedure_type.trim() || null,
         court: form.court.trim() || null,
         court_division: form.court_division.trim() || null,
-        judge: form.judge.trim() || null,
         summary: form.summary.trim() || null,
         claim_description: form.claim_description.trim() || null,
         claim_value: form.claim_value ? parseFloat(form.claim_value) : null,
@@ -80,6 +97,10 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
           .split(",")
           .map((t) => t.trim())
           .filter(Boolean),
+        extension_data: {
+          ...currentExtData,
+          representing_side: form.representing_side || null,
+        },
       };
 
       const res = await fetch(`/api/legal-hub/cases/${caseId}`, {
@@ -211,14 +232,16 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
             />
           </div>
           <div>
-            <label className={fieldLabel}>Judge</label>
-            <input
-              type="text"
+            <label className={fieldLabel}>Representing</label>
+            <select
               className={inputClass}
-              value={form.judge}
-              onChange={(e) => setForm({ ...form, judge: e.target.value })}
-              placeholder="Judge name..."
-            />
+              value={form.representing_side}
+              onChange={(e) => setForm({ ...form, representing_side: e.target.value })}
+            >
+              <option value="">— Not specified —</option>
+              <option value="plaintiff">Plaintiff</option>
+              <option value="defendant">Defendant</option>
+            </select>
           </div>
           <div>
             <label className={fieldLabel}>Claim Value</label>
@@ -287,6 +310,8 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
     }
   })();
 
+  const representingSide = (parseExtensionData(legalCase.extension_data).representing_side as string) || null;
+
   return (
     <div className="bg-card border rounded-lg p-4">
       <div className="flex items-center justify-between mb-2">
@@ -329,8 +354,8 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
           <div>{formatValue(legalCase.court_division)}</div>
         </div>
         <div>
-          <div className="text-muted-foreground text-xs font-medium mb-1">Judge</div>
-          <div>{formatValue(legalCase.judge)}</div>
+          <div className="text-muted-foreground text-xs font-medium mb-1">Representing</div>
+          <div>{representingSide ? (REPRESENTING_LABELS[representingSide] ?? representingSide) : "\u2014"}</div>
         </div>
         <div>
           <div className="text-muted-foreground text-xs font-medium mb-1">Claim Value</div>
@@ -351,7 +376,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
                     Court fee calculation applies to PLN claims only
                   </span>
                 ) : courtFee !== null ? (
-                  `${courtFee.toLocaleString()} PLN (auto)`
+                  `${courtFee.toLocaleString()} PLN`
                 ) : (
                   "\u2014"
                 )}
