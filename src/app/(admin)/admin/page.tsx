@@ -3,6 +3,8 @@ import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import { getAllOrganizations } from "@/lib/db-imports";
 import { AdminOrgList } from "@/components/admin/admin-org-list";
+import { PlatformStorageConfig } from "@/components/admin/platform-storage-config";
+import { StorageMigration } from "@/components/admin/storage-migration";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const RETENTION_DAYS = 30;
@@ -16,6 +18,7 @@ interface Org {
   status: "active" | "pending_deletion" | "expired";
   daysUntilDeletion?: number;
   deletedAt?: string;
+  storagePolicy: string;
 }
 
 export default async function AdminPage() {
@@ -50,6 +53,7 @@ export default async function AdminPage() {
       slug: org.slug as string,
       memberCount: (org.member_count as number) ?? 0,
       createdAt: org.created_at as string,
+      storagePolicy: (org.storage_policy as string) || "local",
       status,
       ...(org.deleted_at
         ? { daysUntilDeletion, deletedAt: org.deleted_at as string }
@@ -58,14 +62,20 @@ export default async function AdminPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Organizations</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage all organizations across the platform.
-        </p>
+    <div className="space-y-8">
+      <PlatformStorageConfig />
+
+      <StorageMigration />
+
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">Organizations</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage all organizations across the platform.
+          </p>
+        </div>
+        <AdminOrgList orgs={orgs} />
       </div>
-      <AdminOrgList orgs={orgs} />
     </div>
   );
 }

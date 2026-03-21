@@ -175,6 +175,26 @@ Two modes for handling external documents:
 - **Immediate enforcement** — Permission changes take effect on the next request (DB re-hydrated on every JWT callback, no re-login required)
 - **UI feature hiding** — Sidebar navigation and page action buttons (upload, create, delete) are conditionally hidden based on the user's effective permission level
 
+### Org Feature Access Control (Plan 034)
+- **Super admin toggles** — Super admin can enable or disable specific product features for each organization individually from the admin panel
+- **Feature scope** — Controlled features: Contracts, Legal Hub, Template Editor, Court Fee Calculator, Policies, QA Cards. Documents are always enabled (core feature)
+- **Full bypass for super admins** — Super admins always have access to all features regardless of org feature settings
+- **Backend enforcement** — Feature access is enforced at the API layer via `requireOrgFeature()` guard; disabling a feature blocks API routes, not just UI
+- **JWT propagation** — Enabled features list is embedded in the org JWT context; checked on every request without additional DB round-trips
+- **UI gating** — Sidebar navigation items and page entry points are hidden for disabled features; users see only what their org has access to
+- **Opt-out model** — All features are enabled by default for new orgs; super admin selectively disables features
+
+### Platform S3 Storage & Migration (Plan 034)
+- **Platform-wide S3 config** — Super admin configures a shared S3 bucket (access key, secret, bucket name, region, optional custom endpoint) usable by all organizations that don't have their own S3
+- **Encrypted platform credentials** — Platform S3 credentials stored encrypted (AES-256-GCM) in `platform_settings` table using `STORAGE_ENCRYPTION_KEY`
+- **Platform S3 test** — Super admin can test the platform S3 connection before saving credentials
+- **Per-org storage policy** — Super admin sets each org's storage policy: `local` (Railway disk), `platform_s3` (shared platform bucket), `own_s3` (org-configured bucket)
+- **Org settings read-only info** — When an org's policy is `platform_s3`, the org settings storage section shows a read-only "managed by platform" message instead of the config form
+- **Data migration job** — Super admin can trigger an async migration job to copy all locally-stored files to the configured S3 backend
+- **Non-destructive migration** — Local files are retained after migration; only the `storage_backend` and `storage_key` columns are updated to point to S3; disk cleanup is a manual step
+- **Migration progress** — Admin panel shows real-time migration progress (total / migrated / failed) via polling; status persisted in `migration_jobs` table
+- **Per-org migration routing** — Migration respects each org's storage policy; files migrate to the org's own S3 if policy is `own_s3`, or to platform S3 if policy is `platform_s3`
+
 ### Global Admin (Plan 030)
 - **Super admin role** — A system-level `is_super_admin` flag on the users table, separate from per-org roles. Super admins operate across all organizations.
 - **Admin panel** — Dedicated `/admin` section (outside the normal app layout) listing all organizations with status, member count, and management actions.

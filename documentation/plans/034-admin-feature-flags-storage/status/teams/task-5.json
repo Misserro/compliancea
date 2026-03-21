@@ -1,0 +1,22 @@
+{
+  "task": "task-5",
+  "description": "Async Data Migration Job",
+  "status": "completed",
+  "pipeline_mode": false,
+  "retry_count": 0,
+  "spawned_at": "2026-03-21T17:09:23Z",
+  "members": {
+    "executor-5": { "status": "shutdown", "started_at": "2026-03-21T17:09:23Z", "ended_at": "2026-03-21T17:16:32Z" },
+    "reviewer-5": { "status": "shutdown", "started_at": "2026-03-21T17:09:23Z", "ended_at": "2026-03-21T17:16:32Z" },
+    "tester-5":   { "status": "shutdown", "started_at": "2026-03-21T17:09:23Z", "ended_at": "2026-03-21T17:16:32Z" }
+  },
+  "stages": {
+    "spawned":      "2026-03-21T17:09:23Z",
+    "planning":     null,
+    "implementing": "2026-03-21T17:12:45Z",
+    "reviewing":    "2026-03-21T17:13:49Z",
+    "testing":      null,
+    "completed":    "2026-03-21T17:15:34Z"
+  },
+  "last_updated": "2026-03-21T17:16:32Z"
+}

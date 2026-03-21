@@ -1,0 +1,22 @@
+{
+  "task": "task-1",
+  "description": "Org Feature Flags: DB, API, and Backend Enforcement",
+  "status": "completed",
+  "pipeline_mode": false,
+  "retry_count": 0,
+  "spawned_at": "2026-03-21T16:54:42Z",
+  "members": {
+    "executor-1": { "status": "shutdown", "started_at": "2026-03-21T16:54:42Z", "ended_at": "2026-03-21T17:01:56Z" },
+    "reviewer-1": { "status": "shutdown", "started_at": "2026-03-21T16:54:42Z", "ended_at": "2026-03-21T17:01:56Z" },
+    "tester-1":   { "status": "shutdown", "started_at": "2026-03-21T16:54:42Z", "ended_at": "2026-03-21T17:01:56Z" }
+  },
+  "stages": {
+    "spawned":     "2026-03-21T16:54:42Z",
+    "planning":    "2026-03-21T16:55:11Z",
+    "implementing": "2026-03-21T16:56:59Z",
+    "reviewing":   "2026-03-21T16:59:21Z",
+    "testing":     null,
+    "completed":   "2026-03-21T17:01:09Z"
+  },
+  "last_updated": "2026-03-21T17:01:56Z"
+}

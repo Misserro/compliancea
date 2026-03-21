@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { ORG_STATUS_COLORS } from "@/lib/constants";
 import { CreateOrgDialog } from "@/components/admin/create-org-dialog";
 import { OrgMembersPanel } from "@/components/admin/org-members-panel";
+import { OrgFeatureFlags } from "@/components/admin/org-feature-flags";
 
 interface Org {
   id: number;
@@ -32,6 +33,7 @@ interface Org {
   status: "active" | "pending_deletion" | "expired";
   daysUntilDeletion?: number;
   deletedAt?: string;
+  storagePolicy: string;
 }
 
 function formatDate(dateStr: string): string {
@@ -63,6 +65,7 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [restoringId, setRestoringId] = useState<number | null>(null);
+  const [updatingPolicyId, setUpdatingPolicyId] = useState<number | null>(null);
 
   function startEdit(org: Org) {
     setEditingId(org.id);
@@ -151,6 +154,28 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
     }
   }
 
+  async function handleStoragePolicyChange(orgId: number, policy: string) {
+    setUpdatingPolicyId(orgId);
+    try {
+      const res = await fetch(`/api/admin/orgs/${orgId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storage_policy: policy }),
+      });
+      if (res.ok) {
+        toast.success("Storage policy updated");
+        router.refresh();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to update storage policy");
+      }
+    } catch (err) {
+      toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
+    } finally {
+      setUpdatingPolicyId(null);
+    }
+  }
+
   return (
     <>
       <div className="flex items-center justify-end">
@@ -167,6 +192,7 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
               <th className="text-left px-4 py-3 font-medium">Slug</th>
               <th className="text-left px-4 py-3 font-medium">Members</th>
               <th className="text-left px-4 py-3 font-medium">Status</th>
+              <th className="text-left px-4 py-3 font-medium">Storage</th>
               <th className="text-left px-4 py-3 font-medium">Created</th>
               <th className="px-4 py-3 font-medium text-right">Actions</th>
             </tr>
@@ -212,6 +238,18 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
                     >
                       {statusLabel(org.status, org.daysUntilDeletion)}
                     </Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    <select
+                      className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                      value={org.storagePolicy}
+                      onChange={(e) => handleStoragePolicyChange(org.id, e.target.value)}
+                      disabled={updatingPolicyId === org.id || org.status !== "active"}
+                    >
+                      <option value="local">Local</option>
+                      <option value="platform_s3">Platform S3</option>
+                      <option value="own_s3">Own S3</option>
+                    </select>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {formatDate(org.createdAt)}
@@ -295,8 +333,14 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
                 </tr>
                 {/* Members panel — expands below the row */}
                 <tr>
-                  <td colSpan={6} className="p-0">
+                  <td colSpan={7} className="p-0">
                     <OrgMembersPanel orgId={org.id} orgName={org.name} />
+                  </td>
+                </tr>
+                {/* Feature flags panel — expands below the row */}
+                <tr>
+                  <td colSpan={7} className="p-0">
+                    <OrgFeatureFlags orgId={org.id} />
                   </td>
                 </tr>
                 </React.Fragment>
@@ -305,7 +349,7 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
             {orgs.length === 0 && (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-4 py-8 text-center text-muted-foreground"
                 >
                   No organizations found.

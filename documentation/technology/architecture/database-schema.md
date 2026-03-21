@@ -538,6 +538,46 @@ Firm/workspace identity. One row per tenant.
 | slug | TEXT UNIQUE NOT NULL | URL-safe identifier (e.g. "acme-legal") |
 | created_at | DATETIME DEFAULT CURRENT_TIMESTAMP | Creation timestamp |
 | deleted_at | DATETIME | Soft-delete timestamp (null = active; set = pending deletion, hard-deleted after 30 days) — added Plan 030 |
+| storage_policy | TEXT NOT NULL DEFAULT 'local' | Storage backend for this org: `local` (Railway disk), `platform_s3` (shared platform bucket), `own_s3` (org-configured bucket) — added Plan 034 |
+
+### org_features
+
+Per-org feature enablement flags. Super admin toggles which product features each organization can access. Absence of a row = feature enabled by default (opt-out model). (Added Plan 034)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| org_id | INTEGER NOT NULL FK → organizations(id) | Owning org |
+| feature | TEXT NOT NULL | Feature key: `contracts`, `legal_hub`, `template_editor`, `court_fee_calculator`, `policies`, `qa_cards` |
+| enabled | INTEGER NOT NULL DEFAULT 1 | 1 = feature enabled, 0 = disabled |
+| updated_at | DATETIME DEFAULT CURRENT_TIMESTAMP | Last change timestamp |
+
+Primary key: `(org_id, feature)`. Super admins bypass all feature checks and always have access to every feature regardless of this table.
+
+### platform_settings
+
+Global platform-level configuration managed by super admins. Not scoped to any specific org. (Added Plan 034)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| key | TEXT PRIMARY KEY | Setting key (e.g. `s3Bucket`, `s3Region`, `s3AccessKeyId`, `s3SecretEncrypted`, `s3Endpoint`) |
+| value | TEXT | Setting value (credentials stored AES-256-GCM encrypted) |
+| updated_at | DATETIME DEFAULT CURRENT_TIMESTAMP | Last change timestamp |
+
+### migration_jobs
+
+Tracks async file migration jobs (local → S3). One row per migration run. (Added Plan 034)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INTEGER PRIMARY KEY AUTOINCREMENT | Job identifier |
+| status | TEXT NOT NULL DEFAULT 'pending' | `pending`, `running`, `completed`, `failed` |
+| total_files | INTEGER NOT NULL DEFAULT 0 | Total files to migrate |
+| migrated_files | INTEGER NOT NULL DEFAULT 0 | Successfully migrated so far |
+| failed_files | INTEGER NOT NULL DEFAULT 0 | Files that failed to migrate |
+| error | TEXT | Last error message (nullable) |
+| started_at | DATETIME | When job began running |
+| completed_at | DATETIME | When job finished (success or failure) |
+| created_at | DATETIME DEFAULT CURRENT_TIMESTAMP | Row creation timestamp |
 
 ### org_members
 

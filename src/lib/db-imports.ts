@@ -171,4 +171,17 @@ export {
   getUserPermissionForResource,
   setMemberPermission,
   resetMemberPermissions,
+  // Org Feature Flags (Plan 034)
+  getOrgFeatures,
+  setOrgFeature,
+  // Platform S3 & Storage Policy (Plan 034 Task 3)
+  getPlatformSettings,
+  setPlatformSetting,
+  deletePlatformSettings,
+  updateOrgStoragePolicy,
+  getOrgStoragePolicy,
+  // Migration Jobs (Plan 034 Task 5)
+  createMigrationJob,
+  updateMigrationJob,
+  getLatestMigrationJob,
 } from "../../lib/db.js";

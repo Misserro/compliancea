@@ -64,6 +64,14 @@ export function AppSidebar() {
     return level >= 1;
   }
 
+  // Feature flag gating: super admins see everything; undefined = all enabled (graceful fallback)
+  function canAccessFeature(feature: string): boolean {
+    if (sessionData?.user?.isSuperAdmin) return true;
+    const orgFeatures = sessionData?.user?.orgFeatures;
+    if (!orgFeatures) return true;
+    return orgFeatures.includes(feature);
+  }
+
   useEffect(() => {
     async function fetchOverdue() {
       try {
@@ -181,7 +189,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Contract Hub */}
-        {canView('contracts') && (
+        {canView('contracts') && canAccessFeature('contracts') && (
         <SidebarGroup>
           <SidebarGroupLabel>Contract Hub</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -224,7 +232,7 @@ export function AppSidebar() {
         )}
 
         {/* Legal Hub */}
-        {canView('legal_hub') && (
+        {canView('legal_hub') && canAccessFeature('legal_hub') && (
         <SidebarGroup>
           <SidebarGroupLabel>Legal Hub</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -261,11 +269,11 @@ export function AppSidebar() {
         {/* Documents Hub */}
         {(() => {
           const docHubItems = [
-            { title: "Documents", href: "/documents", icon: FileText, resource: "documents" },
-            { title: "Policies", href: "/policies", icon: Shield, resource: "policies" },
-            { title: "Analyze & Process", href: "/document-tools", icon: Layers, resource: "documents" },
-            { title: "Ask Library", href: "/ask", icon: MessageSquare, resource: "documents" },
-          ].filter((item) => canView(item.resource));
+            { title: "Documents", href: "/documents", icon: FileText, resource: "documents", feature: "" },
+            { title: "Policies", href: "/policies", icon: Shield, resource: "policies", feature: "policies" },
+            { title: "Analyze & Process", href: "/document-tools", icon: Layers, resource: "documents", feature: "" },
+            { title: "Ask Library", href: "/ask", icon: MessageSquare, resource: "documents", feature: "" },
+          ].filter((item) => canView(item.resource) && (!item.feature || canAccessFeature(item.feature)));
 
           return docHubItems.length > 0 ? (
             <SidebarGroup>

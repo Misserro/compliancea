@@ -1,46 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
-import { getOrgSettings, getOrgStoragePolicy, setOrgSetting, saveDb } from "@/lib/db-imports";
+import { requireSuperAdmin } from "@/lib/require-super-admin";
+import {
+  getPlatformSettings,
+  setPlatformSetting,
+  deletePlatformSettings,
+  saveDb,
+} from "@/lib/db-imports";
 import { logAction } from "@/lib/audit-imports";
 import { encrypt } from "@/lib/storage-crypto-imports";
 import { S3Client, HeadBucketCommand } from "@aws-sdk/client-s3";
 
 export const runtime = "nodejs";
 
-const S3_SETTING_KEYS = [
-  "s3Bucket",
-  "s3Region",
-  "s3AccessKeyId",
-  "s3SecretEncrypted",
-  "s3Endpoint",
-];
-
 /**
- * GET /api/org/storage -- return current S3 config (owner/admin only)
+ * GET /api/admin/platform/storage — return current platform S3 config (super admin only)
  */
 export async function GET() {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const orgRole = session.user.orgRole;
-  if (orgRole !== "owner" && orgRole !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const denied = requireSuperAdmin(session);
+  if (denied) return denied;
 
   await ensureDb();
   try {
-    const orgId = Number(session.user.orgId);
-    if (!orgId) {
-      return NextResponse.json({ error: "No organization" }, { status: 404 });
-    }
-
-    const policyRow = getOrgStoragePolicy(orgId);
-    const storagePolicy = policyRow?.storage_policy || "local";
-
-    const settings = getOrgSettings(orgId);
+    const settings = getPlatformSettings();
     const config = Object.fromEntries(
       settings.map((s: { key: string; value: string }) => [s.key, s.value])
     );
@@ -53,11 +37,10 @@ export async function GET() {
         accessKeyId: config.s3AccessKeyId || "",
         secretKey: "*****",
         endpoint: config.s3Endpoint || "",
-        storagePolicy,
       });
     }
 
-    return NextResponse.json({ configured: false, storagePolicy });
+    return NextResponse.json({ configured: false });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -65,27 +48,16 @@ export async function GET() {
 }
 
 /**
- * PUT /api/org/storage -- save S3 config (owner/admin only)
- * Tests connection before persisting. saveDb() BEFORE logAction().
+ * PUT /api/admin/platform/storage — save platform S3 config (super admin only)
+ * Tests connection before persisting.
  */
 export async function PUT(request: NextRequest) {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const orgRole = session.user.orgRole;
-  if (orgRole !== "owner" && orgRole !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const denied = requireSuperAdmin(session);
+  if (denied) return denied;
 
   await ensureDb();
   try {
-    const orgId = Number(session.user.orgId);
-    if (!orgId) {
-      return NextResponse.json({ error: "No organization" }, { status: 404 });
-    }
-
     let body: Record<string, unknown>;
     try {
       body = await request.json();
@@ -101,7 +73,6 @@ export async function PUT(request: NextRequest) {
       endpoint?: string;
     };
 
-    // Validate required fields
     if (!bucket || typeof bucket !== "string" || bucket.trim().length === 0) {
       return NextResponse.json({ error: "Bucket name is required" }, { status: 400 });
     }
@@ -115,10 +86,10 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Secret Key is required" }, { status: 400 });
     }
 
-    // Test connection before persisting
-    const endpointUrl = endpoint && typeof endpoint === "string" && endpoint.trim().length > 0
-      ? endpoint.trim()
-      : undefined;
+    const endpointUrl =
+      endpoint && typeof endpoint === "string" && endpoint.trim().length > 0
+        ? endpoint.trim()
+        : undefined;
 
     const client = new S3Client({
       region: endpointUrl ? "auto" : region.trim(),
@@ -133,7 +104,11 @@ export async function PUT(request: NextRequest) {
     try {
       await client.send(new HeadBucketCommand({ Bucket: bucket.trim() }));
     } catch (s3Err: unknown) {
-      const s3Error = s3Err as { name?: string; message?: string; $metadata?: { httpStatusCode?: number } };
+      const s3Error = s3Err as {
+        name?: string;
+        message?: string;
+        $metadata?: { httpStatusCode?: number };
+      };
       const status = s3Error.$metadata?.httpStatusCode;
       let errorMessage = "Failed to connect to S3 bucket";
       if (s3Error.name === "NoSuchBucket" || s3Error.name === "NotFound" || status === 404) {
@@ -148,20 +123,19 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
-    // Encrypt secret and persist all settings
     const encryptedSecret = encrypt(secretKey.trim());
 
-    setOrgSetting(orgId, "s3Bucket", bucket.trim());
-    setOrgSetting(orgId, "s3Region", region.trim());
-    setOrgSetting(orgId, "s3AccessKeyId", accessKeyId.trim());
-    setOrgSetting(orgId, "s3SecretEncrypted", encryptedSecret);
-    setOrgSetting(orgId, "s3Endpoint", endpointUrl || "");
+    setPlatformSetting("s3Bucket", bucket.trim());
+    setPlatformSetting("s3Region", region.trim());
+    setPlatformSetting("s3AccessKeyId", accessKeyId.trim());
+    setPlatformSetting("s3SecretEncrypted", encryptedSecret);
+    setPlatformSetting("s3Endpoint", endpointUrl || "");
 
     saveDb();
-    logAction("storage_config", orgId, "configured", {
+    logAction("platform_storage_config", null, "configured", {
       bucket: bucket.trim(),
       region: region.trim(),
-    }, { userId: Number(session.user.id), orgId });
+    }, { userId: Number(session!.user.id) });
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
@@ -171,36 +145,19 @@ export async function PUT(request: NextRequest) {
 }
 
 /**
- * DELETE /api/org/storage -- remove S3 config (owner only)
- * saveDb() BEFORE logAction().
+ * DELETE /api/admin/platform/storage — remove platform S3 config (super admin only)
  */
 export async function DELETE() {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const orgRole = session.user.orgRole;
-  if (orgRole !== "owner") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const denied = requireSuperAdmin(session);
+  if (denied) return denied;
 
   await ensureDb();
   try {
-    const orgId = Number(session.user.orgId);
-    if (!orgId) {
-      return NextResponse.json({ error: "No organization" }, { status: 404 });
-    }
-
-    // Clear all S3 settings by setting to null
-    for (const key of S3_SETTING_KEYS) {
-      setOrgSetting(orgId, key, null);
-    }
-
+    deletePlatformSettings();
     saveDb();
-    logAction("storage_config", orgId, "removed", null, {
-      userId: Number(session.user.id),
-      orgId,
+    logAction("platform_storage_config", null, "removed", null, {
+      userId: Number(session!.user.id),
     });
 
     return new NextResponse(null, { status: 204 });

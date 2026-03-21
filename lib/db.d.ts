@@ -176,3 +176,19 @@ export function getMemberPermissions(...args: any[]): any;
 export function getUserPermissionForResource(...args: any[]): any;
 export function setMemberPermission(...args: any[]): any;
 export function resetMemberPermissions(...args: any[]): any;
+
+// Org Feature Flags (Plan 034)
+export function getOrgFeatures(...args: any[]): any;
+export function setOrgFeature(...args: any[]): any;
+
+// Platform S3 & Storage Policy (Plan 034 Task 3)
+export function getPlatformSettings(...args: any[]): any;
+export function setPlatformSetting(...args: any[]): any;
+export function deletePlatformSettings(...args: any[]): any;
+export function updateOrgStoragePolicy(...args: any[]): any;
+export function getOrgStoragePolicy(...args: any[]): any;
+
+// Migration Jobs (Plan 034 Task 5)
+export function createMigrationJob(...args: any[]): any;
+export function updateMigrationJob(...args: any[]): any;
+export function getLatestMigrationJob(...args: any[]): any;

@@ -17,34 +17,27 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { HardDrive, Loader2, Info } from "lucide-react";
+import { HardDrive, Loader2, CheckCircle2, XCircle } from "lucide-react";
 
-interface StorageSectionProps {
-  orgId: number;
-  orgRole: string;
-}
-
-interface StorageConfig {
+interface PlatformStorageConfig {
   configured: boolean;
   bucket?: string;
   region?: string;
   accessKeyId?: string;
   secretKey?: string;
   endpoint?: string;
-  storagePolicy?: string;
 }
 
-export function StorageSection({ orgId, orgRole }: StorageSectionProps) {
-  const canManage = orgRole === "owner" || orgRole === "admin";
-
-  const [config, setConfig] = useState<StorageConfig | null>(null);
+export function PlatformStorageConfig() {
+  const [config, setConfig] = useState<PlatformStorageConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
+  const [testResult, setTestResult] = useState<{ success: boolean; error?: string } | null>(null);
 
-  // Form state
   const [bucket, setBucket] = useState("");
   const [region, setRegion] = useState("");
   const [accessKeyId, setAccessKeyId] = useState("");
@@ -53,55 +46,21 @@ export function StorageSection({ orgId, orgRole }: StorageSectionProps) {
 
   const loadConfig = useCallback(async () => {
     try {
-      const res = await fetch("/api/org/storage");
+      const res = await fetch("/api/admin/platform/storage");
       if (res.ok) {
-        const data: StorageConfig = await res.json();
+        const data: PlatformStorageConfig = await res.json();
         setConfig(data);
       }
     } catch {
-      // Silently fail on initial load -- non-critical
+      // Non-critical
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (canManage) {
-      loadConfig();
-    } else {
-      setLoading(false);
-    }
-  }, [canManage, loadConfig]);
-
-  if (!canManage) {
-    return null;
-  }
-
-  // Read-only view when storage is managed by platform admin
-  if (config?.storagePolicy === "platform_s3") {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <HardDrive className="size-4" />
-            S3 Storage
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-start gap-3 rounded-lg border p-4 bg-muted/30">
-            <Info className="size-5 mt-0.5 text-muted-foreground shrink-0" />
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Managed by platform</p>
-              <p className="text-sm text-muted-foreground">
-                File storage for this organization is managed by the platform administrator
-                using a shared S3 bucket. Contact your platform admin to change storage settings.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+    loadConfig();
+  }, [loadConfig]);
 
   function handleEdit() {
     if (config?.configured) {
@@ -112,12 +71,14 @@ export function StorageSection({ orgId, orgRole }: StorageSectionProps) {
       setEndpoint(config.endpoint || "");
     }
     setError("");
+    setTestResult(null);
     setEditing(true);
   }
 
   function handleCancel() {
     setEditing(false);
     setError("");
+    setTestResult(null);
     setBucket("");
     setRegion("");
     setAccessKeyId("");
@@ -125,7 +86,7 @@ export function StorageSection({ orgId, orgRole }: StorageSectionProps) {
     setEndpoint("");
   }
 
-  async function handleSave() {
+  function getFormBody(): Record<string, string> | null {
     const trimmedBucket = bucket.trim();
     const trimmedRegion = region.trim();
     const trimmedAccessKeyId = accessKeyId.trim();
@@ -134,40 +95,76 @@ export function StorageSection({ orgId, orgRole }: StorageSectionProps) {
 
     if (!trimmedBucket || !trimmedRegion || !trimmedAccessKeyId || !trimmedSecretKey) {
       setError("All required fields must be filled.");
-      return;
+      return null;
     }
+
+    const body: Record<string, string> = {
+      bucket: trimmedBucket,
+      region: trimmedRegion,
+      accessKeyId: trimmedAccessKeyId,
+      secretKey: trimmedSecretKey,
+    };
+    if (trimmedEndpoint) {
+      body.endpoint = trimmedEndpoint;
+    }
+    return body;
+  }
+
+  async function handleTest() {
+    const body = getFormBody();
+    if (!body) return;
+
+    setTesting(true);
+    setError("");
+    setTestResult(null);
+    try {
+      const res = await fetch("/api/admin/platform/storage/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      setTestResult(data);
+      if (data.success) {
+        toast.success("Connection test successful");
+      } else {
+        toast.error(data.error || "Connection test failed");
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      setTestResult({ success: false, error: msg });
+      toast.error(msg);
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  async function handleSave() {
+    const body = getFormBody();
+    if (!body) return;
 
     setSaving(true);
     setError("");
     try {
-      const body: Record<string, string> = {
-        bucket: trimmedBucket,
-        region: trimmedRegion,
-        accessKeyId: trimmedAccessKeyId,
-        secretKey: trimmedSecretKey,
-      };
-      if (trimmedEndpoint) {
-        body.endpoint = trimmedEndpoint;
-      }
-
-      const res = await fetch("/api/org/storage", {
+      const res = await fetch("/api/admin/platform/storage", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
       if (res.ok) {
-        toast.success("S3 storage configuration saved");
+        toast.success("Platform S3 configuration saved");
         setEditing(false);
         setBucket("");
         setRegion("");
         setAccessKeyId("");
         setSecretKey("");
         setEndpoint("");
+        setTestResult(null);
         await loadConfig();
       } else {
         const data = await res.json();
-        const msg = data.error || "Failed to save configuration. Please check your credentials.";
+        const msg = data.error || "Failed to save configuration.";
         setError(msg);
         toast.error(msg);
       }
@@ -183,7 +180,7 @@ export function StorageSection({ orgId, orgRole }: StorageSectionProps) {
   async function handleRemove() {
     setRemoving(true);
     try {
-      const res = await fetch("/api/org/storage", {
+      const res = await fetch("/api/admin/platform/storage", {
         method: "DELETE",
       });
       if (res.ok || res.status === 204) {
@@ -194,7 +191,7 @@ export function StorageSection({ orgId, orgRole }: StorageSectionProps) {
         setAccessKeyId("");
         setSecretKey("");
         setEndpoint("");
-        toast.success("S3 storage configuration removed");
+        toast.success("Platform S3 configuration removed");
       } else {
         const data = await res.json();
         toast.error(data.error || "Failed to remove configuration");
@@ -212,7 +209,7 @@ export function StorageSection({ orgId, orgRole }: StorageSectionProps) {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <HardDrive className="size-4" />
-            S3 Storage
+            Platform Storage
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -233,14 +230,14 @@ export function StorageSection({ orgId, orgRole }: StorageSectionProps) {
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <HardDrive className="size-4" />
-          S3 Storage
+          Platform Storage
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {isConfigured && !editing && (
           <>
             <p className="text-sm text-muted-foreground">
-              S3 storage is configured. New file uploads will be stored in your S3-compatible bucket.
+              Platform-wide S3 storage is configured. Organizations with &quot;Platform S3&quot; storage policy will use this bucket.
             </p>
             <div className="rounded-lg border p-4 space-y-2 text-sm">
               <div className="flex justify-between">
@@ -284,11 +281,10 @@ export function StorageSection({ orgId, orgRole }: StorageSectionProps) {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Remove S3 configuration</AlertDialogTitle>
+                    <AlertDialogTitle>Remove platform S3 configuration</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to remove the S3 storage configuration? New uploads
-                      will revert to local storage. Existing files stored in S3 will remain
-                      accessible.
+                      Are you sure you want to remove the platform S3 storage configuration?
+                      Organizations using &quot;Platform S3&quot; policy will fall back to local storage.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -310,84 +306,102 @@ export function StorageSection({ orgId, orgRole }: StorageSectionProps) {
           <div className="space-y-4">
             {!isConfigured && (
               <p className="text-sm text-muted-foreground">
-                Configure an S3-compatible bucket (AWS S3, Cloudflare R2, MinIO) for file storage.
+                Configure a platform-wide S3-compatible bucket (AWS S3, Cloudflare R2, MinIO).
+                Organizations with &quot;Platform S3&quot; storage policy will use this bucket.
               </p>
             )}
 
             <div>
-              <Label htmlFor="s3-bucket">Bucket Name</Label>
+              <Label htmlFor="platform-s3-bucket">Bucket Name</Label>
               <Input
-                id="s3-bucket"
+                id="platform-s3-bucket"
                 value={bucket}
                 onChange={(e) => setBucket(e.target.value)}
-                placeholder="my-compliance-bucket"
+                placeholder="my-platform-bucket"
                 className="mt-1.5"
-                disabled={saving}
+                disabled={saving || testing}
               />
             </div>
 
             <div>
-              <Label htmlFor="s3-region">Region</Label>
+              <Label htmlFor="platform-s3-region">Region</Label>
               <Input
-                id="s3-region"
+                id="platform-s3-region"
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
                 placeholder="us-east-1"
                 className="mt-1.5"
-                disabled={saving}
+                disabled={saving || testing}
               />
             </div>
 
             <div>
-              <Label htmlFor="s3-access-key">Access Key ID</Label>
+              <Label htmlFor="platform-s3-access-key">Access Key ID</Label>
               <Input
-                id="s3-access-key"
+                id="platform-s3-access-key"
                 value={accessKeyId}
                 onChange={(e) => setAccessKeyId(e.target.value)}
                 placeholder="AKIAIOSFODNN7EXAMPLE"
                 className="mt-1.5"
-                disabled={saving}
+                disabled={saving || testing}
               />
             </div>
 
             <div>
-              <Label htmlFor="s3-secret-key">
-                Secret Access Key
-              </Label>
+              <Label htmlFor="platform-s3-secret-key">Secret Access Key</Label>
               <Input
-                id="s3-secret-key"
+                id="platform-s3-secret-key"
                 type="password"
                 value={secretKey}
                 onChange={(e) => setSecretKey(e.target.value)}
                 placeholder="Enter secret access key"
                 className="mt-1.5"
-                disabled={saving}
+                disabled={saving || testing}
               />
             </div>
 
             <div>
-              <Label htmlFor="s3-endpoint">Endpoint URL (optional)</Label>
+              <Label htmlFor="platform-s3-endpoint">Endpoint URL (optional)</Label>
               <Input
-                id="s3-endpoint"
+                id="platform-s3-endpoint"
                 value={endpoint}
                 onChange={(e) => setEndpoint(e.target.value)}
                 placeholder="https://... (leave blank for AWS S3)"
                 className="mt-1.5"
-                disabled={saving}
+                disabled={saving || testing}
               />
             </div>
 
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
+            {testResult && (
+              <div
+                className={`flex items-center gap-2 text-sm ${
+                  testResult.success ? "text-green-600" : "text-destructive"
+                }`}
+              >
+                {testResult.success ? (
+                  <CheckCircle2 className="size-4" />
+                ) : (
+                  <XCircle className="size-4" />
+                )}
+                {testResult.success
+                  ? "Connection successful"
+                  : testResult.error || "Connection failed"}
+              </div>
             )}
 
+            {error && <p className="text-sm text-destructive">{error}</p>}
+
             <div className="flex gap-2">
-              <Button onClick={handleSave} disabled={saving}>
+              <Button variant="outline" onClick={handleTest} disabled={saving || testing}>
+                {testing && <Loader2 className="size-4 animate-spin" />}
+                {testing ? "Testing..." : "Test Connection"}
+              </Button>
+              <Button onClick={handleSave} disabled={saving || testing}>
                 {saving && <Loader2 className="size-4 animate-spin" />}
                 {saving ? "Saving..." : "Save"}
               </Button>
               {editing && (
-                <Button variant="outline" onClick={handleCancel} disabled={saving}>
+                <Button variant="outline" onClick={handleCancel} disabled={saving || testing}>
                   Cancel
                 </Button>
               )}

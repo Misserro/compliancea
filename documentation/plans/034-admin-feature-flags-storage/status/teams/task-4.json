@@ -1,0 +1,22 @@
+{
+  "task": "task-4",
+  "description": "Storage Routing Update",
+  "status": "completed",
+  "pipeline_mode": false,
+  "retry_count": 0,
+  "spawned_at": "2026-03-21T17:04:18Z",
+  "members": {
+    "executor-4": { "status": "shutdown", "started_at": "2026-03-21T17:04:18Z", "ended_at": "2026-03-21T17:10:57Z" },
+    "reviewer-4": { "status": "shutdown", "started_at": "2026-03-21T17:04:18Z", "ended_at": "2026-03-21T17:10:57Z" },
+    "tester-4":   { "status": "shutdown", "started_at": "2026-03-21T17:04:18Z", "ended_at": "2026-03-21T17:10:57Z" }
+  },
+  "stages": {
+    "spawned":      "2026-03-21T17:04:18Z",
+    "planning":     null,
+    "implementing": null,
+    "reviewing":    "2026-03-21T17:08:51Z",
+    "testing":      null,
+    "completed":    "2026-03-21T17:10:09Z"
+  },
+  "last_updated": "2026-03-21T17:10:57Z"
+}

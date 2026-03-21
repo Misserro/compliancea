@@ -1,9 +1,10 @@
 import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { getUserByEmail, createSession, getSessionById, getOrgMemberByUserId, getOrgMemberForOrg, get, getMemberPermissions } from "@/lib/db-imports";
+import { getUserByEmail, createSession, getSessionById, getOrgMemberByUserId, getOrgMemberForOrg, get, getMemberPermissions, getOrgFeatures } from "@/lib/db-imports";
 import { ensureDb } from "@/lib/server-utils";
 import { authConfig } from "../auth.config";
+import { FEATURES } from "@/lib/feature-flags";
 
 // ─── Type augmentation ─────────────────────────────────────────────────────────
 declare module "next-auth" {
@@ -17,6 +18,7 @@ declare module "next-auth" {
       orgName?: string;
       isSuperAdmin?: boolean;
       permissions?: Record<string, 'none' | 'view' | 'edit' | 'full'> | null;
+      orgFeatures?: string[];
     } & DefaultSession["user"];
   }
   interface User {
@@ -34,6 +36,7 @@ declare module "@auth/core/jwt" {
     orgName?: string;
     isSuperAdmin?: boolean;
     permissions?: Record<string, 'none' | 'view' | 'edit' | 'full'> | null;
+    orgFeatures?: string[];
   }
 }
 
@@ -98,6 +101,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         } else {
           token.permissions = null;
         }
+
+        // Load org feature flags (Plan 034)
+        if (token.isSuperAdmin) {
+          token.orgFeatures = [...FEATURES];
+        } else if (token.orgId) {
+          const featureRows = getOrgFeatures(Number(token.orgId));
+          const disabledSet = new Set(
+            (featureRows as any[]).filter((r: any) => !r.enabled).map((r: any) => r.feature)
+          );
+          token.orgFeatures = FEATURES.filter(f => !disabledSet.has(f));
+        } else {
+          token.orgFeatures = [...FEATURES];
+        }
       } else if (token.sessionId && token.id) {
         // Subsequent requests: lazy re-hydration in case DB was wiped on redeploy.
         // NOTE: this branch runs on every request (every auth() call), not only after cold starts.
@@ -142,6 +158,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         } else {
           token.permissions = null;
         }
+
+        // Refresh org feature flags (Plan 034)
+        if (token.isSuperAdmin) {
+          token.orgFeatures = [...FEATURES];
+        } else if (token.orgId) {
+          const featureRows = getOrgFeatures(Number(token.orgId));
+          const disabledSet = new Set(
+            (featureRows as any[]).filter((r: any) => !r.enabled).map((r: any) => r.feature)
+          );
+          token.orgFeatures = FEATURES.filter(f => !disabledSet.has(f));
+        } else {
+          token.orgFeatures = [...FEATURES];
+        }
       }
       return token;
     },
@@ -154,6 +183,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token.orgName)   session.user.orgName   = token.orgName;
       session.user.isSuperAdmin = token.isSuperAdmin;
       session.user.permissions = token.permissions;
+      session.user.orgFeatures = token.orgFeatures;
       return session;
     },
   },

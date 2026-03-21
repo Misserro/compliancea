@@ -1,0 +1,22 @@
+{
+  "task": "task-2",
+  "description": "Org Feature Flags: Admin UI and Frontend Gating",
+  "status": "completed",
+  "pipeline_mode": false,
+  "retry_count": 0,
+  "spawned_at": "2026-03-21T17:00:32Z",
+  "members": {
+    "executor-2": { "status": "shutdown", "started_at": "2026-03-21T17:00:32Z", "ended_at": "2026-03-21T17:08:17Z" },
+    "reviewer-2": { "status": "shutdown", "started_at": "2026-03-21T17:00:32Z", "ended_at": "2026-03-21T17:08:17Z" },
+    "tester-2":   { "status": "shutdown", "started_at": "2026-03-21T17:00:32Z", "ended_at": "2026-03-21T17:08:17Z" }
+  },
+  "stages": {
+    "spawned":      "2026-03-21T17:00:32Z",
+    "planning":     null,
+    "implementing": null,
+    "reviewing":    "2026-03-21T17:06:53Z",
+    "testing":      null,
+    "completed":    "2026-03-21T17:07:31Z"
+  },
+  "last_updated": "2026-03-21T17:08:17Z"
+}

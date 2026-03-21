@@ -7,6 +7,7 @@ import {
   getOrgMembers,
   getOrgById,
   updateOrgName,
+  updateOrgStoragePolicy,
   softDeleteOrg,
   get,
   run,
@@ -99,7 +100,20 @@ export async function PATCH(
       }
     }
 
-    if (Object.keys(updates).length === 0) {
+    // Handle storage_policy separately (enum validation, different persistence)
+    const VALID_POLICIES = ["local", "platform_s3", "own_s3"];
+    let storagePolicyUpdate: string | undefined;
+    if (body.storage_policy !== undefined) {
+      if (!VALID_POLICIES.includes(body.storage_policy as string)) {
+        return NextResponse.json(
+          { error: "Invalid storage_policy. Must be one of: local, platform_s3, own_s3" },
+          { status: 400 }
+        );
+      }
+      storagePolicyUpdate = body.storage_policy as string;
+    }
+
+    if (Object.keys(updates).length === 0 && !storagePolicyUpdate) {
       return NextResponse.json(
         { error: "No valid fields to update" },
         { status: 400 }
@@ -137,6 +151,10 @@ export async function PATCH(
         numericId,
       ]);
     }
+    if (storagePolicyUpdate) {
+      updateOrgStoragePolicy(numericId, storagePolicyUpdate);
+      updates.storage_policy = storagePolicyUpdate;
+    }
 
     saveDb();
     logAction("organization", numericId, "updated", updates, {
@@ -153,6 +171,7 @@ export async function PATCH(
         slug: org.slug,
         memberCount: org.member_count,
         createdAt: org.created_at,
+        storagePolicy: org.storage_policy || "local",
       },
     });
   } catch (err: unknown) {
