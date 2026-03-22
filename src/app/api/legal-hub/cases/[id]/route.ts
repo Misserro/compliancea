@@ -43,7 +43,7 @@ export async function GET(
       return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
     }
 
-    const legalCase = getLegalCaseById(id);
+    const legalCase = getLegalCaseById(id, orgId);
     if (!legalCase) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
@@ -93,7 +93,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
     }
 
-    const existing = getLegalCaseById(id);
+    const existing = getLegalCaseById(id, orgId);
     if (!existing) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
@@ -131,7 +131,7 @@ export async function PATCH(
     updateLegalCase(id, fields);
     logAction("legal_case", id, "updated", { fields: Object.keys(fields) }, { userId: Number(session.user.id), orgId });
 
-    const updatedCase = getLegalCaseById(id);
+    const updatedCase = getLegalCaseById(id, orgId);
     const parties = getCaseParties(id);
     const deadlines = getCaseDeadlines(id);
 
@@ -177,7 +177,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
     }
 
-    const existing = getLegalCaseById(id);
+    const existing = getLegalCaseById(id, orgId);
     if (!existing) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }

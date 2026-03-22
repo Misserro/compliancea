@@ -63,7 +63,7 @@ export async function GET(
       return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
     }
 
-    const legalCase = getLegalCaseById(caseId);
+    const legalCase = getLegalCaseById(caseId, orgId);
     if (!legalCase) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
@@ -107,7 +107,7 @@ export async function POST(
       return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
     }
 
-    const legalCase = getLegalCaseById(caseId);
+    const legalCase = getLegalCaseById(caseId, orgId);
     if (!legalCase) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }

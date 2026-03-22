@@ -45,7 +45,7 @@ export async function POST(
       return NextResponse.json({ error: "Invalid case ID" }, { status: 400 });
     }
 
-    const legalCase = getLegalCaseById(caseId);
+    const legalCase = getLegalCaseById(caseId, orgId);
     if (!legalCase) {
       return NextResponse.json(
         { error: "Case not found" },

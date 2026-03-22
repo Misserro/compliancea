@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
 
     logAction("legal_case", newId, "created", { title, case_type: caseType }, { userId: Number(session.user.id), orgId });
 
-    const newCase = getLegalCaseById(newId);
+    const newCase = getLegalCaseById(newId, orgId);
     return NextResponse.json({ case: newCase }, { status: 201 });
   } catch (err: unknown) {
     console.error("Error creating legal case:", err);

@@ -190,7 +190,7 @@ export async function POST(
       return NextResponse.json({ error: "Invalid case ID" }, { status: 400 });
     }
 
-    const legalCase = getLegalCaseById(caseId) as CaseRow | null;
+    const legalCase = getLegalCaseById(caseId, orgId) as CaseRow | null;
     if (!legalCase) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }

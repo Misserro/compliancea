@@ -44,7 +44,7 @@ export async function POST(
       return NextResponse.json({ error: "Invalid case ID" }, { status: 400 });
     }
 
-    const legalCase = getLegalCaseById(caseId) as Record<string, unknown> | null;
+    const legalCase = getLegalCaseById(caseId, orgId) as Record<string, unknown> | null;
     if (!legalCase) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
@@ -125,7 +125,7 @@ export async function POST(
             const note = (params.note as string) || null;
 
             // Re-read case to get fresh status_history_json
-            const currentCase = getLegalCaseById(caseId) as Record<string, unknown> | null;
+            const currentCase = getLegalCaseById(caseId, orgId) as Record<string, unknown> | null;
             const history: Array<Record<string, unknown>> = [];
             try {
               const existing = JSON.parse(

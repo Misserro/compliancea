@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { requireSuperAdmin } from "@/lib/require-super-admin";
 import {
   getAllObligations,
   updateObligation,
@@ -15,6 +17,9 @@ import type { Document } from "@/lib/types";
  * Migrate existing data to Contract Hub structure
  */
 export async function POST() {
+  const session = await auth();
+  const denied = requireSuperAdmin(session);
+  if (denied) return denied;
   try {
     const results = {
       migratedObligations: 0,
