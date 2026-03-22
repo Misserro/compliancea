@@ -124,7 +124,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
 
   if (!editor) {
     return (
-      <div className={cn("border rounded-lg overflow-hidden", className)}>
+      <div className={cn("border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring", className)}>
         <div className="border-b bg-muted/30 px-2 py-1 h-9" />
         <div className="p-4" style={{ minHeight }} />
       </div>
@@ -132,11 +132,11 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
   }
 
   return (
-    <div className={cn("border rounded-lg overflow-hidden", className)}>
+    <div className={cn("border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring", className)}>
       <Toolbar editor={editor} />
       <EditorContent
         editor={editor}
-        className="prose prose-sm dark:prose-invert max-w-none p-4 focus-within:ring-1 focus-within:ring-ring"
+        className="prose prose-sm dark:prose-invert max-w-none p-4 [&_.ProseMirror]:outline-none"
         style={{ minHeight }}
       />
     </div>
