@@ -1,0 +1,16 @@
+{
+  "task": "task-3",
+  "title": "Template wizard multi-step UI + TemplateManagementPage integration",
+  "status": "completed",
+  "stage": "completed",
+  "dependencies": ["task-1", "task-2"],
+  "started_at": "2026-03-22T00:04:00Z",
+  "completed_at": "2026-03-22T00:07:00Z",
+  "last_updated": "2026-03-22T00:07:00Z",
+  "events": [
+    { "timestamp": "2026-03-22T00:04:00Z", "type": "spawned", "message": "Pipeline-spawned (planning while deps in review)" },
+    { "timestamp": "2026-03-22T00:05:00Z", "type": "stage_change", "message": "Dependencies cleared (task-1, task-2 completed); plan approved; Stage: implementation" },
+    { "timestamp": "2026-03-22T00:06:00Z", "type": "stage_change", "message": "Stage: review" },
+    { "timestamp": "2026-03-22T00:07:00Z", "type": "completed", "message": "Task completed, team shutdown" }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-03-22T00:00:00Z",
+      "type": "dashboard_init",
+      "message": "PM dashboard initialized. Watchdog running. Ready to monitor plan execution.",
+      "source": "pm"
+    }
+  ]
+}

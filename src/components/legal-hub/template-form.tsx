@@ -11,6 +11,7 @@ interface TemplateFormProps {
   template?: CaseTemplate | null;
   onSaved: () => void;
   onCancel: () => void;
+  initialContent?: string;
 }
 
 const VARIABLE_REFERENCE = [
@@ -68,6 +69,7 @@ export function TemplateForm({
   template,
   onSaved,
   onCancel,
+  initialContent,
 }: TemplateFormProps) {
   const [name, setName] = useState(template?.name || "");
   const [description, setDescription] = useState(
@@ -77,7 +79,7 @@ export function TemplateForm({
     template?.document_type || ""
   );
   const [templateBody, setTemplateBody] = useState(
-    template?.template_body || ""
+    template?.template_body || initialContent || ""
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -193,7 +195,7 @@ export function TemplateForm({
             </label>
             <RichTextEditor
               ref={editorRef}
-              content={template?.template_body || "<p>Start writing your template here...</p>"}
+              content={template?.template_body || initialContent || "<p>Start writing your template here...</p>"}
               onChange={setTemplateBody}
             />
             <p className="text-xs text-muted-foreground mt-1">

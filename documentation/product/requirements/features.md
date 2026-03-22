@@ -164,6 +164,16 @@ Two modes for handling external documents:
 - **Replika** — Pre-formatted reply brief with formal reference to defendant's response, counter-arguments section, and signature block
 - System templates cannot be deleted; serve as professional starting-point templates for all new organizations
 
+### Template Wizard (Plan 036)
+- **Dual creation path** — Users choose between "Manual" (existing rich editor) and "Guided Wizard" from the template creation entry point
+- **Blueprint-driven structure** — Wizard starts by selecting a blueprint (predefined or custom); blueprints define the ordered list of sections to fill in
+- **Predefined blueprints** — App ships with 4 hardcoded blueprints for common Polish legal document types: Pozew, Wezwanie do zapłaty, Replika, and Blank (empty starting structure)
+- **Custom blueprints** — Org can create, name, edit, and delete reusable custom blueprints (section sets); stored per org in `wizard_blueprints` table
+- **Step-by-step section fill** — Each wizard step presents one section: a textarea for content and contextually relevant `{{variable}}` chips (click-to-insert at cursor)
+- **Variable scoping** — Each predefined section type shows only its relevant variables (court header → `{{case.court}}`, parties → `{{parties.plaintiff.name}}`, etc.); custom sections show all variables
+- **Combination** — Wizard concatenates filled sections into HTML (`<h2>` section titles + `<p>` content blocks) and opens the result in the existing RichTextEditor for final review and editing before saving
+- **Blueprint management** — Dedicated UI to create and manage custom blueprints: name, add/remove/reorder sections (up/down arrows)
+
 ## Organization Management (Plan 027+)
 
 ### User Permission System (Plan 031)

@@ -187,4 +187,10 @@ export {
   // Per-org Migration Jobs (Plan 035 Task 3)
   createMigrationJobForOrg,
   getLatestMigrationJobForOrg,
+  // Wizard Blueprints (Plan 036)
+  createWizardBlueprint,
+  getWizardBlueprints,
+  getWizardBlueprintById,
+  updateWizardBlueprint,
+  deleteWizardBlueprint,
 } from "../../lib/db.js";

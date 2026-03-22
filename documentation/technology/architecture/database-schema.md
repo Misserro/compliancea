@@ -582,6 +582,20 @@ Tracks async file migration jobs. One row per migration run. Supports global (or
 | completed_at | DATETIME | When job finished (success or failure) |
 | created_at | DATETIME DEFAULT CURRENT_TIMESTAMP | Row creation timestamp |
 
+### wizard_blueprints
+
+Stores custom reusable template wizard blueprints per organization. Predefined system blueprints are hardcoded in `src/lib/wizard-blueprints.ts` and not stored in this table. (Added Plan 036)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INTEGER PRIMARY KEY AUTOINCREMENT | Blueprint identifier |
+| org_id | INTEGER NOT NULL FK → organizations(id) | Owning org |
+| name | TEXT NOT NULL | Blueprint display name (e.g. "My Pozew Structure") |
+| sections_json | TEXT NOT NULL DEFAULT '[]' | JSON array of `{title: string, sectionKey: string\|null, variableHintKeys: string[]}` — ordered list of sections |
+| created_at | DATETIME DEFAULT CURRENT_TIMESTAMP | Creation timestamp |
+
+`sectionKey` is `null` for user-created sections (all variables shown) or one of the predefined keys (`court_header`, `parties`, `claim`, `factual_basis`, `evidence`, `closing`, etc.) for variable hint scoping.
+
 ### org_members
 
 Maps users to orgs with a per-org role. A user may belong to multiple orgs.

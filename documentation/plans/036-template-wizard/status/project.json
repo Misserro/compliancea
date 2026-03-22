@@ -1,0 +1,14 @@
+{
+  "plan": "036-template-wizard",
+  "started_at": "2026-03-22T00:00:00Z",
+  "total_tasks": 4,
+  "concurrency_limit": 2,
+  "status": "completed",
+  "tasks": {
+    "task-1": { "status": "completed", "dependencies": [], "team": "task-1-team", "started_at": "2026-03-22T00:01:00Z", "completed_at": "2026-03-22T00:05:00Z" },
+    "task-2": { "status": "completed", "dependencies": [], "team": "task-2-team", "started_at": "2026-03-22T00:01:00Z", "completed_at": "2026-03-22T00:05:00Z" },
+    "task-3": { "status": "completed", "dependencies": ["task-1", "task-2"], "team": "task-3-team", "started_at": "2026-03-22T00:04:00Z", "completed_at": "2026-03-22T00:07:00Z" },
+    "task-4": { "status": "completed", "dependencies": ["task-1"], "team": "task-4-team", "started_at": "2026-03-22T00:04:00Z", "completed_at": "2026-03-22T00:07:00Z" }
+  },
+  "last_updated": "2026-03-22T00:07:00Z"
+}

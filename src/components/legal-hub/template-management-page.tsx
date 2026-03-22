@@ -1,42 +1,61 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, ArrowLeft } from "lucide-react";
+import { Plus, ArrowLeft, Wand2, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CaseTemplate } from "@/lib/types";
 import { TemplateList } from "./template-list";
 import { TemplateForm } from "./template-form";
+import { TemplateWizard } from "./template-wizard";
+import { BlueprintManagement } from "./blueprint-management";
+
+type PageView = "list" | "form" | "wizard" | "blueprints";
 
 export function TemplateManagementPage() {
-  const [showForm, setShowForm] = useState(false);
+  const [view, setView] = useState<PageView>("list");
   const [editingTemplate, setEditingTemplate] = useState<CaseTemplate | null>(
     null
   );
+  const [wizardInitialContent, setWizardInitialContent] = useState("");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleNew = () => {
     setEditingTemplate(null);
-    setShowForm(true);
+    setWizardInitialContent("");
+    setView("form");
+  };
+
+  const handleWizard = () => {
+    setView("wizard");
   };
 
   const handleEdit = (template: CaseTemplate) => {
     setEditingTemplate(template);
-    setShowForm(true);
+    setWizardInitialContent("");
+    setView("form");
   };
 
   const handleSaved = () => {
-    setShowForm(false);
+    setView("list");
     setEditingTemplate(null);
+    setWizardInitialContent("");
     setRefreshTrigger((t) => t + 1);
   };
 
   const handleCancel = () => {
-    setShowForm(false);
+    setView("list");
     setEditingTemplate(null);
+    setWizardInitialContent("");
   };
 
   const handleDeleted = () => {
     setRefreshTrigger((t) => t + 1);
+  };
+
+  const handleWizardComplete = (html: string) => {
+    setWizardInitialContent(html);
+    setEditingTemplate(null);
+    setView("form");
   };
 
   return (
@@ -48,15 +67,37 @@ export function TemplateManagementPage() {
             Manage templates for document generation
           </p>
         </div>
-        {!showForm && (
-          <Button onClick={handleNew} size="sm">
-            <Plus className="w-4 h-4 mr-2" />
-            New Template
-          </Button>
+        {view === "list" && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setView("blueprints")}
+            >
+              <Settings2 className="w-4 h-4 mr-2" />
+              Manage Blueprints
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleWizard}>
+              <Wand2 className="w-4 h-4 mr-2" />
+              Guided Wizard
+            </Button>
+            <Button size="sm" onClick={handleNew}>
+              <Plus className="w-4 h-4 mr-2" />
+              Manual
+            </Button>
+          </div>
         )}
       </div>
 
-      {showForm ? (
+      {view === "list" && (
+        <TemplateList
+          refreshTrigger={refreshTrigger}
+          onEdit={handleEdit}
+          onDeleted={handleDeleted}
+        />
+      )}
+
+      {view === "form" && (
         <div className="space-y-4">
           <Button
             variant="ghost"
@@ -71,14 +112,20 @@ export function TemplateManagementPage() {
             template={editingTemplate}
             onSaved={handleSaved}
             onCancel={handleCancel}
+            initialContent={wizardInitialContent || undefined}
           />
         </div>
-      ) : (
-        <TemplateList
-          refreshTrigger={refreshTrigger}
-          onEdit={handleEdit}
-          onDeleted={handleDeleted}
+      )}
+
+      {view === "wizard" && (
+        <TemplateWizard
+          onComplete={handleWizardComplete}
+          onCancel={handleCancel}
         />
+      )}
+
+      {view === "blueprints" && (
+        <BlueprintManagement onBack={() => setView("list")} />
       )}
     </div>
   );

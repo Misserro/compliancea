@@ -196,3 +196,10 @@ export function getLatestMigrationJob(...args: any[]): any;
 // Per-org Migration Jobs (Plan 035 Task 3)
 export function createMigrationJobForOrg(...args: any[]): any;
 export function getLatestMigrationJobForOrg(...args: any[]): any;
+
+// Wizard Blueprints (Plan 036 Task 1)
+export function createWizardBlueprint(...args: any[]): any;
+export function getWizardBlueprints(...args: any[]): any;
+export function getWizardBlueprintById(...args: any[]): any;
+export function updateWizardBlueprint(...args: any[]): any;
+export function deleteWizardBlueprint(...args: any[]): any;

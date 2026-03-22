@@ -1,0 +1,17 @@
+{
+  "task": "task-1",
+  "title": "Wizard blueprints DB layer + CRUD API",
+  "status": "completed",
+  "stage": "completed",
+  "dependencies": [],
+  "started_at": "2026-03-22T00:01:00Z",
+  "completed_at": "2026-03-22T00:05:00Z",
+  "last_updated": "2026-03-22T00:05:00Z",
+  "events": [
+    { "timestamp": "2026-03-22T00:01:00Z", "type": "spawned", "message": "Task team spawned" },
+    { "timestamp": "2026-03-22T00:01:00Z", "type": "stage_change", "message": "Stage: planning" },
+    { "timestamp": "2026-03-22T00:02:00Z", "type": "stage_change", "message": "Stage: implementation (plan approved)" },
+    { "timestamp": "2026-03-22T00:04:00Z", "type": "stage_change", "message": "Stage: review" },
+    { "timestamp": "2026-03-22T00:05:00Z", "type": "completed", "message": "Task completed, team shutdown" }
+  ]
+}
