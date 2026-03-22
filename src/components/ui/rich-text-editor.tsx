@@ -132,7 +132,10 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
   }
 
   return (
-    <div className={cn("border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring", className)}>
+    <div
+      className={cn("border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring cursor-text", className)}
+      onClick={() => editor.commands.focus()}
+    >
       <Toolbar editor={editor} />
       <EditorContent
         editor={editor}
