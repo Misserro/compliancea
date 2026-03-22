@@ -1,0 +1,16 @@
+{
+  "task": "task-2",
+  "description": "Granular storage_backend tagging + strict read/delete isolation",
+  "pipeline_mode": false,
+  "status": "completed",
+  "stage": "completed",
+  "spawned_at": "2026-03-22T09:17:01Z",
+  "stage_updated_at": "2026-03-22T09:22:59Z",
+  "completed_at": "2026-03-22T09:22:59Z",
+  "retry_count": 0,
+  "members": {
+    "executor-2": {"started_at": "2026-03-22T09:17:01Z", "ended_at": "2026-03-22T09:22:59Z"},
+    "reviewer-2": {"started_at": "2026-03-22T09:17:01Z", "ended_at": "2026-03-22T09:22:59Z"},
+    "tester-2": {"started_at": "2026-03-22T09:17:01Z", "ended_at": "2026-03-22T09:22:59Z"}
+  }
+}

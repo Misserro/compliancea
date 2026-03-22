@@ -9,6 +9,7 @@ import {
   getOrgWithMemberCount,
   get,
   saveDb,
+  getPlatformSettings,
 } from "@/lib/db-imports";
 import { logAction } from "@/lib/audit-imports";
 
@@ -50,6 +51,7 @@ export async function GET() {
         name: org.name,
         slug: org.slug,
         memberCount: org.member_count,
+        storagePolicy: org.storage_policy || "local",
         createdAt: org.created_at,
         status,
         ...(org.deleted_at
@@ -139,6 +141,14 @@ export async function POST(request: NextRequest) {
 
     const org = getOrgWithMemberCount(orgId);
 
+    // Check if platform S3 is configured
+    const platformSettings = getPlatformSettings() as Array<{ key: string; value: string }>;
+    const platformConfig = Object.fromEntries(platformSettings.map((s) => [s.key, s.value]));
+    const platformS3Warning =
+      !platformConfig.s3Bucket || !platformConfig.s3SecretEncrypted
+        ? "Platform S3 is not configured. Files will fail to upload until platform S3 is set up."
+        : undefined;
+
     const response: Record<string, unknown> = {
       org: {
         id: org.id,
@@ -150,6 +160,9 @@ export async function POST(request: NextRequest) {
     };
     if (inviteUrl) {
       response.inviteUrl = inviteUrl;
+    }
+    if (platformS3Warning) {
+      response.warning = platformS3Warning;
     }
 
     return NextResponse.json(response, { status: 201 });

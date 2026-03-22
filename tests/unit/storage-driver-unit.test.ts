@@ -89,6 +89,7 @@ vi.mock("../../lib/paths.js", () => ({
 // ── Mock db.js ────────────────────────────────────────────────────────────────
 vi.mock("../../lib/db.js", () => ({
   getOrgSettings: mockGetOrgSettings,
+  getOrgStoragePolicy: vi.fn().mockReturnValue({ storage_policy: 'local' }),
   run: vi.fn(),
   query: vi.fn(),
   get: vi.fn(),
@@ -195,10 +196,10 @@ describe("putFile — S3 backend (Criterion 1: storageKey format)", () => {
     ]);
   }
 
-  it("Criterion 1: storageBackend='s3' when S3 configured", async () => {
+  it("Criterion 1: storageBackend='org_s3' when S3 configured", async () => {
     await seedS3Config();
     const result = await putFile(1, "documents", "file.pdf", Buffer.from("c"), "application/pdf");
-    expect(result.storageBackend).toBe("s3");
+    expect(result.storageBackend).toBe("org_s3");
   });
 
   it("Criterion 1: storageKey = 'org-{id}/{prefix}/{filename}'", async () => {

@@ -195,6 +195,15 @@ Two modes for handling external documents:
 - **Migration progress** — Admin panel shows real-time migration progress (total / migrated / failed) via polling; status persisted in `migration_jobs` table
 - **Per-org migration routing** — Migration respects each org's storage policy; files migrate to the org's own S3 if policy is `own_s3`, or to platform S3 if policy is `platform_s3`
 
+### S3 Default Policy, Strict Isolation & Per-Org Migration (Plan 035)
+- **Default storage = platform_s3** — New organizations are created with `storage_policy='platform_s3'` (previously `local`); super admin sees a warning in the org creation dialog if platform S3 is not yet configured
+- **Granular storage_backend tagging** — New file uploads record `storage_backend` as `'org_s3'` or `'platform_s3'` (instead of the generic `'s3'`); legacy `'s3'` records continue to work via backward-compatible fallback
+- **Strict read/delete isolation** — `getFile` and `deleteFile` route to credentials based on the stored `storage_backend` value: `'org_s3'` uses org credentials only; `'platform_s3'` uses platform credentials only; no cross-bucket fallback for new files
+- **Per-org migration — local → platform S3** — Super admin can trigger a file migration for a specific org (moving local files to platform S3), in addition to the existing global migration
+- **Per-org migration — own S3 → platform S3** — Super admin can transfer an org's files from its own S3 bucket to the platform S3 bucket; prerequisite: both org and platform S3 must be configured; runs as an async job with real-time progress
+- **Migration prerequisite guard** — API rejects own_s3→platform_s3 migration if org credentials are missing or platform S3 is not configured; UI disables the button with an explanatory tooltip
+- **Admin panel per-org migration UI** — Each org row in the admin panel has a migration panel (in the expandable section) showing available migration actions and live progress
+
 ### Global Admin (Plan 030)
 - **Super admin role** — A system-level `is_super_admin` flag on the users table, separate from per-org roles. Super admins operate across all organizations.
 - **Admin panel** — Dedicated `/admin` section (outside the normal app layout) listing all organizations with status, member count, and management actions.

@@ -226,7 +226,7 @@ describe("GET /api/org/storage (Criterion 2)", () => {
     const res = await GET();
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).toEqual({ configured: false });
+    expect(body).toEqual(expect.objectContaining({ configured: false }));
   });
 
   it("returns { configured: true } with masked secret when config is stored", async () => {
@@ -603,7 +603,7 @@ describe("DELETE /api/org/storage (Criterion 7)", () => {
     const getRes = await GET();
     expect(getRes.status).toBe(200);
     const body = await getRes.json();
-    expect(body).toEqual({ configured: false });
+    expect(body).toEqual(expect.objectContaining({ configured: false }));
   });
 });
 

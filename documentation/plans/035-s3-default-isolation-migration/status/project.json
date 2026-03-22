@@ -1,0 +1,17 @@
+{
+  "plan": "035-s3-default-isolation-migration",
+  "started_at": "2026-03-22T09:17:01Z",
+  "status": "completed",
+  "completed_at": "2026-03-22T09:34:39Z",
+  "total_tasks": 5,
+  "completed_tasks": 5,
+  "active_teams": 0,
+  "concurrency_limit": 2,
+  "tasks": {
+    "task-1": "completed",
+    "task-2": "completed",
+    "task-3": "completed",
+    "task-4": "completed",
+    "task-5": "completed"
+  }
+}

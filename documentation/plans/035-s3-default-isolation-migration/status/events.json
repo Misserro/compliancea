@@ -1,0 +1,206 @@
+{
+  "events": [
+    {
+      "ts": "2026-03-22T00:00:00Z",
+      "type": "dashboard_initialized",
+      "message": "PM dashboard initialized. Watchdog running (PID 4200). Awaiting Lead spawns."
+    },
+    {
+      "ts": "2026-03-22T09:17:01Z",
+      "type": "spawned",
+      "task": "task-1",
+      "message": "SPAWNED task-1: Default storage policy + getAllOrganizations fix + org creation warning"
+    },
+    {
+      "ts": "2026-03-22T09:17:01Z",
+      "type": "spawned",
+      "task": "task-2",
+      "message": "SPAWNED task-2: Granular storage_backend tagging + strict read/delete isolation"
+    },
+    {
+      "ts": "2026-03-22T09:18:57Z",
+      "type": "stage",
+      "task": "task-1",
+      "stage": "planning",
+      "message": "STAGE task-1 planning"
+    },
+    {
+      "ts": "2026-03-22T09:18:57Z",
+      "type": "stage",
+      "task": "task-2",
+      "stage": "planning",
+      "message": "STAGE task-2 planning"
+    },
+    {
+      "ts": "2026-03-22T09:19:35Z",
+      "type": "stage",
+      "task": "task-1",
+      "stage": "implementation",
+      "message": "STAGE task-1 implementation"
+    },
+    {
+      "ts": "2026-03-22T09:20:11Z",
+      "type": "stage",
+      "task": "task-2",
+      "stage": "implementation",
+      "message": "STAGE task-2 implementation"
+    },
+    {
+      "ts": "2026-03-22T09:21:00Z",
+      "type": "stage",
+      "task": "task-1",
+      "stage": "review",
+      "message": "STAGE task-1 review"
+    },
+    {
+      "ts": "2026-03-22T09:21:00Z",
+      "type": "stage",
+      "task": "task-2",
+      "stage": "review",
+      "message": "STAGE task-2 review"
+    },
+    {
+      "ts": "2026-03-22T09:21:00Z",
+      "type": "pipeline_spawn",
+      "task": "task-3",
+      "message": "PIPELINE-SPAWN task-3: Migration worker per-org filtering + own_s3→platform_s3 direction (pipeline_mode=true, planning ahead of task-2 completion)"
+    },
+    {
+      "ts": "2026-03-22T09:22:59Z",
+      "type": "completed",
+      "task": "task-1",
+      "message": "COMPLETED task-1"
+    },
+    {
+      "ts": "2026-03-22T09:22:59Z",
+      "type": "shutdown",
+      "task": "task-1",
+      "message": "SHUTDOWN task-1: all members ended"
+    },
+    {
+      "ts": "2026-03-22T09:22:59Z",
+      "type": "completed",
+      "task": "task-2",
+      "message": "COMPLETED task-2"
+    },
+    {
+      "ts": "2026-03-22T09:22:59Z",
+      "type": "shutdown",
+      "task": "task-2",
+      "message": "SHUTDOWN task-2: all members ended"
+    },
+    {
+      "ts": "2026-03-22T09:22:59Z",
+      "type": "approved_impl",
+      "task": "task-3",
+      "message": "APPROVED-IMPL task-3: pipeline_mode set to false, proceeding to implementation"
+    },
+    {
+      "ts": "2026-03-22T09:22:59Z",
+      "type": "stage",
+      "task": "task-3",
+      "stage": "implementation",
+      "message": "STAGE task-3 implementation"
+    },
+    {
+      "ts": "2026-03-22T09:26:32Z",
+      "type": "stage",
+      "task": "task-3",
+      "stage": "review",
+      "message": "STAGE task-3 review"
+    },
+    {
+      "ts": "2026-03-22T09:26:32Z",
+      "type": "pipeline_spawn",
+      "task": "task-4",
+      "message": "PIPELINE-SPAWN task-4: Per-org migration API endpoint (pipeline_mode=true, planning ahead of task-3 completion)"
+    },
+    {
+      "ts": "2026-03-22T09:28:14Z",
+      "type": "completed",
+      "task": "task-3",
+      "message": "COMPLETED task-3"
+    },
+    {
+      "ts": "2026-03-22T09:28:14Z",
+      "type": "shutdown",
+      "task": "task-3",
+      "message": "SHUTDOWN task-3: all members ended"
+    },
+    {
+      "ts": "2026-03-22T09:28:14Z",
+      "type": "approved_impl",
+      "task": "task-4",
+      "message": "APPROVED-IMPL task-4: pipeline_mode set to false, proceeding to implementation"
+    },
+    {
+      "ts": "2026-03-22T09:28:14Z",
+      "type": "stage",
+      "task": "task-4",
+      "stage": "implementation",
+      "message": "STAGE task-4 implementation"
+    },
+    {
+      "ts": "2026-03-22T09:29:39Z",
+      "type": "stage",
+      "task": "task-4",
+      "stage": "review",
+      "message": "STAGE task-4 review"
+    },
+    {
+      "ts": "2026-03-22T09:29:39Z",
+      "type": "pipeline_spawn",
+      "task": "task-5",
+      "message": "PIPELINE-SPAWN task-5: Admin panel per-org migration UI (pipeline_mode=true, planning ahead of task-4 completion)"
+    },
+    {
+      "ts": "2026-03-22T09:31:22Z",
+      "type": "completed",
+      "task": "task-4",
+      "message": "COMPLETED task-4"
+    },
+    {
+      "ts": "2026-03-22T09:31:22Z",
+      "type": "shutdown",
+      "task": "task-4",
+      "message": "SHUTDOWN task-4: all members ended"
+    },
+    {
+      "ts": "2026-03-22T09:31:22Z",
+      "type": "approved_impl",
+      "task": "task-5",
+      "message": "APPROVED-IMPL task-5: pipeline_mode set to false, proceeding to implementation"
+    },
+    {
+      "ts": "2026-03-22T09:31:22Z",
+      "type": "stage",
+      "task": "task-5",
+      "stage": "implementation",
+      "message": "STAGE task-5 implementation"
+    },
+    {
+      "ts": "2026-03-22T09:33:43Z",
+      "type": "stage",
+      "task": "task-5",
+      "stage": "review",
+      "message": "STAGE task-5 review"
+    },
+    {
+      "ts": "2026-03-22T09:34:39Z",
+      "type": "completed",
+      "task": "task-5",
+      "message": "COMPLETED task-5"
+    },
+    {
+      "ts": "2026-03-22T09:34:39Z",
+      "type": "shutdown",
+      "task": "task-5",
+      "message": "SHUTDOWN task-5: all members ended"
+    },
+    {
+      "ts": "2026-03-22T09:34:39Z",
+      "type": "plan_completed",
+      "message": "All 5 tasks completed. Plan 035 execution finished."
+    }
+  ]
+}

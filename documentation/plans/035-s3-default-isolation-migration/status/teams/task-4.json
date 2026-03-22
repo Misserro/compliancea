@@ -1,0 +1,16 @@
+{
+  "task": "task-4",
+  "description": "Per-org migration API endpoint",
+  "pipeline_mode": false,
+  "status": "completed",
+  "stage": "completed",
+  "spawned_at": "2026-03-22T09:26:32Z",
+  "stage_updated_at": "2026-03-22T09:31:22Z",
+  "completed_at": "2026-03-22T09:31:22Z",
+  "retry_count": 0,
+  "members": {
+    "executor-4": {"started_at": "2026-03-22T09:26:32Z", "ended_at": "2026-03-22T09:31:22Z"},
+    "reviewer-4": {"started_at": "2026-03-22T09:26:32Z", "ended_at": "2026-03-22T09:31:22Z"},
+    "tester-4": {"started_at": "2026-03-22T09:26:32Z", "ended_at": "2026-03-22T09:31:22Z"}
+  }
+}

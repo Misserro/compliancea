@@ -538,7 +538,7 @@ Firm/workspace identity. One row per tenant.
 | slug | TEXT UNIQUE NOT NULL | URL-safe identifier (e.g. "acme-legal") |
 | created_at | DATETIME DEFAULT CURRENT_TIMESTAMP | Creation timestamp |
 | deleted_at | DATETIME | Soft-delete timestamp (null = active; set = pending deletion, hard-deleted after 30 days) — added Plan 030 |
-| storage_policy | TEXT NOT NULL DEFAULT 'local' | Storage backend for this org: `local` (Railway disk), `platform_s3` (shared platform bucket), `own_s3` (org-configured bucket) — added Plan 034 |
+| storage_policy | TEXT NOT NULL DEFAULT 'platform_s3' | Storage backend for this org: `local` (Railway disk), `platform_s3` (shared platform bucket), `own_s3` (org-configured bucket) — added Plan 034; default changed to `platform_s3` in Plan 035 |
 
 ### org_features
 
@@ -565,15 +565,18 @@ Global platform-level configuration managed by super admins. Not scoped to any s
 
 ### migration_jobs
 
-Tracks async file migration jobs (local → S3). One row per migration run. (Added Plan 034)
+Tracks async file migration jobs. One row per migration run. Supports global (org_id = NULL) and per-org jobs. (Added Plan 034; extended Plan 035)
 
 | Column | Type | Description |
 |--------|------|-------------|
 | id | INTEGER PRIMARY KEY AUTOINCREMENT | Job identifier |
+| org_id | INTEGER | Target org (NULL = global migration across all orgs) — added Plan 035 |
+| migration_type | TEXT DEFAULT 'local_to_platform_s3' | `local_to_platform_s3` (local fs → platform S3) or `own_s3_to_platform_s3` (org S3 → platform S3) — added Plan 035 |
 | status | TEXT NOT NULL DEFAULT 'pending' | `pending`, `running`, `completed`, `failed` |
 | total_files | INTEGER NOT NULL DEFAULT 0 | Total files to migrate |
 | migrated_files | INTEGER NOT NULL DEFAULT 0 | Successfully migrated so far |
 | failed_files | INTEGER NOT NULL DEFAULT 0 | Files that failed to migrate |
+| skipped_files | INTEGER NOT NULL DEFAULT 0 | Files skipped (e.g. no S3 configured for org) |
 | error | TEXT | Last error message (nullable) |
 | started_at | DATETIME | When job began running |
 | completed_at | DATETIME | When job finished (success or failure) |

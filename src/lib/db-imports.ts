@@ -184,4 +184,7 @@ export {
   createMigrationJob,
   updateMigrationJob,
   getLatestMigrationJob,
+  // Per-org Migration Jobs (Plan 035 Task 3)
+  createMigrationJobForOrg,
+  getLatestMigrationJobForOrg,
 } from "../../lib/db.js";

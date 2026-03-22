@@ -42,6 +42,8 @@ export function CreateOrgDialog({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [inviteUrl, setInviteUrl] = useState("");
+  const [warning, setWarning] = useState("");
+  const [success, setSuccess] = useState(false);
 
   // Auto-generate slug from name (unless manually edited)
   useEffect(() => {
@@ -57,6 +59,8 @@ export function CreateOrgDialog({
     setOwnerEmail("");
     setError("");
     setInviteUrl("");
+    setWarning("");
+    setSuccess(false);
     setSubmitting(false);
   }
 
@@ -116,9 +120,17 @@ export function CreateOrgDialog({
         return;
       }
 
+      if (data.warning) {
+        setWarning(data.warning);
+      }
+
       if (data.inviteUrl) {
         setInviteUrl(data.inviteUrl);
         toast.success("Organization created with invite link");
+      } else if (data.warning) {
+        // Stay in dialog to show warning — user clicks Done to close
+        setSuccess(true);
+        toast.success("Organization created");
       } else {
         toast.success("Organization created");
         onCreated();
@@ -171,6 +183,35 @@ export function CreateOrgDialog({
               Copy
             </Button>
           </div>
+          {warning && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              {warning}
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={handleDoneWithInvite}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Show success state with warning (no invite URL)
+  if (success) {
+    return (
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Organization created</DialogTitle>
+            <DialogDescription>
+              The organization has been created successfully.
+            </DialogDescription>
+          </DialogHeader>
+          {warning && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              {warning}
+            </div>
+          )}
           <DialogFooter>
             <Button onClick={handleDoneWithInvite}>Done</Button>
           </DialogFooter>

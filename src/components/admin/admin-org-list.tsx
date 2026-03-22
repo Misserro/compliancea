@@ -23,6 +23,7 @@ import { ORG_STATUS_COLORS } from "@/lib/constants";
 import { CreateOrgDialog } from "@/components/admin/create-org-dialog";
 import { OrgMembersPanel } from "@/components/admin/org-members-panel";
 import { OrgFeatureFlags } from "@/components/admin/org-feature-flags";
+import { OrgMigrationPanel } from "@/components/admin/org-migration-panel";
 
 interface Org {
   id: number;
@@ -34,6 +35,7 @@ interface Org {
   daysUntilDeletion?: number;
   deletedAt?: string;
   storagePolicy: string;
+  orgS3Configured: boolean;
 }
 
 function formatDate(dateStr: string): string {
@@ -56,7 +58,7 @@ function statusLabel(status: string, daysUntilDeletion?: number): string {
   return "Expired";
 }
 
-export function AdminOrgList({ orgs }: { orgs: Org[] }) {
+export function AdminOrgList({ orgs, platformConfigured }: { orgs: Org[]; platformConfigured: boolean }) {
   const router = useRouter();
   const [createOpen, setCreateOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -341,6 +343,17 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
                 <tr>
                   <td colSpan={7} className="p-0">
                     <OrgFeatureFlags orgId={org.id} />
+                  </td>
+                </tr>
+                {/* Migration panel — expands below the row */}
+                <tr>
+                  <td colSpan={7} className="p-0">
+                    <OrgMigrationPanel
+                      orgId={org.id}
+                      storagePolicy={org.storagePolicy}
+                      platformConfigured={platformConfigured}
+                      orgS3Configured={org.orgS3Configured}
+                    />
                   </td>
                 </tr>
                 </React.Fragment>

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
-import { getAllOrganizations } from "@/lib/db-imports";
+import { getAllOrganizations, getOrgSettings, getPlatformSettings } from "@/lib/db-imports";
 import { AdminOrgList } from "@/components/admin/admin-org-list";
 import { PlatformStorageConfig } from "@/components/admin/platform-storage-config";
 import { StorageMigration } from "@/components/admin/storage-migration";
@@ -19,6 +19,7 @@ interface Org {
   daysUntilDeletion?: number;
   deletedAt?: string;
   storagePolicy: string;
+  orgS3Configured: boolean;
 }
 
 export default async function AdminPage() {
@@ -28,6 +29,11 @@ export default async function AdminPage() {
 
   await ensureDb();
   const rawOrgs = getAllOrganizations();
+
+  // Check platform S3 configuration once
+  const platformRows = getPlatformSettings();
+  const platformConfig = Object.fromEntries(platformRows.map((r: { key: string; value: string }) => [r.key, r.value]));
+  const platformConfigured = !!(platformConfig.s3Bucket && platformConfig.s3SecretEncrypted);
 
   const now = Date.now();
   const orgs: Org[] = rawOrgs.map((org: Record<string, unknown>) => {
@@ -47,6 +53,11 @@ export default async function AdminPage() {
       }
     }
 
+    // Check if org has its own S3 credentials configured
+    const orgSettings = getOrgSettings(org.id as number);
+    const orgConfig = Object.fromEntries(orgSettings.map((s: { key: string; value: string }) => [s.key, s.value]));
+    const orgS3Configured = !!(orgConfig.s3Bucket && orgConfig.s3SecretEncrypted);
+
     return {
       id: org.id as number,
       name: org.name as string,
@@ -54,6 +65,7 @@ export default async function AdminPage() {
       memberCount: (org.member_count as number) ?? 0,
       createdAt: org.created_at as string,
       storagePolicy: (org.storage_policy as string) || "local",
+      orgS3Configured,
       status,
       ...(org.deleted_at
         ? { daysUntilDeletion, deletedAt: org.deleted_at as string }
@@ -74,7 +86,7 @@ export default async function AdminPage() {
             Manage all organizations across the platform.
           </p>
         </div>
-        <AdminOrgList orgs={orgs} />
+        <AdminOrgList orgs={orgs} platformConfigured={platformConfigured} />
       </div>
     </div>
   );

@@ -192,3 +192,7 @@ export function getOrgStoragePolicy(...args: any[]): any;
 export function createMigrationJob(...args: any[]): any;
 export function updateMigrationJob(...args: any[]): any;
 export function getLatestMigrationJob(...args: any[]): any;
+
+// Per-org Migration Jobs (Plan 035 Task 3)
+export function createMigrationJobForOrg(...args: any[]): any;
+export function getLatestMigrationJobForOrg(...args: any[]): any;

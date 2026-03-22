@@ -1,0 +1,16 @@
+{
+  "task": "task-1",
+  "description": "Default storage policy + getAllOrganizations fix + org creation warning",
+  "pipeline_mode": false,
+  "status": "completed",
+  "stage": "completed",
+  "spawned_at": "2026-03-22T09:17:01Z",
+  "stage_updated_at": "2026-03-22T09:22:59Z",
+  "completed_at": "2026-03-22T09:22:59Z",
+  "retry_count": 0,
+  "members": {
+    "executor-1": {"started_at": "2026-03-22T09:17:01Z", "ended_at": "2026-03-22T09:22:59Z"},
+    "reviewer-1": {"started_at": "2026-03-22T09:17:01Z", "ended_at": "2026-03-22T09:22:59Z"},
+    "tester-1": {"started_at": "2026-03-22T09:17:01Z", "ended_at": "2026-03-22T09:22:59Z"}
+  }
+}
