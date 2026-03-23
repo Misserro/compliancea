@@ -15,8 +15,8 @@ interface CaseMetadataFormProps {
 }
 
 const REPRESENTING_LABELS: Record<string, string> = {
-  plaintiff: "Plaintiff",
-  defendant: "Defendant",
+  plaintiff: "Powód",
+  defendant: "Pozwany",
 };
 
 function parseExtensionData(extStr: string): Record<string, unknown> {
@@ -59,12 +59,12 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to reassign");
+        throw new Error(data.error || "Nie udało się przepisać sprawy");
       }
-      toast.success("Case reassigned");
+      toast.success("Sprawa przepisana");
       onSaved();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to reassign");
+      toast.error(err instanceof Error ? err.message : "Nie udało się przepisać sprawy");
     } finally {
       setReassigning(false);
     }
@@ -150,14 +150,14 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to save");
+        throw new Error(data.error || "Nie udało się zapisać");
       }
 
-      toast.success("Case metadata saved");
+      toast.success("Metadane sprawy zapisane");
       setEditing(false);
       onSaved();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save");
+      toast.error(err instanceof Error ? err.message : "Nie udało się zapisać");
     } finally {
       setSaving(false);
     }
@@ -175,7 +175,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
     return (
       <div className="bg-card border rounded-lg p-4 space-y-3">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium text-muted-foreground">Edit Case Metadata</span>
+          <span className="text-xs font-medium text-muted-foreground">Edytuj metadane sprawy</span>
           <div className="flex items-center gap-1">
             <button
               className="p-1 rounded hover:bg-muted text-green-600 dark:text-green-400"
@@ -197,7 +197,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
           <div>
-            <label className={fieldLabel}>Title *</label>
+            <label className={fieldLabel}>Tytuł sprawy *</label>
             <input
               type="text"
               className={inputClass}
@@ -207,7 +207,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
             />
           </div>
           <div>
-            <label className={fieldLabel}>Case Type *</label>
+            <label className={fieldLabel}>Typ sprawy *</label>
             <select
               className={inputClass}
               value={form.case_type}
@@ -221,7 +221,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
             </select>
           </div>
           <div>
-            <label className={fieldLabel}>Reference Number</label>
+            <label className={fieldLabel}>Numer referencyjny</label>
             <input
               type="text"
               className={inputClass}
@@ -231,7 +231,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
             />
           </div>
           <div>
-            <label className={fieldLabel}>Internal Number</label>
+            <label className={fieldLabel}>Numer wewnętrzny</label>
             <input
               type="text"
               className={inputClass}
@@ -241,7 +241,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
             />
           </div>
           <div>
-            <label className={fieldLabel}>Procedure Type</label>
+            <label className={fieldLabel}>Tryb postępowania</label>
             <input
               type="text"
               className={inputClass}
@@ -251,17 +251,17 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
             />
           </div>
           <div>
-            <label className={fieldLabel}>Court</label>
+            <label className={fieldLabel}>Sąd</label>
             <input
               type="text"
               className={inputClass}
               value={form.court}
               onChange={(e) => setForm({ ...form, court: e.target.value })}
-              placeholder="Court name..."
+              placeholder="Nazwa sądu..."
             />
           </div>
           <div>
-            <label className={fieldLabel}>Court Division</label>
+            <label className={fieldLabel}>Wydział</label>
             <input
               type="text"
               className={inputClass}
@@ -271,19 +271,19 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
             />
           </div>
           <div>
-            <label className={fieldLabel}>Representing</label>
+            <label className={fieldLabel}>Reprezentujemy</label>
             <select
               className={inputClass}
               value={form.representing_side}
               onChange={(e) => setForm({ ...form, representing_side: e.target.value })}
             >
-              <option value="">— Not specified —</option>
-              <option value="plaintiff">Plaintiff</option>
-              <option value="defendant">Defendant</option>
+              <option value="">— Nieokreślone —</option>
+              <option value="plaintiff">Powód</option>
+              <option value="defendant">Pozwany</option>
             </select>
           </div>
           <div>
-            <label className={fieldLabel}>Claim Value</label>
+            <label className={fieldLabel}>Wartość przedmiotu sporu</label>
             <div className="flex gap-2">
               <input
                 type="number"
@@ -302,27 +302,27 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
             </div>
           </div>
           <div className="md:col-span-2 lg:col-span-3">
-            <label className={fieldLabel}>Summary</label>
+            <label className={fieldLabel}>Opis</label>
             <textarea
               className={`${inputClass} min-h-[60px]`}
               value={form.summary}
               onChange={(e) => setForm({ ...form, summary: e.target.value })}
-              placeholder="Factual basis..."
+              placeholder="Podstawa faktyczna..."
               rows={3}
             />
           </div>
           <div className="md:col-span-2 lg:col-span-3">
-            <label className={fieldLabel}>Claim Description</label>
+            <label className={fieldLabel}>Przedmiot roszczenia</label>
             <textarea
               className={`${inputClass} min-h-[60px]`}
               value={form.claim_description}
               onChange={(e) => setForm({ ...form, claim_description: e.target.value })}
-              placeholder="What is being claimed..."
+              placeholder="Czego dotyczy roszczenie..."
               rows={3}
             />
           </div>
           <div className="md:col-span-2 lg:col-span-3">
-            <label className={fieldLabel}>Tags (comma-separated)</label>
+            <label className={fieldLabel}>Tagi (oddzielone przecinkami)</label>
             <input
               type="text"
               className={inputClass}
@@ -354,7 +354,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
   return (
     <div className="bg-card border rounded-lg p-4">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-muted-foreground">Case Metadata</span>
+        <span className="text-xs font-medium text-muted-foreground">Metadane sprawy</span>
         <button
           className="p-1 rounded hover:bg-muted text-muted-foreground"
           onClick={() => setEditing(true)}
@@ -384,39 +384,39 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
           )}
         </div>
         <div>
-          <div className="text-muted-foreground text-xs font-medium mb-1">Title</div>
+          <div className="text-muted-foreground text-xs font-medium mb-1">Tytuł sprawy</div>
           <div className="font-medium">{legalCase.title}</div>
         </div>
         <div>
-          <div className="text-muted-foreground text-xs font-medium mb-1">Case Type</div>
+          <div className="text-muted-foreground text-xs font-medium mb-1">Typ sprawy</div>
           <div>{LEGAL_CASE_TYPE_LABELS[legalCase.case_type] || legalCase.case_type}</div>
         </div>
         <div>
-          <div className="text-muted-foreground text-xs font-medium mb-1">Reference Number</div>
+          <div className="text-muted-foreground text-xs font-medium mb-1">Numer referencyjny</div>
           <div>{formatValue(legalCase.reference_number)}</div>
         </div>
         <div>
-          <div className="text-muted-foreground text-xs font-medium mb-1">Internal Number</div>
+          <div className="text-muted-foreground text-xs font-medium mb-1">Numer wewnętrzny</div>
           <div>{formatValue(legalCase.internal_number)}</div>
         </div>
         <div>
-          <div className="text-muted-foreground text-xs font-medium mb-1">Procedure Type</div>
+          <div className="text-muted-foreground text-xs font-medium mb-1">Tryb postępowania</div>
           <div>{formatValue(legalCase.procedure_type)}</div>
         </div>
         <div>
-          <div className="text-muted-foreground text-xs font-medium mb-1">Court</div>
+          <div className="text-muted-foreground text-xs font-medium mb-1">Sąd</div>
           <div>{formatValue(legalCase.court)}</div>
         </div>
         <div>
-          <div className="text-muted-foreground text-xs font-medium mb-1">Court Division</div>
+          <div className="text-muted-foreground text-xs font-medium mb-1">Wydział</div>
           <div>{formatValue(legalCase.court_division)}</div>
         </div>
         <div>
-          <div className="text-muted-foreground text-xs font-medium mb-1">Representing</div>
+          <div className="text-muted-foreground text-xs font-medium mb-1">Reprezentujemy</div>
           <div>{representingSide ? (REPRESENTING_LABELS[representingSide] ?? representingSide) : "\u2014"}</div>
         </div>
         <div>
-          <div className="text-muted-foreground text-xs font-medium mb-1">Claim Value</div>
+          <div className="text-muted-foreground text-xs font-medium mb-1">Wartość przedmiotu sporu</div>
           <div>
             {legalCase.claim_value != null
               ? `${legalCase.claim_value.toLocaleString()} ${legalCase.claim_currency}`
@@ -427,11 +427,11 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
           const courtFee = calculateCourtFee(legalCase.claim_value);
           return (
             <div>
-              <div className="text-muted-foreground text-xs font-medium mb-1">Court Fee</div>
+              <div className="text-muted-foreground text-xs font-medium mb-1">Opłata sądowa</div>
               <div>
                 {legalCase.claim_currency !== "PLN" ? (
                   <span className="text-muted-foreground text-xs">
-                    Court fee calculation applies to PLN claims only
+                    Obliczanie opłaty sądowej dotyczy wyłącznie roszczeń w PLN
                   </span>
                 ) : courtFee !== null ? (
                   `${courtFee.toLocaleString()} PLN`
@@ -444,19 +444,19 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
         })()}
         {legalCase.summary && (
           <div className="md:col-span-2 lg:col-span-3">
-            <div className="text-muted-foreground text-xs font-medium mb-1">Summary</div>
+            <div className="text-muted-foreground text-xs font-medium mb-1">Opis</div>
             <div className="whitespace-pre-wrap">{legalCase.summary}</div>
           </div>
         )}
         {legalCase.claim_description && (
           <div className="md:col-span-2 lg:col-span-3">
-            <div className="text-muted-foreground text-xs font-medium mb-1">Claim Description</div>
+            <div className="text-muted-foreground text-xs font-medium mb-1">Przedmiot roszczenia</div>
             <div className="whitespace-pre-wrap">{legalCase.claim_description}</div>
           </div>
         )}
         {tags && (
           <div className="md:col-span-2 lg:col-span-3">
-            <div className="text-muted-foreground text-xs font-medium mb-1">Tags</div>
+            <div className="text-muted-foreground text-xs font-medium mb-1">Tagi</div>
             <div>{tags}</div>
           </div>
         )}

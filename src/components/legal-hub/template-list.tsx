@@ -29,7 +29,7 @@ export function TemplateList({
         const res = await fetch("/api/legal-hub/templates");
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || "Failed to fetch templates");
+          throw new Error(data.error || "Nie udało się załadować szablonów");
         }
         const data = await res.json();
         setTemplates(data.templates || []);
@@ -46,7 +46,7 @@ export function TemplateList({
   const handleDelete = async (template: CaseTemplate) => {
     if (
       !window.confirm(
-        `Are you sure you want to delete template "${template.name}"?`
+        `Czy na pewno chcesz usunąć szablon "${template.name}"?`
       )
     ) {
       return;
@@ -58,12 +58,12 @@ export function TemplateList({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to delete");
+        throw new Error(data.error || "Nie udało się usunąć");
       }
       onDeleted();
     } catch (err) {
       console.error("Error deleting template:", err);
-      alert(err instanceof Error ? err.message : "Failed to delete template");
+      alert(err instanceof Error ? err.message : "Nie udało się usunąć szablonu");
     }
   };
 
@@ -88,8 +88,7 @@ export function TemplateList({
   if (templates.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground text-sm">
-        No templates yet. Create your first template to start generating
-        documents.
+        Brak szablonów. Utwórz pierwszy szablon, aby rozpocząć generowanie dokumentów.
       </div>
     );
   }
@@ -99,11 +98,11 @@ export function TemplateList({
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-muted/50 border-b">
-            <th className="text-left font-medium px-4 py-3">Name</th>
-            <th className="text-left font-medium px-4 py-3">Type</th>
-            <th className="text-left font-medium px-4 py-3">Active</th>
-            <th className="text-left font-medium px-4 py-3">Created</th>
-            <th className="text-right font-medium px-4 py-3">Actions</th>
+            <th className="text-left font-medium px-4 py-3">Nazwa</th>
+            <th className="text-left font-medium px-4 py-3">Typ</th>
+            <th className="text-left font-medium px-4 py-3">Status</th>
+            <th className="text-left font-medium px-4 py-3">Utworzono</th>
+            <th className="text-right font-medium px-4 py-3">Akcje</th>
           </tr>
         </thead>
         <tbody>
@@ -128,7 +127,7 @@ export function TemplateList({
                       : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                   }`}
                 >
-                  {template.is_active ? "Active" : "Inactive"}
+                  {template.is_active ? "Aktywny" : "Nieaktywny"}
                 </span>
               </td>
               <td className="px-4 py-3 text-muted-foreground">

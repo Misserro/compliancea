@@ -17,10 +17,10 @@ interface CaseDetailPageProps {
 type TabKey = "overview" | "documents" | "generate" | "chat";
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
-  { key: "overview", label: "Overview", icon: <LayoutDashboard className="w-4 h-4" /> },
-  { key: "documents", label: "Documents", icon: <FileText className="w-4 h-4" /> },
-  { key: "generate", label: "Generate", icon: <Wand2 className="w-4 h-4" /> },
-  { key: "chat", label: "Chat", icon: <MessageSquare className="w-4 h-4" /> },
+  { key: "overview", label: "Przegląd", icon: <LayoutDashboard className="w-4 h-4" /> },
+  { key: "documents", label: "Dokumenty", icon: <FileText className="w-4 h-4" /> },
+  { key: "generate", label: "Generuj", icon: <Wand2 className="w-4 h-4" /> },
+  { key: "chat", label: "Czat", icon: <MessageSquare className="w-4 h-4" /> },
 ];
 
 export function CaseDetailPage({ caseId }: CaseDetailPageProps) {

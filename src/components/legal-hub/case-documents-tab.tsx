@@ -62,14 +62,14 @@ function IndexingBadge({ entry }: { entry: IndexingStatusEntry | undefined }) {
   if (entry.status === "indexed") {
     return (
       <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 ml-2">
-        Indexed
+        Zaindeksowany
       </span>
     );
   }
   if (entry.status === "processing") {
     return (
       <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 ml-2 animate-pulse">
-        Indexing...
+        Indeksowanie...
       </span>
     );
   }
@@ -77,9 +77,9 @@ function IndexingBadge({ entry }: { entry: IndexingStatusEntry | undefined }) {
   return (
     <span
       className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 ml-2 cursor-help"
-      title={entry.errorMessage || "Indexing failed"}
+      title={entry.errorMessage || "Błąd indeksowania"}
     >
-      Indexing failed
+      Błąd indeksowania
     </span>
   );
 }
@@ -223,7 +223,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
   if (loading) {
     return (
       <div className="text-sm text-muted-foreground py-2">
-        Loading documents...
+        Ładowanie dokumentów...
       </div>
     );
   }
@@ -232,14 +232,14 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
     <div data-slot="case-documents-tab">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Documents</h3>
+        <h3 className="text-lg font-semibold text-foreground">Dokumenty</h3>
         <Button
           variant="outline"
           size="sm"
           onClick={() => setDialogOpen(true)}
         >
           <Plus className="w-3.5 h-3.5 mr-1" />
-          Add Document
+          Dodaj dokument
         </Button>
       </div>
 
@@ -291,10 +291,10 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
         <div className="text-center py-12 space-y-3">
           <Upload className="w-10 h-10 mx-auto text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground">
-            No documents attached.
+            Brak załączonych dokumentów.
           </p>
           <p className="text-xs text-muted-foreground">
-            Upload or link a document to get started.
+            Prześlij lub powiąż dokument, aby rozpocząć.
           </p>
           <Button
             variant="outline"
@@ -302,12 +302,12 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
             onClick={() => setDialogOpen(true)}
           >
             <Plus className="w-3.5 h-3.5 mr-1" />
-            Add Document
+            Dodaj dokument
           </Button>
         </div>
       ) : filteredDocuments.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">
-          No documents in this category.
+          Brak dokumentów w tej kategorii.
         </p>
       ) : (
         <div className="space-y-2">
@@ -344,7 +344,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
                               title="Retry indexing"
                             >
                               <RefreshCw className={`h-2.5 w-2.5 ${retrying[doc.id] ? "animate-spin" : ""}`} />
-                              Retry
+                              Ponów
                             </button>
                           )}
                         </>
@@ -357,10 +357,10 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
                     </div>
                     <div className="text-xs text-muted-foreground flex flex-wrap gap-x-2">
                       <span>
-                        {isLinked ? "Linked from library" : "Uploaded"}
+                        {isLinked ? "Z biblioteki" : "Przesłany"}
                       </span>
                       {doc.date_filed && (
-                        <span>Filed: {formatDate(doc.date_filed)}</span>
+                        <span>Złożono: {formatDate(doc.date_filed)}</span>
                       )}
                       {doc.filing_reference && (
                         <span>Ref: {doc.filing_reference}</span>
@@ -418,14 +418,14 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove document?</AlertDialogTitle>
+            <AlertDialogTitle>Usunąć dokument?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove the document from this case. If it was linked from
-              the document library, the original will not be deleted.
+              Spowoduje to usunięcie dokumentu z tej sprawy. Jeśli był powiązany z
+              biblioteki dokumentów, oryginał nie zostanie usunięty.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (deletingDocId) {
@@ -434,7 +434,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
                 }
               }}
             >
-              Remove
+              Usuń
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

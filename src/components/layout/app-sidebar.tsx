@@ -240,12 +240,12 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === "/legal-hub" || (pathname.startsWith("/legal-hub/") && !pathname.startsWith("/legal-hub/templates"))}
+                  isActive={pathname === "/legal-hub" || (pathname.startsWith("/legal-hub/") && !pathname.startsWith("/legal-hub/templates") && !pathname.startsWith("/legal-hub/firm"))}
                   tooltip="Cases"
                 >
                   <Link href="/legal-hub">
                     <Scale />
-                    <span>Cases</span>
+                    <span>Sprawy</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -257,10 +257,24 @@ export function AppSidebar() {
                 >
                   <Link href="/legal-hub/templates">
                     <FileText />
-                    <span>Templates</span>
+                    <span>Szablony</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {sessionData?.user?.orgRole !== "member" && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === "/legal-hub/firm" || pathname.startsWith("/legal-hub/firm/")}
+                    tooltip="Moja kancelaria"
+                  >
+                    <Link href="/legal-hub/firm">
+                      <Building2 />
+                      <span>Moja kancelaria</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

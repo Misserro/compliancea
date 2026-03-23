@@ -15,11 +15,11 @@ const PARTY_TYPES = ["plaintiff", "defendant", "third_party", "witness", "other"
 const REPRESENTATIVE_TYPES = ["attorney", "legal_counsel", "other"] as const;
 
 const PARTY_TYPE_LABELS: Record<string, string> = {
-  plaintiff: "Plaintiff",
-  defendant: "Defendant",
-  third_party: "Third Party",
-  witness: "Witness",
-  other: "Other",
+  plaintiff: "Powód",
+  defendant: "Pozwany",
+  third_party: "Osoba trzecia",
+  witness: "Świadek",
+  other: "Inny",
 };
 
 const PARTY_TYPE_COLORS: Record<string, string> = {
@@ -85,7 +85,7 @@ export function CasePartiesSection({ parties, caseId, onRefresh }: CasePartiesSe
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      toast.error("Name is required");
+      toast.error("Imię/nazwa jest wymagana");
       return;
     }
     setSaving(true);
@@ -103,14 +103,14 @@ export function CasePartiesSection({ parties, caseId, onRefresh }: CasePartiesSe
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to save party");
+        throw new Error(data.error || "Nie udało się zapisać strony");
       }
 
-      toast.success(editingParty ? "Party updated" : "Party added");
+      toast.success(editingParty ? "Strona zaktualizowana" : "Strona dodana");
       handleCancel();
       onRefresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save");
+      toast.error(err instanceof Error ? err.message : "Nie udało się zapisać");
     } finally {
       setSaving(false);
     }
@@ -124,12 +124,12 @@ export function CasePartiesSection({ parties, caseId, onRefresh }: CasePartiesSe
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to delete party");
+        throw new Error(data.error || "Nie udało się usunąć strony");
       }
-      toast.success("Party removed");
+      toast.success("Strona usunięta");
       onRefresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete");
+      toast.error(err instanceof Error ? err.message : "Nie udało się usunąć");
     } finally {
       setDeleting(null);
     }
@@ -141,19 +141,19 @@ export function CasePartiesSection({ parties, caseId, onRefresh }: CasePartiesSe
   return (
     <div className="bg-card border rounded-lg p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">Parties</span>
+        <span className="text-xs font-medium text-muted-foreground">Strony</span>
         <button
           className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded hover:bg-muted text-muted-foreground"
           onClick={openAdd}
         >
           <Plus className="w-3.5 h-3.5" />
-          Add Party
+          Dodaj stronę
         </button>
       </div>
 
       {/* Party list */}
       {parties.length === 0 && !showForm && (
-        <p className="text-sm text-muted-foreground py-2">No parties added yet.</p>
+        <p className="text-sm text-muted-foreground py-2">Brak stron.</p>
       )}
 
       {parties.map((party) => (
@@ -210,7 +210,7 @@ export function CasePartiesSection({ parties, caseId, onRefresh }: CasePartiesSe
         <div className="border rounded p-3 space-y-3 bg-muted/30">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">
-              {editingParty ? "Edit Party" : "Add Party"}
+              {editingParty ? "Edytuj stronę" : "Dodaj stronę"}
             </span>
             <div className="flex items-center gap-1">
               <button
@@ -233,7 +233,7 @@ export function CasePartiesSection({ parties, caseId, onRefresh }: CasePartiesSe
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className={fieldLabel}>Party Type *</label>
+              <label className={fieldLabel}>Typ strony *</label>
               <select
                 className={inputClass}
                 value={form.party_type}
@@ -247,67 +247,67 @@ export function CasePartiesSection({ parties, caseId, onRefresh }: CasePartiesSe
               </select>
             </div>
             <div>
-              <label className={fieldLabel}>Name *</label>
+              <label className={fieldLabel}>Imię i nazwisko / Nazwa *</label>
               <input
                 type="text"
                 className={inputClass}
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Full name..."
+                placeholder="Pełna nazwa..."
               />
             </div>
             <div className="md:col-span-2">
-              <label className={fieldLabel}>Address</label>
+              <label className={fieldLabel}>Adres</label>
               <textarea
                 className={`${inputClass} min-h-[40px]`}
                 value={form.address}
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
-                placeholder="Address..."
+                placeholder="Adres..."
                 rows={2}
               />
             </div>
             <div>
-              <label className={fieldLabel}>Representative Name</label>
+              <label className={fieldLabel}>Imię i nazwisko pełnomocnika</label>
               <input
                 type="text"
                 className={inputClass}
                 value={form.representative_name}
                 onChange={(e) => setForm({ ...form, representative_name: e.target.value })}
-                placeholder="Attorney / counsel name..."
+                placeholder="Imię i nazwisko adwokata..."
               />
             </div>
             <div>
-              <label className={fieldLabel}>Representative Type</label>
+              <label className={fieldLabel}>Typ pełnomocnika</label>
               <select
                 className={inputClass}
                 value={form.representative_type}
                 onChange={(e) => setForm({ ...form, representative_type: e.target.value })}
               >
-                <option value="">None</option>
+                <option value="">Brak</option>
                 {REPRESENTATIVE_TYPES.map((t) => (
                   <option key={t} value={t}>
-                    {t === "attorney" ? "Attorney" : t === "legal_counsel" ? "Legal Counsel" : "Other"}
+                    {t === "attorney" ? "Adwokat" : t === "legal_counsel" ? "Radca prawny" : "Inny"}
                   </option>
                 ))}
               </select>
             </div>
             <div className="md:col-span-2">
-              <label className={fieldLabel}>Representative Address</label>
+              <label className={fieldLabel}>Adres pełnomocnika</label>
               <textarea
                 className={`${inputClass} min-h-[40px]`}
                 value={form.representative_address}
                 onChange={(e) => setForm({ ...form, representative_address: e.target.value })}
-                placeholder="Representative address..."
+                placeholder="Adres pełnomocnika..."
                 rows={2}
               />
             </div>
             <div className="md:col-span-2">
-              <label className={fieldLabel}>Notes</label>
+              <label className={fieldLabel}>Uwagi</label>
               <textarea
                 className={`${inputClass} min-h-[40px]`}
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                placeholder="Additional notes..."
+                placeholder="Dodatkowe uwagi..."
                 rows={2}
               />
             </div>

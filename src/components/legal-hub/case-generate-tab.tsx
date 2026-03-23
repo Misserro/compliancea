@@ -263,7 +263,7 @@ export function CaseGenerateTab({
         {/* Left column: Template selector + generate */}
         <div className="space-y-4">
           <div className="border rounded-lg p-4 space-y-4">
-            <h3 className="text-sm font-semibold">Generate New Document</h3>
+            <h3 className="text-sm font-semibold">Generuj nowy dokument</h3>
 
             {loadingTemplates ? (
               <Skeleton className="h-10 w-full" />
@@ -282,14 +282,14 @@ export function CaseGenerateTab({
               <>
                 <div>
                   <label className="text-sm font-medium mb-1 block">
-                    Select Template
+                    Wybierz szablon
                   </label>
                   <select
                     value={selectedTemplateId}
                     onChange={(e) => setSelectedTemplateId(e.target.value)}
                     className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                   >
-                    <option value="">-- Select a template --</option>
+                    <option value="">-- Wybierz szablon --</option>
                     {templates.map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.name}
@@ -301,12 +301,12 @@ export function CaseGenerateTab({
 
                 <div>
                   <label className="text-sm font-medium mb-1 block">
-                    Document Name
+                    Nazwa dokumentu
                   </label>
                   <Input
                     value={documentName}
                     onChange={(e) => setDocumentName(e.target.value)}
-                    placeholder="Name for the generated document"
+                    placeholder="Nazwa dla generowanego dokumentu"
                   />
                 </div>
 
@@ -321,7 +321,7 @@ export function CaseGenerateTab({
                   ) : (
                     <Wand2 className="w-4 h-4 mr-2" />
                   )}
-                  Generate Document
+                  {generating ? "Generowanie..." : "Generuj dokument"}
                 </Button>
               </>
             )}
@@ -329,7 +329,7 @@ export function CaseGenerateTab({
 
           {/* Generated documents history */}
           <div className="border rounded-lg p-4 space-y-3">
-            <h3 className="text-sm font-semibold">Generated Documents</h3>
+            <h3 className="text-sm font-semibold">Wygenerowane dokumenty</h3>
             {loadingDocs ? (
               <div className="space-y-2">
                 <Skeleton className="h-10 w-full" />
@@ -337,7 +337,7 @@ export function CaseGenerateTab({
               </div>
             ) : generatedDocs.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No documents generated yet.
+                Nie wygenerowano jeszcze żadnych dokumentów.
               </p>
             ) : (
               <div className="divide-y max-h-[400px] overflow-y-auto">
@@ -372,7 +372,7 @@ export function CaseGenerateTab({
                         onClick={() => handleOpenDoc(doc)}
                         className="text-xs"
                       >
-                        Open
+                        Otwórz
                       </Button>
                       <Button
                         variant="ghost"
@@ -380,7 +380,7 @@ export function CaseGenerateTab({
                         onClick={() => handleDeleteDoc(doc)}
                         className="text-destructive hover:text-destructive text-xs"
                       >
-                        Delete
+                        Usuń
                       </Button>
                     </div>
                   </div>
@@ -400,7 +400,7 @@ export function CaseGenerateTab({
                     {activeDoc.document_name}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Editing generated document
+                    Edycja wygenerowanego dokumentu
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -409,7 +409,7 @@ export function CaseGenerateTab({
                     size="sm"
                     onClick={handleSave}
                     disabled={saving}
-                    title="Save changes"
+                    title="Zapisz zmiany"
                   >
                     {saving ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -422,7 +422,7 @@ export function CaseGenerateTab({
                     size="sm"
                     onClick={handleExport}
                     disabled={exporting}
-                    title="Export as DOCX"
+                    title="Eksportuj jako DOCX"
                   >
                     {exporting ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -434,7 +434,7 @@ export function CaseGenerateTab({
                     variant="ghost"
                     size="sm"
                     onClick={handleCloseEditor}
-                    title="Close editor"
+                    title="Zamknij edytor"
                   >
                     <X className="w-4 h-4" />
                   </Button>
@@ -451,8 +451,7 @@ export function CaseGenerateTab({
             <div className="border rounded-lg p-8 text-center text-muted-foreground text-sm">
               <Wand2 className="w-8 h-8 mx-auto mb-3 opacity-40" />
               <p>
-                Select a template and generate a document, or open an existing
-                one from the history.
+                Wybierz szablon i wygeneruj dokument lub otwórz istniejący z historii.
               </p>
             </div>
           )}

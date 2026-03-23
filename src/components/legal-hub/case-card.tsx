@@ -66,7 +66,7 @@ export function CaseCard({ legalCase }: CaseCardProps) {
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               {legalCase.court && <span>{legalCase.court}</span>}
               <span className="text-xs">
-                Created {formatDate(legalCase.created_at)}
+                Utworzono {formatDate(legalCase.created_at)}
               </span>
               {legalCase.assigned_to_name && (
                 <span className="flex items-center gap-1 text-xs">

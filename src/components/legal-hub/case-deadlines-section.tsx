@@ -17,12 +17,12 @@ const DEADLINE_TYPES = [
 ] as const;
 
 const DEADLINE_TYPE_LABELS: Record<string, string> = {
-  hearing: "Hearing",
-  response_deadline: "Response Deadline",
-  appeal_deadline: "Appeal Deadline",
-  filing_deadline: "Filing Deadline",
-  payment: "Payment",
-  other: "Other",
+  hearing: "Rozprawa",
+  response_deadline: "Termin odpowiedzi",
+  appeal_deadline: "Termin odwołania",
+  filing_deadline: "Termin złożenia",
+  payment: "Płatność",
+  other: "Inny",
 };
 
 const DEADLINE_STATUS_COLORS: Record<string, string> = {
@@ -99,11 +99,11 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
 
   const handleSave = async () => {
     if (!form.title.trim()) {
-      toast.error("Title is required");
+      toast.error("Tytuł jest wymagany");
       return;
     }
     if (!form.due_date) {
-      toast.error("Due date is required");
+      toast.error("Data terminu jest wymagana");
       return;
     }
 
@@ -122,14 +122,14 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to save deadline");
+        throw new Error(data.error || "Nie udało się zapisać terminu");
       }
 
-      toast.success(editingDeadline ? "Deadline updated" : "Deadline added");
+      toast.success(editingDeadline ? "Termin zaktualizowany" : "Termin dodany");
       handleCancel();
       onRefresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save");
+      toast.error(err instanceof Error ? err.message : "Nie udało się zapisać");
     } finally {
       setSaving(false);
     }
@@ -145,12 +145,12 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to update deadline");
+        throw new Error(data.error || "Nie udało się zaktualizować terminu");
       }
-      toast.success("Deadline marked as met");
+      toast.success("Termin oznaczony jako zrealizowany");
       onRefresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update");
+      toast.error(err instanceof Error ? err.message : "Nie udało się zaktualizować");
     } finally {
       setActionId(null);
     }
@@ -164,12 +164,12 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to delete deadline");
+        throw new Error(data.error || "Nie udało się usunąć terminu");
       }
-      toast.success("Deadline removed");
+      toast.success("Termin usunięty");
       onRefresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete");
+      toast.error(err instanceof Error ? err.message : "Nie udało się usunąć");
     } finally {
       setActionId(null);
     }
@@ -181,19 +181,19 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
   return (
     <div className="bg-card border rounded-lg p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">Deadlines</span>
+        <span className="text-xs font-medium text-muted-foreground">Terminy</span>
         <button
           className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded hover:bg-muted text-muted-foreground"
           onClick={openAdd}
         >
           <Plus className="w-3.5 h-3.5" />
-          Add Deadline
+          Dodaj termin
         </button>
       </div>
 
       {/* Deadline list */}
       {deadlines.length === 0 && !showForm && (
-        <p className="text-sm text-muted-foreground py-2">No deadlines set.</p>
+        <p className="text-sm text-muted-foreground py-2">Brak terminów.</p>
       )}
 
       {deadlines.map((deadline) => {
@@ -202,7 +202,7 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
           overdue
             ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
             : DEADLINE_STATUS_COLORS[deadline.status] || DEADLINE_STATUS_COLORS.pending;
-        const statusLabel = overdue ? "Overdue" : deadline.status.charAt(0).toUpperCase() + deadline.status.slice(1);
+        const statusLabel = overdue ? "Przeterminowany" : deadline.status.charAt(0).toUpperCase() + deadline.status.slice(1);
 
         return (
           <div
@@ -223,10 +223,10 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span className={overdue ? "text-red-600 dark:text-red-400 font-medium" : ""}>
-                  Due: {formatDate(deadline.due_date)}
+                  Termin: {formatDate(deadline.due_date)}
                 </span>
                 {deadline.completed_at && (
-                  <span>Completed: {formatDate(deadline.completed_at)}</span>
+                  <span>Ukończono: {formatDate(deadline.completed_at)}</span>
                 )}
               </div>
               {deadline.description && (
@@ -269,7 +269,7 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
         <div className="border rounded p-3 space-y-3 bg-muted/30">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">
-              {editingDeadline ? "Edit Deadline" : "Add Deadline"}
+              {editingDeadline ? "Edytuj termin" : "Dodaj termin"}
             </span>
             <div className="flex items-center gap-1">
               <button
@@ -292,17 +292,17 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className={fieldLabel}>Title *</label>
+              <label className={fieldLabel}>Tytuł *</label>
               <input
                 type="text"
                 className={inputClass}
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                placeholder="Deadline title..."
+                placeholder="Tytuł terminu..."
               />
             </div>
             <div>
-              <label className={fieldLabel}>Type *</label>
+              <label className={fieldLabel}>Typ *</label>
               <select
                 className={inputClass}
                 value={form.deadline_type}
@@ -316,7 +316,7 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
               </select>
             </div>
             <div>
-              <label className={fieldLabel}>Due Date *</label>
+              <label className={fieldLabel}>Data terminu *</label>
               <input
                 type="date"
                 className={inputClass}
@@ -325,12 +325,12 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
               />
             </div>
             <div className="md:col-span-2">
-              <label className={fieldLabel}>Description</label>
+              <label className={fieldLabel}>Opis</label>
               <textarea
                 className={`${inputClass} min-h-[40px]`}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Additional details..."
+                placeholder="Dodatkowe informacje..."
                 rows={2}
               />
             </div>

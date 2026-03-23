@@ -74,11 +74,11 @@ export function NewCaseDialog({
     setError("");
 
     if (!title.trim()) {
-      setError("Title is required");
+      setError("Tytuł jest wymagany");
       return;
     }
     if (!caseType) {
-      setError("Case type is required");
+      setError("Typ sprawy jest wymagany");
       return;
     }
 
@@ -105,7 +105,7 @@ export function NewCaseDialog({
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Failed to create case");
+        setError(data.error || "Nie udało się utworzyć sprawy");
         setIsSubmitting(false);
         return;
       }
@@ -113,7 +113,7 @@ export function NewCaseDialog({
       reset();
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create case");
+      setError(err instanceof Error ? err.message : "Nie udało się utworzyć sprawy");
       setIsSubmitting(false);
     }
   };
@@ -125,7 +125,7 @@ export function NewCaseDialog({
       <div className="bg-background border rounded-lg shadow-lg w-full max-w-md p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold">New Case</h2>
+          <h2 className="text-lg font-semibold">Nowa sprawa</h2>
           {!isSubmitting && (
             <button
               onClick={handleClose}
@@ -141,27 +141,27 @@ export function NewCaseDialog({
         <div className="space-y-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">
-              Title <span className="text-destructive">*</span>
+              Tytuł <span className="text-destructive">*</span>
             </label>
             <input
               type="text"
               className="w-full px-2 py-1.5 border rounded text-sm bg-background"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Case title"
+              placeholder="Tytuł sprawy"
             />
           </div>
 
           <div>
             <label className="text-sm font-medium mb-1.5 block">
-              Case Type <span className="text-destructive">*</span>
+              Typ sprawy <span className="text-destructive">*</span>
             </label>
             <select
               className="w-full px-2 py-1.5 border rounded text-sm bg-background"
               value={caseType}
               onChange={(e) => setCaseType(e.target.value)}
             >
-              <option value="">Select case type...</option>
+              <option value="">Wybierz typ sprawy...</option>
               {LEGAL_CASE_TYPES.map((t) => (
                 <option key={t} value={t}>
                   {LEGAL_CASE_TYPE_LABELS[t] || t}
@@ -191,43 +191,43 @@ export function NewCaseDialog({
 
           <div>
             <label className="text-sm font-medium mb-1.5 block">
-              Reference Number{" "}
-              <span className="text-muted-foreground font-normal">(optional)</span>
+              Numer referencyjny{" "}
+              <span className="text-muted-foreground font-normal">(opcjonalnie)</span>
             </label>
             <input
               type="text"
               className="w-full px-2 py-1.5 border rounded text-sm bg-background"
               value={referenceNumber}
               onChange={(e) => setReferenceNumber(e.target.value)}
-              placeholder="e.g. I C 123/26"
+              placeholder="np. I C 123/26"
             />
           </div>
 
           <div>
             <label className="text-sm font-medium mb-1.5 block">
-              Court{" "}
-              <span className="text-muted-foreground font-normal">(optional)</span>
+              Sąd{" "}
+              <span className="text-muted-foreground font-normal">(opcjonalnie)</span>
             </label>
             <input
               type="text"
               className="w-full px-2 py-1.5 border rounded text-sm bg-background"
               value={court}
               onChange={(e) => setCourt(e.target.value)}
-              placeholder="e.g. District Court in Warsaw"
+              placeholder="np. Sąd Rejonowy w Warszawie"
             />
           </div>
 
           <div>
             <label className="text-sm font-medium mb-1.5 block">
-              Summary{" "}
-              <span className="text-muted-foreground font-normal">(optional)</span>
+              Opis{" "}
+              <span className="text-muted-foreground font-normal">(opcjonalnie)</span>
             </label>
             <textarea
               className="w-full px-2 py-1.5 border rounded text-sm bg-background resize-none"
               rows={3}
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
-              placeholder="Brief description of the case"
+              placeholder="Krótki opis sprawy"
             />
           </div>
 
@@ -239,14 +239,14 @@ export function NewCaseDialog({
               disabled={isSubmitting}
               className="px-3 py-1.5 text-sm border rounded hover:bg-muted transition-colors"
             >
-              Cancel
+              Anuluj
             </button>
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
               className="px-4 py-2 bg-primary text-primary-foreground rounded text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? "Creating..." : "Create Case"}
+              {isSubmitting ? "Tworzenie..." : "Utwórz sprawę"}
             </button>
           </div>
         </div>

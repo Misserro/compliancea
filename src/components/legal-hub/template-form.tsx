@@ -97,11 +97,11 @@ export function TemplateForm({
   const handleSubmit = async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setError("Name is required");
+      setError("Nazwa jest wymagana");
       return;
     }
     if (!templateBody.trim() || templateBody === "<p></p>") {
-      setError("Template body is required");
+      setError("Treść szablonu jest wymagana");
       return;
     }
 
@@ -146,7 +146,7 @@ export function TemplateForm({
       {/* Form fields + editor */}
       <div className="lg:col-span-2 space-y-4">
         <h2 className="text-lg font-semibold">
-          {template ? "Edit Template" : "New Template"}
+          {template ? "Edytuj szablon" : "Nowy szablon"}
         </h2>
 
         {error && (
@@ -158,7 +158,7 @@ export function TemplateForm({
         <div className="space-y-3">
           <div>
             <label className="text-sm font-medium mb-1 block">
-              Name <span className="text-destructive">*</span>
+              Nazwa <span className="text-destructive">*</span>
             </label>
             <Input
               value={name}
@@ -169,18 +169,18 @@ export function TemplateForm({
 
           <div>
             <label className="text-sm font-medium mb-1 block">
-              Description
+              Opis
             </label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description of this template"
+              placeholder="Krótki opis szablonu"
             />
           </div>
 
           <div>
             <label className="text-sm font-medium mb-1 block">
-              Document Type
+              Typ dokumentu
             </label>
             <Input
               value={documentType}
@@ -191,7 +191,7 @@ export function TemplateForm({
 
           <div>
             <label className="text-sm font-medium mb-1 block">
-              Template Body <span className="text-destructive">*</span>
+              Treść szablonu <span className="text-destructive">*</span>
             </label>
             <RichTextEditor
               ref={editorRef}
@@ -199,8 +199,8 @@ export function TemplateForm({
               onChange={setTemplateBody}
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Use {"{{variable}}"} placeholders from the reference panel. They
-              will be replaced with case data during generation.
+              Używaj symboli {"{{zmienna}}"} z panelu zmiennych. Zostaną zastąpione
+              danymi sprawy podczas generowania.
             </p>
           </div>
         </div>
@@ -212,7 +212,7 @@ export function TemplateForm({
             ) : (
               <Save className="w-4 h-4 mr-2" />
             )}
-            {template ? "Save Changes" : "Create Template"}
+            {saving ? (template ? "Zapisywanie..." : "Tworzenie...") : (template ? "Zapisz zmiany" : "Utwórz szablon")}
           </Button>
           <Button
             variant="outline"
@@ -220,16 +220,16 @@ export function TemplateForm({
             onClick={onCancel}
             disabled={saving}
           >
-            Cancel
+            Anuluj
           </Button>
         </div>
       </div>
 
       {/* Variable reference panel */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold">Variable Reference</h3>
+        <h3 className="text-sm font-semibold">Zmienne</h3>
         <p className="text-xs text-muted-foreground">
-          Click to copy a variable, then paste it into the template editor.
+          Kliknij, aby skopiować zmienną, a następnie wklej ją do edytora szablonu.
         </p>
         <div className="border rounded-lg divide-y max-h-[600px] overflow-y-auto">
           {VARIABLE_REFERENCE.map(({ token, description: desc }) => (
@@ -249,7 +249,7 @@ export function TemplateForm({
                 variant="ghost"
                 size="sm"
                 onClick={() => handleCopy(token)}
-                title="Copy to clipboard"
+                title="Kopiuj do schowka"
                 className="shrink-0 ml-2"
               >
                 <Copy className="w-3.5 h-3.5" />

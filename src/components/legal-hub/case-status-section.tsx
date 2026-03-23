@@ -58,7 +58,7 @@ export function CaseStatusSection({ legalCase, caseId, onRefresh }: CaseStatusSe
 
   const handleTransition = async () => {
     if (selectedStatus === legalCase.status) {
-      toast.error("Please select a different status");
+      toast.error("Wybierz inny status");
       return;
     }
 
@@ -75,7 +75,7 @@ export function CaseStatusSection({ legalCase, caseId, onRefresh }: CaseStatusSe
         throw new Error(data.error || "Failed to change status");
       }
 
-      toast.success(`Status changed to ${LEGAL_CASE_STATUS_DISPLAY[selectedStatus] || selectedStatus}`);
+      toast.success(`Status zmieniony na ${LEGAL_CASE_STATUS_DISPLAY[selectedStatus] || selectedStatus}`);
       setNote("");
       onRefresh();
     } catch (err) {
@@ -91,7 +91,7 @@ export function CaseStatusSection({ legalCase, caseId, onRefresh }: CaseStatusSe
 
       {/* Current status */}
       <div className="flex items-center gap-3">
-        <span className="text-sm text-muted-foreground">Current:</span>
+        <span className="text-sm text-muted-foreground">Aktualny:</span>
         <span className={`px-3 py-1 rounded text-sm font-medium ${statusColor}`}>
           {statusDisplay}
         </span>
@@ -101,7 +101,7 @@ export function CaseStatusSection({ legalCase, caseId, onRefresh }: CaseStatusSe
       <div className="flex items-end gap-3 flex-wrap">
         <div className="flex-1 min-w-[180px]">
           <label className="text-muted-foreground text-xs font-medium mb-1 block">
-            Change to
+            Zmień na
           </label>
           <select
             className="w-full px-2 py-1.5 border rounded text-sm bg-background"
@@ -117,14 +117,14 @@ export function CaseStatusSection({ legalCase, caseId, onRefresh }: CaseStatusSe
         </div>
         <div className="flex-1 min-w-[180px]">
           <label className="text-muted-foreground text-xs font-medium mb-1 block">
-            Note (optional)
+            Notatka (opcjonalnie)
           </label>
           <input
             type="text"
             className="w-full px-2 py-1.5 border rounded text-sm bg-background"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Reason for change..."
+            placeholder="Powód zmiany..."
           />
         </div>
         <button
@@ -132,14 +132,14 @@ export function CaseStatusSection({ legalCase, caseId, onRefresh }: CaseStatusSe
           onClick={handleTransition}
           disabled={transitioning || selectedStatus === legalCase.status}
         >
-          {transitioning ? "Changing..." : "Change Status"}
+          {transitioning ? "Zmiana..." : "Zmień status"}
         </button>
       </div>
 
       {/* Status history timeline */}
       {reversedHistory.length > 0 && (
         <div className="space-y-2">
-          <span className="text-xs font-medium text-muted-foreground">History</span>
+          <span className="text-xs font-medium text-muted-foreground">Historia</span>
           <div className="space-y-1.5">
             {reversedHistory.map((entry, index) => {
               const entryColor =

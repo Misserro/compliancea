@@ -107,7 +107,7 @@ export function AddCaseDocumentDialog({
       if (activeTab === "upload") {
         const file = fileRef.current?.files?.[0];
         if (!file) {
-          toast.error("Please select a file");
+          toast.error("Wybierz plik");
           setSaving(false);
           return;
         }
@@ -130,7 +130,7 @@ export function AddCaseDocumentDialog({
         );
         const data = await res.json();
         if (res.ok) {
-          toast.success("Document uploaded");
+          toast.success("Dokument przesłany");
           resetForm();
           onSaved();
           onOpenChange(false);
@@ -140,7 +140,7 @@ export function AddCaseDocumentDialog({
       } else {
         // link mode
         if (!selectedDocId) {
-          toast.error("Please select a document from the library");
+          toast.error("Wybierz dokument z biblioteki");
           setSaving(false);
           return;
         }
@@ -163,7 +163,7 @@ export function AddCaseDocumentDialog({
         );
         const data = await res.json();
         if (res.ok) {
-          toast.success("Document linked");
+          toast.success("Dokument powiązany");
           resetForm();
           onSaved();
           onOpenChange(false);
@@ -184,7 +184,7 @@ export function AddCaseDocumentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add Case Document</DialogTitle>
+          <DialogTitle>Dodaj dokument do sprawy</DialogTitle>
         </DialogHeader>
 
         {/* Tab buttons */}
@@ -199,7 +199,7 @@ export function AddCaseDocumentDialog({
             )}
             onClick={() => setActiveTab("upload")}
           >
-            Upload new
+            Prześlij nowy
           </button>
           <button
             type="button"
@@ -211,14 +211,14 @@ export function AddCaseDocumentDialog({
             )}
             onClick={() => setActiveTab("link")}
           >
-            Link existing
+            Powiąż istniejący
           </button>
         </div>
 
         <div className="space-y-4 py-2">
           {activeTab === "upload" && (
             <div>
-              <Label htmlFor="case-doc-file">File *</Label>
+              <Label htmlFor="case-doc-file">Plik *</Label>
               <Input
                 id="case-doc-file"
                 type="file"
@@ -226,8 +226,7 @@ export function AddCaseDocumentDialog({
                 ref={fileRef}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                PDF or DOCX. Max 10MB. The file will be processed for text
-                search.
+                PDF lub DOCX. Maks. 10 MB. Plik zostanie przetworzony do wyszukiwania tekstowego.
               </p>
             </div>
           )}
@@ -235,24 +234,24 @@ export function AddCaseDocumentDialog({
           {activeTab === "link" && (
             <div>
               <Label htmlFor="case-doc-search">
-                Search library documents
+                Szukaj w bibliotece dokumentów
               </Label>
               <Input
                 id="case-doc-search"
-                placeholder="Search by name, type, or category..."
+                placeholder="Szukaj po nazwie, typie lub kategorii..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <div className="mt-2 max-h-48 overflow-y-auto rounded border bg-muted/30">
                 {libraryLoading ? (
                   <p className="text-sm text-muted-foreground p-3">
-                    Loading documents...
+                    Ładowanie dokumentów...
                   </p>
                 ) : filteredDocs.length === 0 ? (
                   <p className="text-sm text-muted-foreground p-3">
                     {searchQuery
-                      ? "No matching documents."
-                      : "No documents in library."}
+                      ? "Brak pasujących dokumentów."
+                      : "Brak dokumentów w bibliotece."}
                   </p>
                 ) : (
                   filteredDocs.map((doc) => (
@@ -285,7 +284,7 @@ export function AddCaseDocumentDialog({
 
           {/* Shared fields */}
           <div>
-            <Label htmlFor="case-doc-category">Category</Label>
+            <Label htmlFor="case-doc-category">Kategoria</Label>
             <Select
               value={documentCategory}
               onValueChange={setDocumentCategory}
@@ -304,7 +303,7 @@ export function AddCaseDocumentDialog({
           </div>
 
           <div>
-            <Label htmlFor="case-doc-label">Label (optional)</Label>
+            <Label htmlFor="case-doc-label">Etykieta (opcjonalnie)</Label>
             <Input
               id="case-doc-label"
               placeholder="e.g., Pozew, Za\u0142\u0105cznik nr 1"
@@ -315,7 +314,7 @@ export function AddCaseDocumentDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="case-doc-date-filed">Date filed</Label>
+              <Label htmlFor="case-doc-date-filed">Data złożenia</Label>
               <Input
                 id="case-doc-date-filed"
                 type="date"
@@ -324,7 +323,7 @@ export function AddCaseDocumentDialog({
               />
             </div>
             <div>
-              <Label htmlFor="case-doc-filing-ref">Filing reference</Label>
+              <Label htmlFor="case-doc-filing-ref">Numer pisma</Label>
               <Input
                 id="case-doc-filing-ref"
                 placeholder="e.g., I C 123/25"
@@ -341,14 +340,14 @@ export function AddCaseDocumentDialog({
             onClick={() => onOpenChange(false)}
             disabled={saving}
           >
-            Cancel
+            Anuluj
           </Button>
           <Button onClick={handleSave} disabled={saving}>
             {saving
-              ? "Saving..."
+              ? "Zapisywanie..."
               : activeTab === "upload"
-              ? "Upload"
-              : "Link Document"}
+              ? "Prześlij"
+              : "Powiąż dokument"}
           </Button>
         </DialogFooter>
       </DialogContent>
