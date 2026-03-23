@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { LEGAL_CASE_TYPES, LEGAL_CASE_TYPE_LABELS } from "@/lib/constants";
+import type { OrgMember } from "@/lib/types";
 
 interface NewCaseDialogProps {
   open: boolean;
@@ -15,13 +17,39 @@ export function NewCaseDialog({
   onOpenChange,
   onSuccess,
 }: NewCaseDialogProps) {
+  const { data: sessionData } = useSession();
+  const isAdmin = sessionData?.user?.orgRole !== "member";
+  const currentUserId = sessionData?.user?.id;
+
   const [title, setTitle] = useState("");
   const [caseType, setCaseType] = useState("");
   const [referenceNumber, setReferenceNumber] = useState("");
   const [court, setCourt] = useState("");
   const [summary, setSummary] = useState("");
+  const [assignedTo, setAssignedTo] = useState("");
+  const [members, setMembers] = useState<OrgMember[]>([]);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch org members for admin assignee picker
+  useEffect(() => {
+    if (open && isAdmin) {
+      fetch("/api/org/members")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.members) {
+            setMembers(data.members);
+            // Default to current user if not already set
+            if (!assignedTo && currentUserId) {
+              setAssignedTo(String(currentUserId));
+            }
+          }
+        })
+        .catch(() => {
+          // Silently fail — admin can still create without picker
+        });
+    }
+  }, [open, isAdmin, currentUserId]); // assignedTo intentionally excluded — default-selection runs once on open
 
   const reset = () => {
     setTitle("");
@@ -29,6 +57,8 @@ export function NewCaseDialog({
     setReferenceNumber("");
     setCourt("");
     setSummary("");
+    setAssignedTo("");
+    setMembers([]);
     setError("");
     setIsSubmitting(false);
   };
@@ -55,16 +85,21 @@ export function NewCaseDialog({
     setIsSubmitting(true);
 
     try {
+      const body: Record<string, unknown> = {
+        title: title.trim(),
+        case_type: caseType,
+        reference_number: referenceNumber.trim() || null,
+        court: court.trim() || null,
+        summary: summary.trim() || null,
+      };
+      if (isAdmin && assignedTo) {
+        body.assigned_to = Number(assignedTo);
+      }
+
       const res = await fetch("/api/legal-hub/cases", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: title.trim(),
-          case_type: caseType,
-          reference_number: referenceNumber.trim() || null,
-          court: court.trim() || null,
-          summary: summary.trim() || null,
-        }),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
@@ -134,6 +169,25 @@ export function NewCaseDialog({
               ))}
             </select>
           </div>
+
+          {isAdmin && members.length > 0 && (
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">
+                Przypisany do
+              </label>
+              <select
+                className="w-full px-2 py-1.5 border rounded text-sm bg-background"
+                value={assignedTo}
+                onChange={(e) => setAssignedTo(e.target.value)}
+              >
+                {members.map((m) => (
+                  <option key={m.user_id} value={String(m.user_id)}>
+                    {m.name || m.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="text-sm font-medium mb-1.5 block">

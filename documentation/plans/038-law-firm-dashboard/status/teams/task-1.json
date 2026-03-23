@@ -1,0 +1,23 @@
+{
+  "task_id": "task-1",
+  "task_name": "DB schema migration: assigned_to + lawyer profile columns",
+  "team_name": "task-1-team",
+  "goal": "legal_cases has assigned_to column; all existing cases backfilled; org_members has five profile columns; createLegalCase, getLegalCases, updateLegalCase updated; LegalCase TypeScript interface updated",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-23T10:50:25.000Z",
+  "ended_at": "2026-03-23T10:57:21.000Z",
+  "elapsed_seconds": 416,
+  "stages": {
+    "planning":       { "started_at": "2026-03-23T10:50:25.000Z", "ended_at": "2026-03-23T10:53:30.000Z", "elapsed_seconds": 185 },
+    "implementation": { "started_at": "2026-03-23T10:50:25.000Z", "ended_at": "2026-03-23T10:53:30.000Z", "elapsed_seconds": 185 },
+    "review":         { "started_at": "2026-03-23T10:53:30.000Z", "ended_at": "2026-03-23T10:57:21.000Z", "elapsed_seconds": 231 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-1", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-23T10:50:25.000Z", "ended_at": "2026-03-23T10:57:21.000Z" },
+    { "name": "reviewer-1", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-23T10:50:25.000Z", "ended_at": "2026-03-23T10:57:21.000Z" },
+    { "name": "tester-1",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-23T10:50:25.000Z", "ended_at": "2026-03-23T10:57:21.000Z" }
+  ]
+}

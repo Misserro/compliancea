@@ -7,6 +7,7 @@ import {
   getLegalCases,
   getLegalCaseById,
   createLegalCase,
+  getOrgMemberRecord,
 } from "@/lib/db-imports";
 import { logAction } from "@/lib/audit-imports";
 import { LEGAL_CASE_TYPES } from "@/lib/constants";
@@ -38,7 +39,9 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") || undefined;
     const caseType = searchParams.get("caseType") || undefined;
 
-    const cases = getLegalCases({ search, status, caseType , orgId });
+    const userId = Number(session.user.id);
+    const orgRole = session.user.orgRole as string;
+    const cases = getLegalCases({ search, status, caseType, orgId, userId, orgRole });
     return NextResponse.json({ cases });
   } catch (err: unknown) {
     console.error("Error fetching legal cases:", err);
@@ -87,6 +90,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Determine assigned_to based on role
+    let assignedTo: number;
+    const isMember = !session.user.isSuperAdmin && session.user.orgRole === 'member';
+
+    if (isMember) {
+      // Members always auto-assign to themselves
+      assignedTo = Number(session.user.id);
+    } else if (body.assigned_to !== undefined && body.assigned_to !== null) {
+      // Admin/owner/superAdmin with explicit assigned_to
+      if (typeof body.assigned_to !== 'number' || !Number.isInteger(body.assigned_to) || body.assigned_to <= 0) {
+        return NextResponse.json(
+          { error: "assigned_to must be a positive integer" },
+          { status: 400 }
+        );
+      }
+      const targetMember = getOrgMemberRecord(orgId, body.assigned_to);
+      if (!targetMember) {
+        return NextResponse.json(
+          { error: "assigned_to user is not a member of this organization" },
+          { status: 400 }
+        );
+      }
+      assignedTo = body.assigned_to;
+    } else {
+      // Admin/owner/superAdmin without assigned_to — default to self
+      assignedTo = Number(session.user.id);
+    }
+
     const newId = createLegalCase({
       title,
       caseType,
@@ -103,6 +134,7 @@ export async function POST(request: NextRequest) {
       tags: body.tags || [],
       extensionData: body.extension_data || {},
       orgId,
+      assignedTo,
     });
 
     logAction("legal_case", newId, "created", { title, case_type: caseType }, { userId: Number(session.user.id), orgId });

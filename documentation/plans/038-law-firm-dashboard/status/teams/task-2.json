@@ -1,0 +1,23 @@
+{
+  "task_id": "task-2",
+  "task_name": "Case assignment API: create, list, reassign",
+  "team_name": "task-2-team",
+  "goal": "GET /api/legal-hub/cases filters by assigned_to for members; POST auto-assigns for members, accepts assigned_to for admins; PATCH allows admin-only assigned_to updates with 403 for members",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-23T10:55:24.000Z",
+  "ended_at": "2026-03-23T11:00:33.000Z",
+  "elapsed_seconds": 309,
+  "stages": {
+    "planning":       { "started_at": "2026-03-23T10:55:24.000Z", "ended_at": "2026-03-23T10:57:50.000Z", "elapsed_seconds": 146 },
+    "implementation": { "started_at": "2026-03-23T10:57:50.000Z", "ended_at": "2026-03-23T10:59:00.000Z", "elapsed_seconds": 70 },
+    "review":         { "started_at": "2026-03-23T10:59:00.000Z", "ended_at": "2026-03-23T11:00:33.000Z", "elapsed_seconds": 93 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-2", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-23T10:55:24.000Z", "ended_at": "2026-03-23T11:00:33.000Z" },
+    { "name": "reviewer-2", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-23T10:55:24.000Z", "ended_at": "2026-03-23T11:00:33.000Z" },
+    { "name": "tester-2",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-23T10:55:24.000Z", "ended_at": "2026-03-23T11:00:33.000Z" }
+  ]
+}

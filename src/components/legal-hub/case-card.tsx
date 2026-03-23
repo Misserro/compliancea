@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Calendar } from "lucide-react";
+import { Calendar, User } from "lucide-react";
 import type { LegalCase } from "@/lib/types";
 import {
   LEGAL_CASE_STATUS_COLORS,
@@ -62,12 +62,18 @@ export function CaseCard({ legalCase }: CaseCardProps) {
               </span>
             </div>
 
-            {/* Court + created date */}
+            {/* Court + created date + assignee */}
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               {legalCase.court && <span>{legalCase.court}</span>}
               <span className="text-xs">
                 Created {formatDate(legalCase.created_at)}
               </span>
+              {legalCase.assigned_to_name && (
+                <span className="flex items-center gap-1 text-xs">
+                  <User className="w-3 h-3" />
+                  {legalCase.assigned_to_name}
+                </span>
+              )}
             </div>
           </div>
 

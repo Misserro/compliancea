@@ -203,3 +203,7 @@ export function getWizardBlueprints(...args: any[]): any;
 export function getWizardBlueprintById(...args: any[]): any;
 export function updateWizardBlueprint(...args: any[]): any;
 export function deleteWizardBlueprint(...args: any[]): any;
+
+// Law Firm Dashboard (Plan 038 Task 3)
+export function getFirmStats(...args: any[]): any;
+export function updateMemberProfile(...args: any[]): any;

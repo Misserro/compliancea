@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
-import type { LegalCase } from "@/lib/types";
+import { useSession } from "next-auth/react";
+import type { LegalCase, OrgMember } from "@/lib/types";
 import { LEGAL_CASE_TYPES, LEGAL_CASE_TYPE_LABELS } from "@/lib/constants";
 import { calculateCourtFee } from "@/lib/court-fee";
 
@@ -28,8 +29,46 @@ function parseExtensionData(extStr: string): Record<string, unknown> {
 }
 
 export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFormProps) {
+  const { data: sessionData } = useSession();
+  const isAdmin = sessionData?.user?.orgRole !== "member";
+
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [members, setMembers] = useState<OrgMember[]>([]);
+  const [reassigning, setReassigning] = useState(false);
+
+  // Fetch org members for admin reassignment dropdown
+  useEffect(() => {
+    if (isAdmin) {
+      fetch("/api/org/members")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.members) setMembers(data.members);
+        })
+        .catch((err) => { console.warn("Failed to load org members for reassignment:", err); });
+    }
+  }, [isAdmin]);
+
+  const handleReassign = async (newUserId: string) => {
+    setReassigning(true);
+    try {
+      const res = await fetch(`/api/legal-hub/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assigned_to: Number(newUserId) }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to reassign");
+      }
+      toast.success("Case reassigned");
+      onSaved();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to reassign");
+    } finally {
+      setReassigning(false);
+    }
+  };
 
   const parseTags = (tagsStr: string): string => {
     try {
@@ -325,6 +364,25 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
         </button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+        <div>
+          <div className="text-muted-foreground text-xs font-medium mb-1">Przypisany do</div>
+          {isAdmin && members.length > 0 ? (
+            <select
+              className="w-full px-2 py-1.5 border rounded text-sm bg-background"
+              value={legalCase.assigned_to != null ? String(legalCase.assigned_to) : ""}
+              onChange={(e) => handleReassign(e.target.value)}
+              disabled={reassigning}
+            >
+              {members.map((m) => (
+                <option key={m.user_id} value={String(m.user_id)}>
+                  {m.name || m.email}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div>{legalCase.assigned_to_name || "\u2014"}</div>
+          )}
+        </div>
         <div>
           <div className="text-muted-foreground text-xs font-medium mb-1">Title</div>
           <div className="font-medium">{legalCase.title}</div>

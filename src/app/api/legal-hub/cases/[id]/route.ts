@@ -9,6 +9,7 @@ import {
   deleteLegalCase,
   getCaseParties,
   getCaseDeadlines,
+  getOrgMemberRecord,
 } from "@/lib/db-imports";
 import { logAction } from "@/lib/audit-imports";
 import { hasPermission } from "@/lib/permissions";
@@ -100,12 +101,36 @@ export async function PATCH(
 
     const body = await request.json();
 
+    // Validate assigned_to: admin-only, must be a positive integer, must belong to same org
+    if (body.assigned_to !== undefined) {
+      const isMember = !session.user.isSuperAdmin && session.user.orgRole === 'member';
+      if (isMember) {
+        return NextResponse.json(
+          { error: "Members cannot change case assignment" },
+          { status: 403 }
+        );
+      }
+      if (body.assigned_to === null || typeof body.assigned_to !== 'number' || !Number.isInteger(body.assigned_to) || body.assigned_to <= 0) {
+        return NextResponse.json(
+          { error: "assigned_to must be a positive integer" },
+          { status: 400 }
+        );
+      }
+      const targetMember = getOrgMemberRecord(orgId, body.assigned_to);
+      if (!targetMember) {
+        return NextResponse.json(
+          { error: "assigned_to user is not a member of this organization" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Build fields from body with allowlist
     const allowedKeys = [
       "title", "case_type", "reference_number", "internal_number",
       "procedure_type", "court", "court_division", "judge", "status",
       "summary", "claim_description", "claim_value", "claim_currency",
-      "tags", "extension_data",
+      "tags", "extension_data", "assigned_to",
     ];
 
     const fields: Record<string, unknown> = {};

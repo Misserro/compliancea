@@ -1,0 +1,23 @@
+{
+  "task_id": "task-4",
+  "task_name": "Case assignment UI: case creation dialog + case detail reassignment",
+  "team_name": "task-4-team",
+  "goal": "Admin creating a case sees member picker defaulting to self; case detail shows Assigned to field; admin sees reassignment dropdown; member sees read-only; CaseCard shows assignee name; member case list filtered",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-23T10:59:59.000Z",
+  "ended_at": "2026-03-23T11:06:06.000Z",
+  "elapsed_seconds": 367,
+  "stages": {
+    "planning":       { "started_at": "2026-03-23T10:59:59.000Z", "ended_at": "2026-03-23T11:00:33.000Z", "elapsed_seconds": 34 },
+    "implementation": { "started_at": "2026-03-23T11:00:33.000Z", "ended_at": "2026-03-23T11:03:50.000Z", "elapsed_seconds": 197 },
+    "review":         { "started_at": "2026-03-23T11:03:50.000Z", "ended_at": "2026-03-23T11:06:06.000Z", "elapsed_seconds": 136 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-4", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-23T10:59:59.000Z", "ended_at": "2026-03-23T11:06:06.000Z" },
+    { "name": "reviewer-4", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-23T10:59:59.000Z", "ended_at": "2026-03-23T11:06:06.000Z" },
+    { "name": "tester-4",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-23T10:59:59.000Z", "ended_at": "2026-03-23T11:06:06.000Z" }
+  ]
+}

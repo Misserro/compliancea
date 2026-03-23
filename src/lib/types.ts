@@ -312,6 +312,8 @@ export interface LegalCase {
   claim_currency: string;
   tags: string;
   extension_data: string;
+  assigned_to: number | null;
+  assigned_to_name: string | null;
   created_at: string;
   updated_at: string;
   next_deadline?: string | null;
@@ -380,5 +382,12 @@ export interface CaseGeneratedDoc {
   file_path: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface OrgMember {
+  user_id: number;
+  name: string;
+  email: string;
+  role: string;
 }
 

@@ -1,0 +1,23 @@
+{
+  "task_id": "task-3",
+  "task_name": "Firm stats API + lawyer profile update API",
+  "team_name": "task-3-team",
+  "goal": "GET /api/legal-hub/firm-stats returns statsByStatus, finalizedLast30Days, members with profile+case count (403 for members); PATCH /api/org/members/profile updates own profile (member) or any profile (admin with target_user_id)",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-23T10:55:24.000Z",
+  "ended_at": "2026-03-23T11:02:56.000Z",
+  "elapsed_seconds": 452,
+  "stages": {
+    "planning":       { "started_at": "2026-03-23T10:55:24.000Z", "ended_at": "2026-03-23T10:57:50.000Z", "elapsed_seconds": 146 },
+    "implementation": { "started_at": "2026-03-23T10:57:50.000Z", "ended_at": "2026-03-23T11:00:33.000Z", "elapsed_seconds": 163 },
+    "review":         { "started_at": "2026-03-23T11:00:33.000Z", "ended_at": "2026-03-23T11:02:56.000Z", "elapsed_seconds": 143 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-3", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-23T10:55:24.000Z", "ended_at": "2026-03-23T11:02:56.000Z" },
+    { "name": "reviewer-3", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-23T10:55:24.000Z", "ended_at": "2026-03-23T11:02:56.000Z" },
+    { "name": "tester-3",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-23T10:55:24.000Z", "ended_at": "2026-03-23T11:02:56.000Z" }
+  ]
+}

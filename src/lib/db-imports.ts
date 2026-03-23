@@ -193,4 +193,7 @@ export {
   getWizardBlueprintById,
   updateWizardBlueprint,
   deleteWizardBlueprint,
+  // Law Firm Dashboard (Plan 038 Task 3)
+  getFirmStats,
+  updateMemberProfile,
 } from "../../lib/db.js";

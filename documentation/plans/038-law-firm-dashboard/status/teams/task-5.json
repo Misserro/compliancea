@@ -1,0 +1,23 @@
+{
+  "task_id": "task-5",
+  "task_name": "My law firm admin tab UI",
+  "team_name": "task-5-team",
+  "goal": "Admin sees two tabs in Legal Hub: Sprawy and Moja kancelaria; Moja kancelaria shows case stats + member roster with editable profiles; tab hidden for members",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-23T11:01:31.000Z",
+  "ended_at": "2026-03-23T11:07:25.000Z",
+  "elapsed_seconds": 354,
+  "stages": {
+    "planning":       { "started_at": "2026-03-23T11:01:31.000Z", "ended_at": "2026-03-23T11:02:56.000Z", "elapsed_seconds": 85 },
+    "implementation": { "started_at": "2026-03-23T11:03:50.000Z", "ended_at": "2026-03-23T11:06:06.000Z", "elapsed_seconds": 136 },
+    "review":         { "started_at": "2026-03-23T11:06:06.000Z", "ended_at": "2026-03-23T11:07:25.000Z", "elapsed_seconds": 79 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-5", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-23T11:01:31.000Z", "ended_at": "2026-03-23T11:07:25.000Z" },
+    { "name": "reviewer-5", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-23T11:01:31.000Z", "ended_at": "2026-03-23T11:07:25.000Z" },
+    { "name": "tester-5",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-23T11:01:31.000Z", "ended_at": "2026-03-23T11:07:25.000Z" }
+  ]
+}
