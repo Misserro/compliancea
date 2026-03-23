@@ -1,0 +1,23 @@
+{
+  "task_id": "task-2",
+  "task_name": "Section AI Assist UI",
+  "team_name": "task-2-team",
+  "goal": "Update template-wizard.tsx section filling step: mode toggle, hint textarea, Generuj z AI button with loading state. Populate section textarea on success. Extend WizardSection type in wizard-blueprints.ts with aiMode and aiHint optional fields.",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-23T09:00:06Z",
+  "ended_at": "2026-03-23T09:11:16Z",
+  "elapsed_seconds": 670,
+  "stages": {
+    "planning":       { "started_at": "2026-03-23T09:00:06Z", "ended_at": "2026-03-23T09:06:26Z", "elapsed_seconds": 380 },
+    "implementation": { "started_at": "2026-03-23T09:06:26Z", "ended_at": "2026-03-23T09:08:52Z", "elapsed_seconds": 146 },
+    "review":         { "started_at": "2026-03-23T09:08:52Z", "ended_at": "2026-03-23T09:11:16Z", "elapsed_seconds": 144 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-2", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-23T09:00:06Z", "ended_at": "2026-03-23T09:11:16Z" },
+    { "name": "reviewer-2", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-23T09:00:06Z", "ended_at": "2026-03-23T09:11:16Z" },
+    { "name": "tester-2",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-23T09:00:06Z", "ended_at": "2026-03-23T09:11:16Z" }
+  ]
+}

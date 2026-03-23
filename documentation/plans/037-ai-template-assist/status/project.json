@@ -1,0 +1,14 @@
+{
+  "name": "037-ai-template-assist",
+  "description": "Extends Template Wizard with two AI-powered capabilities: Section AI Assist (per-section Claude content generation) and Document Polish (full AI rewrite into cohesive Polish legal document)",
+  "plan_file": "documentation/plans/037-ai-template-assist/README.md",
+  "status": "completed",
+  "started_at": "2026-03-23T08:55:08Z",
+  "ended_at": "2026-03-23T09:14:24Z",
+  "elapsed_seconds": 1156,
+  "concurrency_limit": 2,
+  "total_tasks": 4,
+  "completed_tasks": 4,
+  "active_tasks": 0,
+  "pending_tasks": 0
+}

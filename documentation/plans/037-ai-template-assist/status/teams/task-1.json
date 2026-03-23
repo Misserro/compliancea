@@ -1,0 +1,23 @@
+{
+  "task_id": "task-1",
+  "task_name": "Section AI Assist API",
+  "team_name": "task-1-team",
+  "goal": "Create POST /api/legal-hub/wizard/ai-assist route with auth, org membership validation, input validation, and Claude invocation. Write prompts/wizard-section-assist.md. Return { content: string }.",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-23T08:56:37Z",
+  "ended_at": "2026-03-23T09:06:26Z",
+  "elapsed_seconds": 589,
+  "stages": {
+    "planning":       { "started_at": "2026-03-23T08:56:37Z", "ended_at": "2026-03-23T08:59:01Z", "elapsed_seconds": 144 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": "2026-03-23T08:59:01Z", "ended_at": "2026-03-23T09:06:26Z", "elapsed_seconds": 445 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-1", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-23T08:56:37Z", "ended_at": "2026-03-23T09:06:26Z" },
+    { "name": "reviewer-1", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-23T08:56:37Z", "ended_at": "2026-03-23T09:06:26Z" },
+    { "name": "tester-1",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-23T08:56:37Z", "ended_at": "2026-03-23T09:06:26Z" }
+  ]
+}

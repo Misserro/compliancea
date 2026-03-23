@@ -1,0 +1,23 @@
+{
+  "task_id": "task-4",
+  "task_name": "Document Polish Wizard Step",
+  "team_name": "task-4-team",
+  "goal": "Add ai-polish step to template-wizard.tsx. Display assembled draft, optional AI polish via api-polish API, loading state, accept/revert CTAs, skip button. Both accept and skip call onComplete(html).",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-23T09:01:51Z",
+  "ended_at": "2026-03-23T09:14:24Z",
+  "elapsed_seconds": 753,
+  "stages": {
+    "planning":       { "started_at": "2026-03-23T09:01:51Z", "ended_at": "2026-03-23T09:11:16Z", "elapsed_seconds": 565 },
+    "implementation": { "started_at": "2026-03-23T09:11:16Z", "ended_at": "2026-03-23T09:13:27Z", "elapsed_seconds": 131 },
+    "review":         { "started_at": "2026-03-23T09:13:27Z", "ended_at": "2026-03-23T09:14:24Z", "elapsed_seconds": 57 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-4", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-23T09:01:51Z", "ended_at": "2026-03-23T09:14:24Z" },
+    { "name": "reviewer-4", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-23T09:01:51Z", "ended_at": "2026-03-23T09:14:24Z" },
+    { "name": "tester-4",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-23T09:01:51Z", "ended_at": "2026-03-23T09:14:24Z" }
+  ]
+}

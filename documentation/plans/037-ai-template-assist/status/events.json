@@ -1,0 +1,151 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-03-23T08:55:08Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution started — 4 tasks, concurrency limit 2. Tasks 1 and 3 run in parallel (no dependencies). Tasks 2 and 4 pipeline-spawn after their prerequisites."
+    },
+    {
+      "timestamp": "2026-03-23T08:56:37Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1-team spawned: Section AI Assist API. Members: executor-1 (opus), reviewer-1 (sonnet), tester-1 (sonnet)."
+    },
+    {
+      "timestamp": "2026-03-23T08:56:37Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-23T08:57:54Z",
+      "type": "team_spawned",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3-team spawned: Document Polish API. Members: executor-3 (opus), reviewer-3 (sonnet), tester-3 (sonnet)."
+    },
+    {
+      "timestamp": "2026-03-23T08:57:54Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-23T08:59:01Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 entered review stage. Planning completed in ~144s. reviewer-1 now active."
+    },
+    {
+      "timestamp": "2026-03-23T09:00:06Z",
+      "type": "pipeline_spawn",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2-team pipeline-spawned: Section AI Assist UI. Planning only — awaiting task-1 completion before implementation. Members: executor-2 (opus), reviewer-2 (sonnet), tester-2 (sonnet). pipeline_mode=true."
+    },
+    {
+      "timestamp": "2026-03-23T09:00:06Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 entered planning stage (pipeline mode — implementation gated on task-1 APPROVED-IMPL)"
+    },
+    {
+      "timestamp": "2026-03-23T09:01:51Z",
+      "type": "pipeline_spawn",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4-team pipeline-spawned: Document Polish Wizard Step. Planning only — awaiting task-2 and task-3 completion before implementation. Members: executor-4 (opus), reviewer-4 (sonnet), tester-4 (sonnet). pipeline_mode=true."
+    },
+    {
+      "timestamp": "2026-03-23T09:01:51Z",
+      "type": "stage_entered",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4 entered planning stage (pipeline mode — implementation gated on task-2 + task-3 both APPROVED-IMPL)"
+    },
+    {
+      "timestamp": "2026-03-23T09:06:26Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 completed: Section AI Assist API. Total ~589s. Planning ~144s, review ~445s. 0 retries."
+    },
+    {
+      "timestamp": "2026-03-23T09:06:26Z",
+      "type": "implementation_approved",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 APPROVED-IMPL: pipeline_mode cleared, implementation stage opened. executor-2 now implementing Section AI Assist UI."
+    },
+    {
+      "timestamp": "2026-03-23T09:06:26Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 entered implementation stage. Planning completed in ~380s."
+    },
+    {
+      "timestamp": "2026-03-23T09:06:26Z",
+      "type": "task_completed",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 completed: Document Polish API. Total ~512s. 0 retries."
+    },
+    {
+      "timestamp": "2026-03-23T09:08:52Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 entered review stage. Implementation completed in ~146s. reviewer-2 now active, executor-2 idle."
+    },
+    {
+      "timestamp": "2026-03-23T09:11:16Z",
+      "type": "task_completed",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 completed: Section AI Assist UI. Total ~670s. Planning ~380s, implementation ~146s, review ~144s. 0 retries."
+    },
+    {
+      "timestamp": "2026-03-23T09:11:16Z",
+      "type": "implementation_approved",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4 APPROVED-IMPL: pipeline_mode cleared, implementation stage opened. Both prerequisites (task-2 + task-3) complete. executor-4 now implementing Document Polish Wizard Step."
+    },
+    {
+      "timestamp": "2026-03-23T09:11:16Z",
+      "type": "stage_entered",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4 entered implementation stage. Planning completed in ~565s."
+    },
+    {
+      "timestamp": "2026-03-23T09:13:27Z",
+      "type": "stage_entered",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4 entered review stage. Implementation completed in ~131s. reviewer-4 now active, executor-4 idle."
+    },
+    {
+      "timestamp": "2026-03-23T09:14:24Z",
+      "type": "task_completed",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4 completed: Document Polish Wizard Step. Total ~753s. Planning ~565s, implementation ~131s, review ~57s. 0 retries."
+    },
+    {
+      "timestamp": "2026-03-23T09:14:24Z",
+      "type": "execution_completed",
+      "task_id": null,
+      "agent": "pm",
+      "message": "All 4 tasks completed. Total wall-clock time ~1156s (~19m). 0 retries across all tasks. 0 incidents."
+    }
+  ]
+}

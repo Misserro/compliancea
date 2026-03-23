@@ -19,7 +19,11 @@ export interface WizardSection {
   sectionKey: string | null;
   variableHintKeys: string[];
   content: string;
+  aiMode?: "template" | "real";
+  aiHint?: string;
 }
+
+export type WizardStep = "blueprint" | number | "ai-polish";
 
 // ---------------------------------------------------------------------------
 // Variable hint mapping: section key → variable tokens shown in that section

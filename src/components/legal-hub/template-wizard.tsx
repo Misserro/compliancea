@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, X, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -11,6 +11,7 @@ import {
   combineWizardSections,
   type PredefinedBlueprint,
   type WizardSection,
+  type WizardStep,
 } from "@/lib/wizard-blueprints";
 
 interface CustomBlueprint {
@@ -24,8 +25,6 @@ interface TemplateWizardProps {
   onCancel: () => void;
 }
 
-type WizardStep = "blueprint" | number;
-
 export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
   const [step, setStep] = useState<WizardStep>("blueprint");
   const [customBlueprints, setCustomBlueprints] = useState<CustomBlueprint[]>(
@@ -33,6 +32,17 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
   );
   const [loadingCustom, setLoadingCustom] = useState(true);
   const [sections, setSections] = useState<WizardSection[]>([]);
+  const [selectedBlueprintName, setSelectedBlueprintName] = useState("");
+  const [selectedDocumentType, setSelectedDocumentType] = useState<
+    string | null
+  >(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [polishedHtml, setPolishedHtml] = useState<string | null>(null);
+  const [polishState, setPolishState] = useState<
+    "idle" | "loading" | "done" | "error"
+  >("idle");
+  const [polishError, setPolishError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
@@ -58,13 +68,17 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
         title: string;
         sectionKey: string | null;
         variableHintKeys?: string[];
-      }>
+      }>,
+      blueprintName: string,
+      documentType: string | null
     ) => {
       if (blueprintSections.length === 0) {
         // Blank blueprint — go straight to form with empty content
         onComplete("");
         return;
       }
+      setSelectedBlueprintName(blueprintName);
+      setSelectedDocumentType(documentType);
       const initialized: WizardSection[] = blueprintSections.map((s) => ({
         title: s.title,
         sectionKey: s.sectionKey,
@@ -83,7 +97,7 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
 
   const selectPredefined = useCallback(
     (blueprint: PredefinedBlueprint) => {
-      selectBlueprint(blueprint.sections);
+      selectBlueprint(blueprint.sections, blueprint.name, blueprint.documentType);
     },
     [selectBlueprint]
   );
@@ -100,7 +114,7 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
       } catch {
         parsed = [];
       }
-      selectBlueprint(parsed);
+      selectBlueprint(parsed, blueprint.name, null);
     },
     [selectBlueprint]
   );
@@ -121,6 +135,58 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
     textarea.focus();
   };
 
+  const updateAiMode = (index: number, mode: "template" | "real") => {
+    setSections((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, aiMode: mode } : s))
+    );
+  };
+
+  const updateAiHint = (index: number, hint: string) => {
+    setSections((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, aiHint: hint } : s))
+    );
+  };
+
+  const handleAiGenerate = async (index: number) => {
+    const sec = sections[index];
+    const mode = sec.aiMode ?? "template";
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const previousSections = sections
+        .slice(0, index)
+        .map((s) => ({ title: s.title, content: s.content }));
+      // Strip {{...}} wrappers — API re-wraps them
+      const availableVariables = sec.variableHintKeys.map((v) =>
+        v.replace(/^\{\{/, "").replace(/\}\}$/, "")
+      );
+      const res = await fetch("/api/legal-hub/wizard/ai-assist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blueprintName: selectedBlueprintName,
+          documentType: selectedDocumentType,
+          sectionTitle: sec.title,
+          sectionKey: sec.sectionKey,
+          mode,
+          previousSections,
+          userHint: sec.aiHint?.trim() || null,
+          availableVariables,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Request failed (${res.status})`);
+      }
+      const data = await res.json();
+      updateContent(index, data.content);
+    } catch (err: unknown) {
+      setAiError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleNext = () => {
     if (typeof step === "number" && step < sections.length - 1) {
       setStep(step + 1);
@@ -128,6 +194,10 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
   };
 
   const handlePrev = () => {
+    if (step === "ai-polish") {
+      setStep(sections.length - 1);
+      return;
+    }
     if (typeof step === "number") {
       if (step > 0) {
         setStep(step - 1);
@@ -138,6 +208,57 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
   };
 
   const handleFinish = () => {
+    setPolishedHtml(null);
+    setPolishState("idle");
+    setPolishError(null);
+    setStep("ai-polish");
+  };
+
+  const handlePolish = async () => {
+    setPolishState("loading");
+    setPolishError(null);
+    try {
+      const res = await fetch("/api/legal-hub/wizard/ai-polish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sections: sections.map((s) => ({
+            title: s.title,
+            content: s.content,
+          })),
+          blueprintName: selectedBlueprintName,
+          documentType: selectedDocumentType ?? null,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(
+          data.error || "Błąd podczas ulepszania dokumentu"
+        );
+      }
+      const data = await res.json();
+      setPolishedHtml(data.polishedHtml);
+      setPolishState("done");
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Nieznany błąd";
+      setPolishError(msg);
+      setPolishState("error");
+    }
+  };
+
+  const handleSkipPolish = () => {
+    const html = combineWizardSections(
+      sections.map((s) => ({ title: s.title, content: s.content }))
+    );
+    onComplete(html);
+  };
+
+  const handleAcceptPolished = () => {
+    if (polishedHtml) onComplete(polishedHtml);
+  };
+
+  const handleRevertToOriginal = () => {
     const html = combineWizardSections(
       sections.map((s) => ({ title: s.title, content: s.content }))
     );
@@ -231,6 +352,142 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
     );
   }
 
+  // -- AI polish step -----------------------------------------------------------
+  if (step === "ai-polish") {
+    const rawHtml = combineWizardSections(
+      sections.map((s) => ({ title: s.title, content: s.content }))
+    );
+
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            className="text-muted-foreground"
+          >
+            <X className="w-4 h-4 mr-1" />
+            Cancel
+          </Button>
+          <div>
+            <div className="text-xs text-muted-foreground">
+              Ostatni krok
+            </div>
+            <h2 className="text-lg font-semibold flex items-center gap-1.5">
+              <Sparkles className="w-5 h-5" />
+              Ulepszanie dokumentu
+            </h2>
+          </div>
+        </div>
+
+        {/* Progress bar — all sections filled + polish step active */}
+        <div className="flex gap-1.5">
+          {sections.map((_, i) => (
+            <div
+              key={i}
+              className="h-1.5 rounded-full flex-1 bg-primary/40"
+            />
+          ))}
+          <div className="h-1.5 rounded-full flex-1 bg-primary" />
+        </div>
+
+        {/* Preview area */}
+        <div className="space-y-3">
+          <label className="text-sm font-medium block">
+            {polishState === "done"
+              ? "Ulepszona wersja"
+              : "Podgląd dokumentu"}
+          </label>
+          <div
+            className="rounded-md border border-input bg-background px-4 py-3 text-sm max-h-[400px] overflow-y-auto prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{
+              __html: polishState === "done" && polishedHtml ? polishedHtml : rawHtml,
+            }}
+          />
+        </div>
+
+        {/* Action area */}
+        <div className="space-y-3">
+          {polishState === "idle" && (
+            <div className="flex items-center gap-3">
+              <Button size="sm" onClick={handlePolish}>
+                <Sparkles className="w-4 h-4 mr-1.5" />
+                Ulepsz z AI
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSkipPolish}
+              >
+                Pomiń
+              </Button>
+            </div>
+          )}
+
+          {polishState === "loading" && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Ulepszanie dokumentu...
+            </div>
+          )}
+
+          {polishState === "done" && (
+            <div className="flex items-center gap-3">
+              <Button size="sm" onClick={handleAcceptPolished}>
+                <Check className="w-4 h-4 mr-1" />
+                Użyj ulepszonej wersji
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRevertToOriginal}
+              >
+                Użyj oryginalnej wersji
+              </Button>
+            </div>
+          )}
+
+          {polishState === "error" && (
+            <div className="space-y-2">
+              <p className="text-xs text-destructive">
+                {polishError}
+              </p>
+              <div className="flex items-center gap-3">
+                <Button size="sm" onClick={handlePolish}>
+                  <Sparkles className="w-4 h-4 mr-1.5" />
+                  Spróbuj ponownie
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSkipPolish}
+                >
+                  Pomiń
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Navigation */}
+        <div className="flex items-center justify-between pt-2 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePrev}
+            disabled={polishState === "loading"}
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Previous
+          </Button>
+          <div />
+        </div>
+      </div>
+    );
+  }
+
   // -- Section fill step ------------------------------------------------------
   const idx = step;
   const section = sections[idx];
@@ -296,6 +553,75 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
             Each line becomes a paragraph. Click a variable chip to insert it at
             the cursor.
           </p>
+
+          {/* AI Assist */}
+          <div className="space-y-3 pt-3 border-t">
+            <h3 className="text-sm font-medium flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4" />
+              Asystent AI
+            </h3>
+
+            {/* Mode toggle */}
+            <div className="flex gap-0">
+              <button
+                type="button"
+                onClick={() => updateAiMode(idx, "template")}
+                className={`px-3 py-1.5 text-xs font-medium border transition-colors rounded-l-md ${
+                  (section.aiMode ?? "template") === "template"
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background text-muted-foreground border-input hover:bg-muted/50"
+                }`}
+              >
+                Szablon z zmiennymi
+              </button>
+              <button
+                type="button"
+                onClick={() => updateAiMode(idx, "real")}
+                className={`px-3 py-1.5 text-xs font-medium border border-l-0 transition-colors rounded-r-md ${
+                  section.aiMode === "real"
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background text-muted-foreground border-input hover:bg-muted/50"
+                }`}
+              >
+                Treść rzeczywista
+              </button>
+            </div>
+
+            {/* Hint textarea */}
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">
+                Wskazówka dla AI — opcjonalnie
+              </label>
+              <textarea
+                value={section.aiHint ?? ""}
+                onChange={(e) => updateAiHint(idx, e.target.value)}
+                placeholder="Np. skup się na terminach płatności..."
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
+                rows={2}
+              />
+            </div>
+
+            {/* Generate button */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => handleAiGenerate(idx)}
+              disabled={aiLoading}
+            >
+              {aiLoading ? (
+                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-1.5" />
+              )}
+              {aiLoading ? "Generowanie..." : "Generuj z AI"}
+            </Button>
+
+            {/* Error display */}
+            {aiError && (
+              <p className="text-xs text-destructive">{aiError}</p>
+            )}
+          </div>
         </div>
 
         {/* Variable chips */}
