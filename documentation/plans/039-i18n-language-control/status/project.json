@@ -1,0 +1,14 @@
+{
+  "name": "039-i18n-language-control",
+  "description": "Introduces full i18n to the application using next-intl. Users switch between English and Polish via a sidebar toggle. Cookie-based locale, no URL routing.",
+  "plan_file": "documentation/plans/039-i18n-language-control/README.md",
+  "status": "executing",
+  "started_at": "2026-03-26T12:35:28.000Z",
+  "ended_at": null,
+  "elapsed_seconds": 1541,
+  "concurrency_limit": 3,
+  "total_tasks": 7,
+  "completed_tasks": 3,
+  "active_tasks": 3,
+  "pending_tasks": 1
+}

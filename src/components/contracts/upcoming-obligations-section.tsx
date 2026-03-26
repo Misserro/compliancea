@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Calendar, FileText } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
 import type { Obligation } from "@/lib/types";
 import { CATEGORY_COLORS, CATEGORY_MIGRATION_MAP, OBLIGATION_CATEGORIES } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +13,8 @@ export function UpcomingObligationsSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const t = useTranslations("Contracts");
+  const locale = useLocale();
 
   useEffect(() => {
     async function loadUpcoming() {
@@ -22,17 +25,17 @@ export function UpcomingObligationsSection() {
           setObligations(data.obligations || []);
         } else {
           setError(true);
-          toast.error("Failed to load upcoming obligations");
+          toast.error(t("upcoming.loadError"));
         }
       } catch (err) {
         setError(true);
-        toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
+        toast.error(err instanceof Error ? err.message : t("upcoming.loadError"));
       } finally {
         setLoading(false);
       }
     }
     loadUpcoming();
-  }, []);
+  }, [t]);
 
   const categories = ["all", ...OBLIGATION_CATEGORIES] as const;
 
@@ -50,20 +53,20 @@ export function UpcomingObligationsSection() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const diffDays = Math.round((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Tomorrow";
-    if (diffDays < 7 && diffDays > 0) return `In ${diffDays} days`;
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    if (diffDays === 0) return t("upcoming.today");
+    if (diffDays === 1) return t("upcoming.tomorrow");
+    if (diffDays < 7 && diffDays > 0) return t("upcoming.inDays", { count: diffDays });
+    return date.toLocaleDateString(locale, { month: "short", day: "numeric" });
   };
 
   const emptyMessage =
     categoryFilter === "all"
-      ? "No upcoming obligations in the next 30 days."
-      : `No upcoming ${categoryFilter} obligations.`;
+      ? t("upcoming.noUpcoming")
+      : t("upcoming.noUpcomingCategory", { category: t(`obligationCategory.${categoryFilter}`) });
 
   return (
     <div>
-      <h3 className="text-lg font-semibold mb-4">Upcoming Obligations (Next 30 Days)</h3>
+      <h3 className="text-lg font-semibold mb-4">{t("upcoming.title")}</h3>
 
       {/* Category filter */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
@@ -77,7 +80,7 @@ export function UpcomingObligationsSection() {
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
           >
-            {cat === "all" ? "All" : cat.charAt(0).toUpperCase() + cat.slice(1)}
+            {cat === "all" ? t("allFilter") : t(`obligationCategory.${cat}`)}
           </button>
         ))}
       </div>
@@ -89,7 +92,7 @@ export function UpcomingObligationsSection() {
           ))}
         </div>
       ) : !loading && error ? (
-        <p className="text-sm text-destructive text-center py-6">Failed to load upcoming obligations.</p>
+        <p className="text-sm text-destructive text-center py-6">{t("upcoming.loadError")}</p>
       ) : filteredObligations.length === 0 ? (
         <p className="text-sm text-muted-foreground py-6 text-center">{emptyMessage}</p>
       ) : (
@@ -106,11 +109,11 @@ export function UpcomingObligationsSection() {
               >
                 <div className="flex items-start justify-between mb-2">
                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${categoryColor}`}>
-                    {category}
+                    {t(`obligationCategory.${category}`)}
                   </span>
                   <div className="text-xs text-muted-foreground flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
-                    {ob.due_date ? formatDate(ob.due_date) : "—"}
+                    {ob.due_date ? formatDate(ob.due_date) : "\u2014"}
                   </div>
                 </div>
                 <h4 className="font-medium text-sm mb-2 line-clamp-2">{ob.title}</h4>

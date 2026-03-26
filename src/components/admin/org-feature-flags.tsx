@@ -2,16 +2,17 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Switch } from "@/components/ui/switch";
 import { Settings2 } from "lucide-react";
 
-const FEATURE_LABELS: Record<string, string> = {
-  contracts: "Contracts",
-  legal_hub: "Legal Hub",
-  template_editor: "Template Editor",
-  court_fee_calculator: "Court Fee Calculator",
-  policies: "Policies",
-  qa_cards: "Q&A Cards",
+const FEATURE_KEYS: Record<string, string> = {
+  contracts: "contracts",
+  legal_hub: "legalHub",
+  template_editor: "templateEditor",
+  court_fee_calculator: "courtFeeCalculator",
+  policies: "policies",
+  qa_cards: "qaCards",
 };
 
 interface OrgFeatureFlagsProps {
@@ -19,6 +20,7 @@ interface OrgFeatureFlagsProps {
 }
 
 export function OrgFeatureFlags({ orgId }: OrgFeatureFlagsProps) {
+  const t = useTranslations("Admin.featureFlags");
   const [features, setFeatures] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
@@ -56,13 +58,14 @@ export function OrgFeatureFlags({ orgId }: OrgFeatureFlagsProps) {
       if (res.ok) {
         const data = await res.json();
         setFeatures(data);
+        const featureLabel = FEATURE_KEYS[feature] ? t(FEATURE_KEYS[feature]) : feature;
         toast.success(
-          `${FEATURE_LABELS[feature] ?? feature} ${enabled ? "enabled" : "disabled"}`
+          enabled ? t("featureEnabled", { feature: featureLabel }) : t("featureDisabled", { feature: featureLabel })
         );
       } else {
         setFeatures(prev);
         const data = await res.json();
-        toast.error(data.error || "Failed to update feature");
+        toast.error(data.error || t("failedToUpdateFeature"));
       }
     } catch (err) {
       setFeatures(prev);
@@ -79,21 +82,21 @@ export function OrgFeatureFlags({ orgId }: OrgFeatureFlagsProps) {
         onClick={() => setExpanded((v) => !v)}
       >
         <Settings2 className="size-3.5" />
-        {expanded ? "Hide features" : "Manage features"}
+        {expanded ? t("hideFeatures") : t("manageFeatures")}
       </button>
 
       {expanded && (
         <div className="px-4 pb-4 space-y-3">
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
+            <p className="text-sm text-muted-foreground">{t("loading")}</p>
           ) : (
             <div className="rounded-md border divide-y text-sm">
-              {Object.entries(FEATURE_LABELS).map(([feature, label]) => (
+              {Object.entries(FEATURE_KEYS).map(([feature, tKey]) => (
                 <div
                   key={feature}
                   className="flex items-center justify-between px-3 py-2"
                 >
-                  <span className="font-medium">{label}</span>
+                  <span className="font-medium">{t(tKey)}</span>
                   <Switch
                     checked={features[feature] ?? true}
                     onCheckedChange={(checked) =>

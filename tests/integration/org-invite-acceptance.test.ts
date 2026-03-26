@@ -228,7 +228,8 @@ describe("Login page — invite token awareness (Criterion 5)", () => {
     const { readFileSync } = require("node:fs");
     const content = readFileSync(resolve(ROOT, "src/app/(auth)/login/page.tsx"), "utf-8");
     // Plan: "show a subtle banner: 'You've been invited to join an organization. Log in to accept.'"
-    expect(content).toMatch(/invited.*join|join.*organization/i);
+    // Page uses i18n translation keys — check for inviteLoginPrompt key or literal text
+    expect(content).toMatch(/inviteLoginPrompt|invited.*join|join.*organization/i);
   });
 
   it("login page redirects to /invite/{token} after successful login if pendingInviteToken exists", () => {
@@ -267,7 +268,8 @@ describe("Register page — invite token awareness", () => {
   it("register page shows invite context banner", () => {
     const { readFileSync } = require("node:fs");
     const content = readFileSync(resolve(ROOT, "src/app/(auth)/register/page.tsx"), "utf-8");
-    expect(content).toMatch(/invited|organization/i);
+    // Page uses i18n translation keys — check for inviteRegisterPrompt key or literal text
+    expect(content).toMatch(/inviteRegisterPrompt|invited|organization/i);
   });
 
   it("register page redirects to /invite/{token} after successful registration if pendingInviteToken exists", () => {

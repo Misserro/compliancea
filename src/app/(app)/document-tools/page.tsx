@@ -2,9 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { AnalyzerSection } from "@/components/analyze/analyzer-section";
 import { DeskSection } from "@/components/analyze/desk-section";
 import { getAllDocuments } from "@/lib/db-imports";
+import { getTranslations } from "next-intl/server";
 import type { Document } from "@/lib/types";
 
-export default function DocumentToolsPage() {
+export default async function DocumentToolsPage() {
+  const t = await getTranslations('Documents');
+
   let documents: Document[] = [];
   try {
     documents = getAllDocuments() as Document[];
@@ -15,16 +18,16 @@ export default function DocumentToolsPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Analyze & Process</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">{t('analyze.title')}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          AI-powered document analysis and multi-mode processing tools.
+          {t('analyze.subtitle')}
         </p>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Document Analyzer</CardTitle>
+          <CardTitle>{t('analyze.analyzerTitle')}</CardTitle>
           <CardDescription>
-            Upload a document to translate, summarize, extract key points, or generate department to-do lists.
+            {t('analyze.analyzerSubtitle')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -33,9 +36,9 @@ export default function DocumentToolsPage() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Select a Mode</CardTitle>
+          <CardTitle>{t('analyze.selectModeTitle')}</CardTitle>
           <CardDescription>
-            Respond to a regulator query with cross-referenced sources, auto-answer a questionnaire, or review an NDA for risks.
+            {t('analyze.selectModeSubtitle')}
           </CardDescription>
         </CardHeader>
         <CardContent>

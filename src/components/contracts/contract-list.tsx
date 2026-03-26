@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { Contract } from "@/lib/types";
 import { ContractCard } from "./contract-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,6 +26,7 @@ export function ContractList({
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [cardRefresh, setCardRefresh] = useState(0);
+  const t = useTranslations("Contracts");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -32,7 +34,7 @@ export function ContractList({
     setLoading(true);
     fetch("/api/contracts", { signal: controller.signal })
       .then((res) => {
-        if (!res.ok) throw new Error("Failed to load contracts");
+        if (!res.ok) throw new Error(t("loadError"));
         return res.json();
       })
       .then((data) => {
@@ -40,14 +42,14 @@ export function ContractList({
       })
       .catch((err) => {
         if (err.name === "AbortError") return;
-        toast.error(err instanceof Error ? err.message : "Error loading contracts");
+        toast.error(err instanceof Error ? err.message : t("errorLoading"));
       })
       .finally(() => {
         setLoading(false);
       });
 
     return () => controller.abort();
-  }, [refreshTrigger, cardRefresh]);
+  }, [refreshTrigger, cardRefresh, t]);
 
   const q = searchQuery.trim().toLowerCase();
   const filteredContracts = contracts
@@ -73,8 +75,8 @@ export function ContractList({
   if (contracts.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <p>No contracts found.</p>
-        <p className="text-sm mt-1">Use "Add New Contract" to get started.</p>
+        <p>{t("noContracts")}</p>
+        <p className="text-sm mt-1">{t("noContractsHint")}</p>
       </div>
     );
   }
@@ -82,7 +84,7 @@ export function ContractList({
   if (filteredContracts.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <p>No contracts match your search.</p>
+        <p>{t("noMatchingContracts")}</p>
       </div>
     );
   }

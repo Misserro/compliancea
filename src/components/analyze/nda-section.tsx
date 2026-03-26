@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +37,7 @@ const JURISDICTIONS = [
 ];
 
 export function NdaSection({ documents: _documents }: NdaSectionProps) {
+  const t = useTranslations('Documents');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [jurisdiction, setJurisdiction] = useState("");
   const [customJurisdiction, setCustomJurisdiction] = useState("");
@@ -54,21 +56,21 @@ export function NdaSection({ documents: _documents }: NdaSectionProps) {
   async function handleReview() {
     const file = fileInputRef.current?.files?.[0];
     if (!file) {
-      setStatus({ message: "Please select a PDF or DOCX file.", type: "error" });
+      setStatus({ message: t('nda.selectFile'), type: "error" });
       return;
     }
     if (!jurisdiction) {
-      setStatus({ message: "Please select a jurisdiction.", type: "error" });
+      setStatus({ message: t('nda.selectJurisdictionError'), type: "error" });
       return;
     }
     if (jurisdiction === "Other" && !customJurisdiction.trim()) {
-      setStatus({ message: "Please enter a jurisdiction.", type: "error" });
+      setStatus({ message: t('nda.enterJurisdictionError'), type: "error" });
       return;
     }
 
     setLoading(true);
     setResult(null);
-    setStatus({ message: "Analyzing NDA...", type: "info" });
+    setStatus({ message: t('nda.analyzingNda'), type: "info" });
 
     try {
       const fd = new FormData();
@@ -80,7 +82,7 @@ export function NdaSection({ documents: _documents }: NdaSectionProps) {
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: res.statusText }));
         setStatus({
-          message: `Analysis failed: ${data.error || "Unknown error"}`,
+          message: t('nda.analysisFailed', { error: data.error || "Unknown error" }),
           type: "error",
         });
         return;
@@ -88,10 +90,10 @@ export function NdaSection({ documents: _documents }: NdaSectionProps) {
 
       const data: NdaAnalysisResult = await res.json();
       setResult(data);
-      setStatus({ message: "Analysis complete.", type: "success" });
+      setStatus({ message: t('nda.analysisComplete'), type: "success" });
     } catch (err) {
       setStatus({
-        message: `Network error: ${err instanceof Error ? err.message : String(err)}`,
+        message: t('nda.networkError', { error: err instanceof Error ? err.message : String(err) }),
         type: "error",
       });
     } finally {
@@ -113,7 +115,7 @@ export function NdaSection({ documents: _documents }: NdaSectionProps) {
     <div className="space-y-4">
       {/* File input */}
       <div className="space-y-2">
-        <Label htmlFor="nda-file">NDA document (PDF or DOCX)</Label>
+        <Label htmlFor="nda-file">{t('nda.fileLabel')}</Label>
         <Input
           id="nda-file"
           ref={fileInputRef}
@@ -124,10 +126,10 @@ export function NdaSection({ documents: _documents }: NdaSectionProps) {
 
       {/* Jurisdiction dropdown */}
       <div className="space-y-2">
-        <Label>Jurisdiction</Label>
+        <Label>{t('nda.jurisdiction')}</Label>
         <Select value={jurisdiction} onValueChange={setJurisdiction}>
           <SelectTrigger className="w-64">
-            <SelectValue placeholder="Select jurisdiction..." />
+            <SelectValue placeholder={t('nda.selectJurisdiction')} />
           </SelectTrigger>
           <SelectContent>
             {JURISDICTIONS.map((j) => (
@@ -142,10 +144,10 @@ export function NdaSection({ documents: _documents }: NdaSectionProps) {
       {/* Custom jurisdiction input — shown only when "Other" is selected */}
       {jurisdiction === "Other" && (
         <div className="space-y-2">
-          <Label htmlFor="nda-custom-jurisdiction">Enter jurisdiction</Label>
+          <Label htmlFor="nda-custom-jurisdiction">{t('nda.enterJurisdiction')}</Label>
           <Input
             id="nda-custom-jurisdiction"
-            placeholder="e.g. Canada (Ontario), Australia"
+            placeholder={t('nda.jurisdictionPlaceholder')}
             value={customJurisdiction}
             onChange={(e) => setCustomJurisdiction(e.target.value)}
             className="w-64"
@@ -155,7 +157,7 @@ export function NdaSection({ documents: _documents }: NdaSectionProps) {
 
       {/* Review button */}
       <Button onClick={handleReview} disabled={loading}>
-        {loading ? "Analyzing..." : "Review NDA"}
+        {loading ? t('nda.analyzing') : t('nda.reviewButton')}
       </Button>
 
       {/* Status */}
@@ -166,9 +168,9 @@ export function NdaSection({ documents: _documents }: NdaSectionProps) {
         <div className="space-y-3 pt-2">
           <Separator />
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium">NDA Analysis Report</h4>
+            <h4 className="text-sm font-medium">{t('nda.reportTitle')}</h4>
             <Button variant="outline" size="sm" onClick={handleExport}>
-              Export as DOCX
+              {t('nda.exportDocx')}
             </Button>
           </div>
           <div className="rounded-md border bg-muted/30 p-4 overflow-auto max-h-[600px] text-sm [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1 [&_h4]:text-sm [&_h4]:font-medium [&_h4]:mt-2 [&_h4]:mb-1 [&_p]:my-1 [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:my-0.5 [&_blockquote]:border-l-2 [&_blockquote]:border-muted-foreground [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_strong]:font-semibold [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-2 [&_th]:text-left [&_th]:font-medium [&_td]:border [&_td]:border-border [&_td]:p-2 [&_hr]:my-3 [&_hr]:border-border">

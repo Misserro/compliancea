@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { FileText, Wand2, MessageSquare, LayoutDashboard } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { LegalCase, CaseParty, CaseDeadline } from "@/lib/types";
 import { CaseHeader } from "./case-header";
 import { CaseOverviewTab } from "./case-overview-tab";
@@ -16,14 +17,16 @@ interface CaseDetailPageProps {
 
 type TabKey = "overview" | "documents" | "generate" | "chat";
 
-const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
-  { key: "overview", label: "Przegląd", icon: <LayoutDashboard className="w-4 h-4" /> },
-  { key: "documents", label: "Dokumenty", icon: <FileText className="w-4 h-4" /> },
-  { key: "generate", label: "Generuj", icon: <Wand2 className="w-4 h-4" /> },
-  { key: "chat", label: "Czat", icon: <MessageSquare className="w-4 h-4" /> },
-];
-
 export function CaseDetailPage({ caseId }: CaseDetailPageProps) {
+  const t = useTranslations('LegalHub');
+
+  const TABS: { key: TabKey; labelKey: string; icon: React.ReactNode }[] = [
+    { key: "overview", labelKey: "tab.overview", icon: <LayoutDashboard className="w-4 h-4" /> },
+    { key: "documents", labelKey: "tab.documents", icon: <FileText className="w-4 h-4" /> },
+    { key: "generate", labelKey: "tab.generate", icon: <Wand2 className="w-4 h-4" /> },
+    { key: "chat", labelKey: "tab.chat", icon: <MessageSquare className="w-4 h-4" /> },
+  ];
+
   const [legalCase, setLegalCase] = useState<LegalCase | null>(null);
   const [parties, setParties] = useState<CaseParty[]>([]);
   const [deadlines, setDeadlines] = useState<CaseDeadline[]>([]);
@@ -56,7 +59,7 @@ export function CaseDetailPage({ caseId }: CaseDetailPageProps) {
     fetchCase();
   }, [fetchCase, refreshTrigger]);
 
-  const handleRefresh = () => setRefreshTrigger((t) => t + 1);
+  const handleRefresh = () => setRefreshTrigger((prev) => prev + 1);
 
   if (loading) {
     return (
@@ -73,7 +76,7 @@ export function CaseDetailPage({ caseId }: CaseDetailPageProps) {
     return (
       <div className="text-center py-12">
         <p className="text-destructive text-sm">
-          {error || "Nie znaleziono sprawy"}
+          {error || t('caseNotFound')}
         </p>
       </div>
     );
@@ -86,7 +89,7 @@ export function CaseDetailPage({ caseId }: CaseDetailPageProps) {
       {/* Tab bar */}
       <div className="border-b">
         <div className="flex gap-1">
-          {TABS.map(({ key, label, icon }) => (
+          {TABS.map(({ key, labelKey, icon }) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
@@ -97,7 +100,7 @@ export function CaseDetailPage({ caseId }: CaseDetailPageProps) {
               }`}
             >
               {icon}
-              {label}
+              {t(labelKey as Parameters<typeof t>[0])}
             </button>
           ))}
         </div>

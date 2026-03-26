@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { CaseList } from "./case-list";
 import { NewCaseDialog } from "./new-case-dialog";
 import { Input } from "@/components/ui/input";
 import {
   LEGAL_CASE_STATUSES,
-  LEGAL_CASE_STATUS_DISPLAY,
   LEGAL_CASE_TYPES,
-  LEGAL_CASE_TYPE_LABELS,
 } from "@/lib/constants";
 import { PERMISSION_LEVELS, type PermissionLevel } from "@/lib/permissions";
 import { useSession } from "next-auth/react";
@@ -20,6 +19,9 @@ const permLevel = (perms: Record<string, string> | null | undefined, resource: s
 export function LegalHubDashboard() {
   const { data: sessionData } = useSession();
   const canEdit = permLevel(sessionData?.user?.permissions, 'legal_hub') >= 2;
+  const t = useTranslations('LegalHub');
+  const tStatus = useTranslations("CaseStatuses");
+  const tType = useTranslations("CaseTypes");
 
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showNewCaseDialog, setShowNewCaseDialog] = useState(false);
@@ -38,14 +40,14 @@ export function LegalHubDashboard() {
     <div className="space-y-4">
           {/* Header row */}
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-lg font-semibold">Sprawy</h3>
+            <h3 className="text-lg font-semibold">{t('cases')}</h3>
             {canEdit && (
               <button
                 className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded text-sm font-medium hover:bg-primary/90 transition-colors"
                 onClick={() => setShowNewCaseDialog(true)}
               >
                 <Plus className="w-4 h-4" />
-                Nowa sprawa
+                {t('newCase')}
               </button>
             )}
           </div>
@@ -53,14 +55,14 @@ export function LegalHubDashboard() {
           {/* Search and filters */}
           <div className="space-y-2">
             <Input
-              placeholder="Szukaj po tytule..."
+              placeholder={t('dashboard.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
 
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <span className="text-xs text-muted-foreground shrink-0">
-                {selectedStatuses.length === 0 ? "Wszystkie statusy" : "Wyświetlane:"}
+                {selectedStatuses.length === 0 ? t('dashboard.allStatuses') : t('dashboard.showing')}
               </span>
               {LEGAL_CASE_STATUSES.map((status) => (
                 <label
@@ -73,7 +75,7 @@ export function LegalHubDashboard() {
                     onChange={() => toggleStatus(status)}
                     className="rounded border-input"
                   />
-                  {LEGAL_CASE_STATUS_DISPLAY[status] || status}
+                  {tStatus(status)}
                 </label>
               ))}
               {selectedStatuses.length > 0 && (
@@ -81,22 +83,22 @@ export function LegalHubDashboard() {
                   className="text-xs text-muted-foreground underline ml-1"
                   onClick={() => setSelectedStatuses([])}
                 >
-                  Wyczyść
+                  {t('dashboard.clearFilters')}
                 </button>
               )}
             </div>
 
             <div className="flex items-center gap-2">
-              <label className="text-sm text-muted-foreground">Typ:</label>
+              <label className="text-sm text-muted-foreground">{t('dashboard.typeLabel')}</label>
               <select
                 className="px-2 py-1 border rounded text-sm bg-background"
                 value={selectedCaseType}
                 onChange={(e) => setSelectedCaseType(e.target.value)}
               >
-                <option value="">Wszystkie typy</option>
-                {LEGAL_CASE_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {LEGAL_CASE_TYPE_LABELS[t] || t}
+                <option value="">{t('dashboard.allTypes')}</option>
+                {LEGAL_CASE_TYPES.map((caseType) => (
+                  <option key={caseType} value={caseType}>
+                    {tType(caseType)}
                   </option>
                 ))}
               </select>
@@ -117,7 +119,7 @@ export function LegalHubDashboard() {
             onOpenChange={setShowNewCaseDialog}
             onSuccess={() => {
               setShowNewCaseDialog(false);
-              setRefreshTrigger((t) => t + 1);
+              setRefreshTrigger((prev) => prev + 1);
             }}
           />
     </div>

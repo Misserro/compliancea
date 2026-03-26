@@ -3,8 +3,9 @@
 import { useState, useRef } from "react";
 import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { Contract, Obligation } from "@/lib/types";
-import { STATUS_COLORS, CONTRACT_STATUS_DISPLAY, CATEGORY_MIGRATION_MAP } from "@/lib/constants";
+import { STATUS_COLORS, CATEGORY_MIGRATION_MAP } from "@/lib/constants";
 import { ObligationCard } from "../obligations/obligation-card";
 import { EvidenceDialog } from "../obligations/evidence-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,9 +29,10 @@ function ContractObligationsRow({ contract, categoryFilter }: ContractRowProps) 
   const [statusFilter, setStatusFilter] = useState<string>("active");
   const [evidenceDialogObligationId, setEvidenceDialogObligationId] = useState<number | null>(null);
   const refreshCountRef = useRef(0);
+  const t = useTranslations("Contracts");
 
   const statusColor = STATUS_COLORS[contract.status] || STATUS_COLORS.unsigned;
-  const statusDisplay = CONTRACT_STATUS_DISPLAY[contract.status] || contract.status;
+  const statusDisplay = t(`contractStatus.${contract.status}`);
 
   const fetchObligations = async () => {
     setLoading(true);
@@ -94,10 +96,10 @@ function ContractObligationsRow({ contract, categoryFilter }: ContractRowProps) 
   });
 
   const STATUS_TABS = [
-    { key: "active", label: "Active", count: activeCount },
-    { key: "inactive", label: "Inactive", count: inactiveCount },
-    { key: "finalized", label: "Finalized", count: finalizedCount },
-    { key: "all", label: "All", count: obligations.length },
+    { key: "active", label: t("obligationStatus.active"), count: activeCount },
+    { key: "inactive", label: t("obligationStatus.inactive"), count: inactiveCount },
+    { key: "finalized", label: t("obligationStatus.finalized"), count: finalizedCount },
+    { key: "all", label: t("obligationStatus.all"), count: obligations.length },
   ];
 
   return (
@@ -124,19 +126,19 @@ function ContractObligationsRow({ contract, categoryFilter }: ContractRowProps) 
           {contract.activeObligations > 0 && (
             <div className="flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded text-xs font-medium">
               <CheckCircle2 className="w-3 h-3" />
-              {contract.activeObligations} Active
+              {t("activeCount", { count: contract.activeObligations })}
             </div>
           )}
           {contract.overdueObligations > 0 && (
             <div className="flex items-center gap-1 px-2 py-0.5 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded text-xs font-medium">
               <AlertCircle className="w-3 h-3" />
-              {contract.overdueObligations} Overdue
+              {t("overdueCount", { count: contract.overdueObligations })}
             </div>
           )}
           {contract.finalizedObligations > 0 && (
             <div className="flex items-center gap-1 px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded text-xs font-medium">
               <Clock className="w-3 h-3" />
-              {contract.finalizedObligations} Finalized
+              {t("finalizedCount", { count: contract.finalizedObligations })}
             </div>
           )}
         </div>
@@ -151,7 +153,7 @@ function ContractObligationsRow({ contract, categoryFilter }: ContractRowProps) 
               <Skeleton className="h-16 w-full rounded" />
             </div>
           ) : fetchError ? (
-            <p className="text-sm text-destructive py-2">Failed to load obligations. Try collapsing and re-expanding.</p>
+            <p className="text-sm text-destructive py-2">{t("failedToLoadObligations")}</p>
           ) : (
             <>
               {/* Status tab filter */}
@@ -175,8 +177,8 @@ function ContractObligationsRow({ contract, categoryFilter }: ContractRowProps) 
               {displayed.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-2">
                   {categoryFilter !== "all"
-                    ? `No ${categoryFilter} obligations for this contract.`
-                    : `No ${statusFilter === "all" ? "" : statusFilter + " "}obligations for this contract.`}
+                    ? t("noObligationsCategory", { category: t(`obligationCategory.${categoryFilter}`) })
+                    : t("noObligationsStatus", { status: statusFilter === "all" ? "" : t(`obligationStatus.${statusFilter}`).toLowerCase() + " " })}
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -194,7 +196,7 @@ function ContractObligationsRow({ contract, categoryFilter }: ContractRowProps) 
                           refreshObligations();
                         } catch (err) {
                           console.error("Failed to update obligation:", err);
-                          toast.error(`Failed to update: ${err instanceof Error ? err.message : "Unknown error"}`);
+                          toast.error(err instanceof Error ? err.message : t("updateFailed"));
                         }
                       }}
                       onAddEvidence={(obId) => setEvidenceDialogObligationId(obId)}
@@ -243,9 +245,11 @@ function ContractObligationsRow({ contract, categoryFilter }: ContractRowProps) 
 }
 
 export function PerContractObligations({ contracts, categoryFilter }: PerContractObligationsProps) {
+  const t = useTranslations("Contracts");
+
   if (contracts.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground text-center py-8">No contracts found.</p>
+      <p className="text-sm text-muted-foreground text-center py-8">{t("noContractsFound")}</p>
     );
   }
 

@@ -2,38 +2,42 @@
 
 import Link from "next/link";
 import { Calendar, User } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
 import type { LegalCase } from "@/lib/types";
 import {
   LEGAL_CASE_STATUS_COLORS,
-  LEGAL_CASE_STATUS_DISPLAY,
-  LEGAL_CASE_TYPE_LABELS,
 } from "@/lib/constants";
 
 interface CaseCardProps {
   legalCase: LegalCase;
 }
 
-function formatDate(dateString: string | null | undefined) {
-  if (!dateString) return null;
-  try {
-    return new Date(dateString).toLocaleDateString("pl-PL", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return dateString;
-  }
-}
-
 export function CaseCard({ legalCase }: CaseCardProps) {
+  const t = useTranslations('LegalHub');
+  const tStatus = useTranslations("CaseStatuses");
+  const tType = useTranslations("CaseTypes");
+  const locale = useLocale();
+
+  function formatDate(dateString: string | null | undefined) {
+    if (!dateString) return null;
+    try {
+      return new Date(dateString).toLocaleDateString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return dateString;
+    }
+  }
+
   const statusColor =
     LEGAL_CASE_STATUS_COLORS[legalCase.status] ||
     LEGAL_CASE_STATUS_COLORS.new;
   const statusDisplay =
-    LEGAL_CASE_STATUS_DISPLAY[legalCase.status] || legalCase.status;
+    tStatus(legalCase.status);
   const typeLabel =
-    LEGAL_CASE_TYPE_LABELS[legalCase.case_type] || legalCase.case_type;
+    tType(legalCase.case_type);
 
   return (
     <Link href={`/legal-hub/${legalCase.id}`}>
@@ -66,7 +70,7 @@ export function CaseCard({ legalCase }: CaseCardProps) {
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               {legalCase.court && <span>{legalCase.court}</span>}
               <span className="text-xs">
-                Utworzono {formatDate(legalCase.created_at)}
+                {t('createdOn', { date: formatDate(legalCase.created_at) ?? '' })}
               </span>
               {legalCase.assigned_to_name && (
                 <span className="flex items-center gap-1 text-xs">

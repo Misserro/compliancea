@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { Contract } from "@/lib/types";
 import { OBLIGATION_CATEGORIES } from "@/lib/constants";
 import { UpcomingObligationsSection } from "./upcoming-obligations-section";
@@ -12,6 +13,7 @@ export function ObligationsTab() {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const t = useTranslations("Contracts");
 
   useEffect(() => {
     async function loadContracts() {
@@ -21,16 +23,16 @@ export function ObligationsTab() {
           const data = await res.json();
           setContracts(data.contracts || []);
         } else {
-          toast.error("Failed to load contracts");
+          toast.error(t("loadError"));
         }
       } catch (err) {
-        toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
+        toast.error(err instanceof Error ? err.message : t("loadError"));
       } finally {
         setLoading(false);
       }
     }
     loadContracts();
-  }, []);
+  }, [t]);
 
   const categories = ["all", ...OBLIGATION_CATEGORIES] as const;
 
@@ -42,7 +44,7 @@ export function ObligationsTab() {
       {/* Bottom section: per-contract breakdown */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Obligations by Contract</h3>
+          <h3 className="text-lg font-semibold">{t("obligationsByContract")}</h3>
         </div>
 
         {/* Category filter — independent from upcoming section */}
@@ -57,7 +59,7 @@ export function ObligationsTab() {
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
-              {cat === "all" ? "All" : cat.charAt(0).toUpperCase() + cat.slice(1)}
+              {cat === "all" ? t("allFilter") : t(`obligationCategory.${cat}`)}
             </button>
           ))}
         </div>

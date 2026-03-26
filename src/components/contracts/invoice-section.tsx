@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Pencil, Trash2, FileText, Receipt } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -37,19 +38,6 @@ function formatCurrency(amount: number, currency: string): string {
   return `${symbol}${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function formatDate(dateString: string | null): string {
-  if (!dateString) return "\u2014";
-  try {
-    return new Date(dateString + "T00:00:00").toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return dateString;
-  }
-}
-
 function getInvoiceStatus(invoice: Invoice): "paid" | "overdue" | "pending" {
   if (invoice.is_paid) return "paid";
   if (invoice.date_of_payment) {
@@ -66,6 +54,22 @@ export function InvoiceSection({ contractId, onUpdate }: InvoiceSectionProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editInvoice, setEditInvoice] = useState<Invoice | null>(null);
   const [deletingInvoiceId, setDeletingInvoiceId] = useState<number | null>(null);
+  const t = useTranslations("Contracts");
+  const tCommon = useTranslations("Common");
+  const locale = useLocale();
+
+  const formatDate = (dateString: string | null): string => {
+    if (!dateString) return "\u2014";
+    try {
+      return new Date(dateString + "T00:00:00").toLocaleDateString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return dateString;
+    }
+  };
 
   const fetchInvoices = useCallback(async () => {
     try {
@@ -93,15 +97,15 @@ export function InvoiceSection({ contractId, onUpdate }: InvoiceSectionProps) {
         { method: "DELETE" }
       );
       if (res.ok) {
-        toast.success("Invoice deleted");
+        toast.success(t("invoices.deleted"));
         fetchInvoices();
         onUpdate?.();
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to delete invoice");
+        toast.error(data.error || t("invoices.deleteFailed"));
       }
     } catch (err) {
-      toast.error(`Delete failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(err instanceof Error ? err.message : t("invoices.deleteFailed"));
     }
   };
 
@@ -116,15 +120,15 @@ export function InvoiceSection({ contractId, onUpdate }: InvoiceSectionProps) {
         }
       );
       if (res.ok) {
-        toast.success(invoice.is_paid ? "Invoice marked as unpaid" : "Invoice marked as paid");
+        toast.success(invoice.is_paid ? t("invoices.markedUnpaid") : t("invoices.markedPaid"));
         fetchInvoices();
         onUpdate?.();
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to update invoice");
+        toast.error(data.error || t("invoices.updateFailed"));
       }
     } catch (err) {
-      toast.error(`Update failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(err instanceof Error ? err.message : t("invoices.updateFailed"));
     }
   };
 
@@ -148,14 +152,14 @@ export function InvoiceSection({ contractId, onUpdate }: InvoiceSectionProps) {
 
   if (loading) {
     return (
-      <div className="text-sm text-muted-foreground py-2">Loading invoices...</div>
+      <div className="text-sm text-muted-foreground py-2">{t("invoices.loading")}</div>
     );
   }
 
   return (
     <div data-slot="invoice-section">
       <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm font-semibold text-foreground">Invoices</h4>
+        <h4 className="text-sm font-semibold text-foreground">{t("invoices.title")}</h4>
         <Button
           variant="outline"
           size="sm"
@@ -165,7 +169,7 @@ export function InvoiceSection({ contractId, onUpdate }: InvoiceSectionProps) {
           }}
         >
           <Plus className="w-3.5 h-3.5 mr-1" />
-          Add Invoice
+          {t("invoices.add")}
         </Button>
       </div>
 
@@ -173,16 +177,16 @@ export function InvoiceSection({ contractId, onUpdate }: InvoiceSectionProps) {
       {invoices.length > 0 && (
         <div className="flex items-center gap-4 text-sm mb-3 p-2 rounded bg-muted/50">
           <span>
-            <span className="text-muted-foreground">Total invoiced:</span>{" "}
+            <span className="text-muted-foreground">{t("invoices.totalInvoiced")}</span>{" "}
             <span className="font-medium">{formatCurrency(summary.totalInvoiced, primaryCurrency)}</span>
           </span>
           <span>
-            <span className="text-muted-foreground">Total paid:</span>{" "}
+            <span className="text-muted-foreground">{t("invoices.totalPaid")}</span>{" "}
             <span className="font-medium">{formatCurrency(summary.totalPaid, primaryCurrency)}</span>
           </span>
           {summary.overdueCount > 0 && (
             <Badge className={cn(INVOICE_STATUS_COLORS.overdue)}>
-              {summary.overdueCount} overdue
+              {t("invoices.overdueCount", { count: summary.overdueCount })}
             </Badge>
           )}
         </div>
@@ -190,12 +194,12 @@ export function InvoiceSection({ contractId, onUpdate }: InvoiceSectionProps) {
 
       {/* Invoice list */}
       {invoices.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No invoices yet.</p>
+        <p className="text-sm text-muted-foreground">{t("invoices.noInvoices")}</p>
       ) : (
         <div className="space-y-2">
           {invoices.map((invoice) => {
             const status = getInvoiceStatus(invoice);
-            const statusLabel = status === "paid" ? "Paid" : status === "overdue" ? "Overdue" : "Pending";
+            const statusLabel = status === "paid" ? t("invoices.paid") : status === "overdue" ? t("invoices.overdue") : t("invoices.pending");
             return (
               <div
                 key={invoice.id}
@@ -218,10 +222,10 @@ export function InvoiceSection({ contractId, onUpdate }: InvoiceSectionProps) {
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {invoice.date_of_issue && (
-                        <span>Issued: {formatDate(invoice.date_of_issue)}</span>
+                        <span>{t("invoices.issued", { date: formatDate(invoice.date_of_issue) })}</span>
                       )}
                       {invoice.date_of_payment && (
-                        <span className="ml-2">Due: {formatDate(invoice.date_of_payment)}</span>
+                        <span className="ml-2">{t("invoices.due", { date: formatDate(invoice.date_of_payment) })}</span>
                       )}
                     </div>
                   </div>
@@ -235,7 +239,7 @@ export function InvoiceSection({ contractId, onUpdate }: InvoiceSectionProps) {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 rounded hover:bg-muted transition-colors"
-                      title="Download invoice file"
+                      title={t("invoices.downloadInvoice")}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <FileText className="w-3.5 h-3.5 text-muted-foreground" />
@@ -247,7 +251,7 @@ export function InvoiceSection({ contractId, onUpdate }: InvoiceSectionProps) {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 rounded hover:bg-muted transition-colors"
-                      title="Download payment confirmation"
+                      title={t("invoices.downloadConfirmation")}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Receipt className="w-3.5 h-3.5 text-muted-foreground" />
@@ -266,9 +270,9 @@ export function InvoiceSection({ contractId, onUpdate }: InvoiceSectionProps) {
                       e.stopPropagation();
                       handleTogglePaid(invoice);
                     }}
-                    title={invoice.is_paid ? "Mark as unpaid" : "Mark as paid"}
+                    title={invoice.is_paid ? t("invoices.markAsUnpaid") : t("invoices.markAsPaid")}
                   >
-                    {invoice.is_paid ? "Unpay" : "Pay"}
+                    {invoice.is_paid ? t("invoices.unpay") : t("invoices.pay")}
                   </button>
 
                   {/* Edit */}
@@ -278,7 +282,7 @@ export function InvoiceSection({ contractId, onUpdate }: InvoiceSectionProps) {
                       e.stopPropagation();
                       handleEdit(invoice);
                     }}
-                    title="Edit invoice"
+                    title={t("invoices.editInvoice")}
                   >
                     <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
                   </button>
@@ -290,7 +294,7 @@ export function InvoiceSection({ contractId, onUpdate }: InvoiceSectionProps) {
                       e.stopPropagation();
                       setDeletingInvoiceId(invoice.id);
                     }}
-                    title="Delete invoice"
+                    title={t("invoices.deleteInvoice")}
                   >
                     <Trash2 className="w-3.5 h-3.5 text-destructive" />
                   </button>
@@ -315,11 +319,11 @@ export function InvoiceSection({ contractId, onUpdate }: InvoiceSectionProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete invoice?</AlertDialogTitle>
-            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+            <AlertDialogTitle>{t("invoices.deleteConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("invoices.deleteConfirmDesc")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (deletingInvoiceId) {
@@ -328,7 +332,7 @@ export function InvoiceSection({ contractId, onUpdate }: InvoiceSectionProps) {
                 }
               }}
             >
-              Delete
+              {tCommon("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

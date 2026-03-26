@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { STATUS_COLORS } from "@/lib/constants";
 import type { Document } from "@/lib/types";
@@ -11,6 +12,7 @@ interface DocumentBadgesProps {
 }
 
 export function DocumentBadges({ doc, expanded = false }: DocumentBadgesProps) {
+  const t = useTranslations('Documents');
   const isContract = doc.doc_type === "contract" || doc.doc_type === "agreement";
   const statusLabel = doc.status || "draft";
 
@@ -26,7 +28,7 @@ export function DocumentBadges({ doc, expanded = false }: DocumentBadgesProps) {
           }`}
         >
           <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
-          {isInForce(doc.in_force) ? "In Force" : "Archived"}
+          {isInForce(doc.in_force) ? t('badges.inForce') : t('badges.archived')}
         </span>
       )}
 
@@ -68,9 +70,9 @@ export function DocumentBadges({ doc, expanded = false }: DocumentBadgesProps) {
 
           {/* Source */}
           {doc.gdrive_file_id ? (
-            <Badge variant="outline">GDrive</Badge>
+            <Badge variant="outline">{t('badges.gdrive')}</Badge>
           ) : (
-            <Badge variant="outline">Local</Badge>
+            <Badge variant="outline">{t('badges.local')}</Badge>
           )}
 
           {/* Sync Status */}
@@ -99,13 +101,13 @@ export function DocumentBadges({ doc, expanded = false }: DocumentBadgesProps) {
 
           {/* Legal Hold */}
           {doc.legal_hold ? (
-            <Badge variant="destructive">Legal Hold</Badge>
+            <Badge variant="destructive">{t('badges.legalHold')}</Badge>
           ) : null}
 
           {/* Auto-tags indicator */}
           {doc.auto_tags && !doc.confirmed_tags && (
             <Badge variant="outline" className="border-dashed">
-              Auto-tagged
+              {t('badges.autoTagged')}
             </Badge>
           )}
         </>

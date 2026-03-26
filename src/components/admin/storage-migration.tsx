@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +26,7 @@ interface MigrationStatus {
 }
 
 export function StorageMigration() {
+  const t = useTranslations("Admin.storageMigration");
   const [job, setJob] = useState<MigrationStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [triggering, setTriggering] = useState(false);
@@ -82,14 +84,14 @@ export function StorageMigration() {
     try {
       const res = await fetch("/api/admin/migrations/storage", { method: "POST" });
       if (res.ok) {
-        toast.success("Migration started");
+        toast.success(t("migrationStarted"));
         await fetchStatus();
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to start migration");
+        toast.error(data.error || t("failedToStartMigration"));
       }
     } catch {
-      toast.error("Failed to start migration");
+      toast.error(t("failedToStartMigration"));
     } finally {
       setTriggering(false);
     }
@@ -101,13 +103,13 @@ export function StorageMigration() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="h-5 w-5" />
-            Storage Migration
+            {t("title")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Loading...
+            {t("loading")}
           </div>
         </CardContent>
       </Card>
@@ -136,7 +138,7 @@ export function StorageMigration() {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Migrate existing local files to S3 storage. Local files are preserved (non-destructive copy).
+          {t("subtitle")}
         </p>
 
         {/* Trigger button */}
@@ -147,12 +149,12 @@ export function StorageMigration() {
                 <TooltipTrigger asChild>
                   <span tabIndex={0}>
                     <Button disabled className="pointer-events-none">
-                      Migrate Data to S3
+                      {t("migrateDataToS3")}
                     </Button>
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>No S3 storage configured. Configure platform S3 or per-org S3 first.</p>
+                  <p>{t("noS3Hint")}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -161,10 +163,10 @@ export function StorageMigration() {
               {triggering || isRunning ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  {triggering ? "Starting..." : "Migration in progress..."}
+                  {triggering ? t("starting") : t("migrationInProgress")}
                 </>
               ) : (
-                "Migrate Data to S3"
+                t("migrateDataToS3")
               )}
             </Button>
           )}
@@ -174,7 +176,7 @@ export function StorageMigration() {
         {isRunning && total > 0 && (
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>{processed} of {total} files processed</span>
+              <span>{t("filesProcessed", { processed, total })}</span>
               <span>{percent}%</span>
             </div>
             <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
@@ -184,9 +186,9 @@ export function StorageMigration() {
               />
             </div>
             <div className="flex gap-4 text-xs text-muted-foreground">
-              <span className="text-green-600">{migrated} migrated</span>
-              {failed > 0 && <span className="text-red-600">{failed} failed</span>}
-              {skipped > 0 && <span className="text-yellow-600">{skipped} skipped</span>}
+              <span className="text-green-600">{t("migratedLabel", { count: migrated })}</span>
+              {failed > 0 && <span className="text-red-600">{t("failedLabel", { count: failed })}</span>}
+              {skipped > 0 && <span className="text-yellow-600">{t("skippedLabel", { count: skipped })}</span>}
             </div>
           </div>
         )}
@@ -194,7 +196,7 @@ export function StorageMigration() {
         {isRunning && total === 0 && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Scanning files...
+            {t("scanningFiles")}
           </div>
         )}
 
@@ -203,20 +205,20 @@ export function StorageMigration() {
           <div className="rounded-md border p-3 space-y-1">
             <div className="flex items-center gap-2 text-sm font-medium text-green-700">
               <CheckCircle2 className="h-4 w-4" />
-              Migration Complete
+              {t("migrationComplete")}
             </div>
             <div className="text-sm text-muted-foreground space-y-0.5">
-              <p>{migrated} file{migrated !== 1 ? "s" : ""} migrated to S3</p>
+              <p>{t("filesMigratedToS3", { count: migrated })}</p>
               {failed > 0 && (
-                <p className="text-red-600">{failed} file{failed !== 1 ? "s" : ""} failed</p>
+                <p className="text-red-600">{t("filesFailed", { count: failed })}</p>
               )}
               {skipped > 0 && (
-                <p className="text-yellow-600">{skipped} file{skipped !== 1 ? "s" : ""} skipped (no S3 configured for org)</p>
+                <p className="text-yellow-600">{t("filesSkippedNoS3", { count: skipped })}</p>
               )}
-              {total === 0 && <p>No local files found to migrate.</p>}
+              {total === 0 && <p>{t("noLocalFiles")}</p>}
               {job?.completedAt && (
                 <p className="text-xs mt-1">
-                  Completed at {new Date(job.completedAt).toLocaleString()}
+                  {t("completedAt", { date: new Date(job.completedAt).toLocaleString() })}
                 </p>
               )}
             </div>
@@ -228,13 +230,13 @@ export function StorageMigration() {
           <div className="rounded-md border border-red-200 bg-red-50 p-3 space-y-1">
             <div className="flex items-center gap-2 text-sm font-medium text-red-700">
               <XCircle className="h-4 w-4" />
-              Migration Failed
+              {t("migrationFailed")}
             </div>
             {job?.error && (
               <p className="text-sm text-red-600">{job.error}</p>
             )}
             <div className="text-sm text-muted-foreground">
-              <p>{migrated} migrated, {failed} failed, {skipped} skipped of {total} total</p>
+              <p>{t("migrationSummary", { migrated, failed, skipped, total })}</p>
             </div>
           </div>
         )}
@@ -243,7 +245,7 @@ export function StorageMigration() {
         {(isCompleted || isFailed) && failed > 0 && (
           <div className="flex items-start gap-2 text-xs text-yellow-700 bg-yellow-50 rounded p-2">
             <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-            <span>Some files failed to migrate. You can re-run the migration to retry failed files.</span>
+            <span>{t("retryHint")}</span>
           </div>
         )}
       </CardContent>

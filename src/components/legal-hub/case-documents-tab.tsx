@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { useTranslations, useLocale } from "next-intl";
 import {
   CASE_DOCUMENT_CATEGORIES,
   CASE_DOCUMENT_CATEGORY_COLORS,
@@ -32,24 +33,6 @@ interface CaseDocumentWithJoins extends CaseDocument {
   linked_document_path: string | null;
 }
 
-function formatDate(dateString: string | null): string {
-  if (!dateString) return "\u2014";
-  try {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return dateString;
-  }
-}
-
-function getCategoryLabel(value: string): string {
-  const cat = CASE_DOCUMENT_CATEGORIES.find((c) => c.value === value);
-  return cat ? cat.label : value;
-}
-
 type IndexingStatus = "processing" | "indexed" | "failed";
 
 interface IndexingStatusEntry {
@@ -57,19 +40,19 @@ interface IndexingStatusEntry {
   errorMessage?: string;
 }
 
-function IndexingBadge({ entry }: { entry: IndexingStatusEntry | undefined }) {
+function IndexingBadge({ entry, t }: { entry: IndexingStatusEntry | undefined; t: ReturnType<typeof useTranslations<'LegalHub'>> }) {
   if (!entry) return null;
   if (entry.status === "indexed") {
     return (
       <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 ml-2">
-        Zaindeksowany
+        {t('indexing.indexed')}
       </span>
     );
   }
   if (entry.status === "processing") {
     return (
       <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 ml-2 animate-pulse">
-        Indeksowanie...
+        {t('indexing.processing')}
       </span>
     );
   }
@@ -77,14 +60,31 @@ function IndexingBadge({ entry }: { entry: IndexingStatusEntry | undefined }) {
   return (
     <span
       className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 ml-2 cursor-help"
-      title={entry.errorMessage || "Błąd indeksowania"}
+      title={entry.errorMessage || String(t('indexing.failedTooltip'))}
     >
-      Błąd indeksowania
+      {t('indexing.failed')}
     </span>
   );
 }
 
 export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
+  const t = useTranslations('LegalHub');
+  const tCommon = useTranslations('Common');
+  const tCat = useTranslations("DocCategories");
+  const locale = useLocale();
+
+  function formatDate(dateString: string | null): string {
+    if (!dateString) return "\u2014";
+    try {
+      return new Date(dateString).toLocaleDateString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return dateString;
+    }
+  }
   const [documents, setDocuments] = useState<CaseDocumentWithJoins[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -121,14 +121,14 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
         if (prev === undefined) {
           // First time seeing this document — toast if already failed (failed before first poll)
           if (item.status === "failed") {
-            toast.error(item.errorMessage || "Document indexing failed — please try re-uploading", { duration: 8000 });
+            toast.error(item.errorMessage || t('indexing.documentFailed'), { duration: 8000 });
           }
         } else if (prev === "processing" && item.status !== "processing") {
           // Transition detected
           if (item.status === "indexed") {
-            toast.success("Document indexed and ready for chat");
+            toast.success(t('indexing.documentIndexed'));
           } else {
-            toast.error(item.errorMessage || "Document indexing failed — please try re-uploading", { duration: 8000 });
+            toast.error(item.errorMessage || t('indexing.documentFailed'), { duration: 8000 });
           }
         }
         prevIndexingStatus.current[item.documentId] = item.status;
@@ -149,11 +149,11 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
       if (res.ok) {
         await fetchIndexingStatus();
       } else {
-        toast.error("Reindex request failed");
+        toast.error(t('documents.reindexFailed'));
         setIndexingStatus((prev) => ({ ...prev, [caseDocId]: { status: "failed", errorMessage: "Reindex failed" } }));
       }
     } catch {
-      toast.error("Reindex request failed");
+      toast.error(t('documents.reindexFailed'));
       setIndexingStatus((prev) => ({ ...prev, [caseDocId]: { status: "failed", errorMessage: "Reindex failed" } }));
     } finally {
       setRetrying((prev) => ({ ...prev, [caseDocId]: false }));
@@ -203,11 +203,11 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
         { method: "DELETE" }
       );
       if (res.ok) {
-        toast.success("Document removed from case");
+        toast.success(t('documents.removed'));
         fetchDocuments();
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to remove document");
+        toast.error(data.error || t('documents.removeError'));
       }
     } catch (err) {
       toast.error(
@@ -223,7 +223,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
   if (loading) {
     return (
       <div className="text-sm text-muted-foreground py-2">
-        Ładowanie dokumentów...
+        {t('documents.loadingDocuments')}
       </div>
     );
   }
@@ -232,14 +232,14 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
     <div data-slot="case-documents-tab">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Dokumenty</h3>
+        <h3 className="text-lg font-semibold text-foreground">{t('documents.title')}</h3>
         <Button
           variant="outline"
           size="sm"
           onClick={() => setDialogOpen(true)}
         >
           <Plus className="w-3.5 h-3.5 mr-1" />
-          Dodaj dokument
+          {t('documents.addDocument')}
         </Button>
       </div>
 
@@ -256,30 +256,30 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
             )}
             onClick={() => setCategoryFilter("")}
           >
-            Wszystkie ({documents.length})
+            {t('documents.all')} ({documents.length})
           </button>
           {CASE_DOCUMENT_CATEGORIES.filter((cat) =>
-            activeCategoryValues.has(cat.value)
+            activeCategoryValues.has(cat)
           ).map((cat) => {
             const count = documents.filter(
-              (d) => d.document_category === cat.value
+              (d) => d.document_category === cat
             ).length;
-            const isActive = categoryFilter === cat.value;
+            const isActive = categoryFilter === cat;
             return (
               <button
-                key={cat.value}
+                key={cat}
                 type="button"
                 className={cn(
                   "px-2.5 py-0.5 rounded-full text-xs font-medium border cursor-pointer transition-colors",
                   isActive
-                    ? CASE_DOCUMENT_CATEGORY_COLORS[cat.value]
+                    ? CASE_DOCUMENT_CATEGORY_COLORS[cat]
                     : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
                 )}
                 onClick={() =>
-                  setCategoryFilter(isActive ? "" : cat.value)
+                  setCategoryFilter(isActive ? "" : cat)
                 }
               >
-                {cat.label} ({count})
+                {tCat(cat)} ({count})
               </button>
             );
           })}
@@ -291,10 +291,10 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
         <div className="text-center py-12 space-y-3">
           <Upload className="w-10 h-10 mx-auto text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground">
-            Brak załączonych dokumentów.
+            {t('documents.noDocuments')}
           </p>
           <p className="text-xs text-muted-foreground">
-            Prześlij lub powiąż dokument, aby rozpocząć.
+            {t('documents.noDocumentsHint')}
           </p>
           <Button
             variant="outline"
@@ -302,12 +302,12 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
             onClick={() => setDialogOpen(true)}
           >
             <Plus className="w-3.5 h-3.5 mr-1" />
-            Dodaj dokument
+            {t('documents.addDocument')}
           </Button>
         </div>
       ) : filteredDocuments.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">
-          Brak dokumentów w tej kategorii.
+          {t('documents.noCategoryDocuments')}
         </p>
       ) : (
         <div className="space-y-2">
@@ -316,7 +316,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
               CASE_DOCUMENT_CATEGORY_COLORS[doc.document_category] ||
               CASE_DOCUMENT_CATEGORY_COLORS.other;
             const displayName =
-              doc.linked_document_name || doc.file_name || "Bez nazwy";
+              doc.linked_document_name || doc.file_name || t('documents.noName');
             const isLinked = !!doc.document_id;
 
             return (
@@ -327,7 +327,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <div className="flex-shrink-0">
                     <Badge className={cn(categoryColor)}>
-                      {getCategoryLabel(doc.document_category)}
+                      {tCat(doc.document_category)}
                     </Badge>
                   </div>
                   <div className="min-w-0 flex-1">
@@ -335,16 +335,16 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
                       {displayName}
                       {doc.document_id && (
                         <>
-                          <IndexingBadge entry={indexingStatus[doc.document_id]} />
+                          <IndexingBadge entry={indexingStatus[doc.document_id]} t={t} />
                           {indexingStatus[doc.document_id]?.status === "failed" && (
                             <button
                               onClick={(e) => { e.stopPropagation(); retryIndexing(doc.id); }}
                               disabled={retrying[doc.id]}
                               className="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 disabled:opacity-50 cursor-pointer"
-                              title="Ponów indeksowanie"
+                              title={t('documents.retryIndexing')}
                             >
                               <RefreshCw className={`h-2.5 w-2.5 ${retrying[doc.id] ? "animate-spin" : ""}`} />
-                              Ponów
+                              {t('documents.retry')}
                             </button>
                           )}
                         </>
@@ -357,10 +357,10 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
                     </div>
                     <div className="text-xs text-muted-foreground flex flex-wrap gap-x-2">
                       <span>
-                        {isLinked ? "Z biblioteki" : "Przesłany"}
+                        {isLinked ? t('documents.fromLibrary') : t('documents.uploaded')}
                       </span>
                       {doc.date_filed && (
-                        <span>Złożono: {formatDate(doc.date_filed)}</span>
+                        <span>{t('documents.filedOn', { date: formatDate(doc.date_filed) })}</span>
                       )}
                       {doc.filing_reference && (
                         <span>Ref: {doc.filing_reference}</span>
@@ -377,7 +377,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-1.5 rounded hover:bg-muted transition-colors"
-                    title="Pobierz dokument"
+                    title={t('documents.downloadDocument')}
                     onClick={(e) => e.stopPropagation()}
                   >
                     {isLinked ? (
@@ -394,7 +394,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
                       e.stopPropagation();
                       setDeletingDocId(doc.id);
                     }}
-                    title="Usuń dokument ze sprawy"
+                    title={t('documents.removeFromCase')}
                   >
                     <Trash2 className="w-3.5 h-3.5 text-destructive" />
                   </button>
@@ -418,14 +418,13 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Usunąć dokument?</AlertDialogTitle>
+            <AlertDialogTitle>{t('documents.deleteConfirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Spowoduje to usunięcie dokumentu z tej sprawy. Jeśli był powiązany z
-              biblioteki dokumentów, oryginał nie zostanie usunięty.
+              {t('documents.deleteConfirmDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (deletingDocId) {
@@ -434,7 +433,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
                 }
               }}
             >
-              Usuń
+              {tCommon('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

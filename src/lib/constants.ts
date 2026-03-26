@@ -153,19 +153,6 @@ export const LEGAL_CASE_TYPES = [
   "civil", "criminal", "administrative", "labor", "family", "commercial",
 ] as const;
 
-export const LEGAL_CASE_STATUS_DISPLAY: Record<string, string> = {
-  new: "Nowa",
-  intake: "Przyjęta",
-  analysis: "Analiza",
-  draft_prepared: "Projekt gotowy",
-  filed: "Złożona",
-  awaiting_response: "Oczekiwanie",
-  hearing_scheduled: "Rozprawa",
-  judgment_received: "Wyrok",
-  appeal: "Odwołanie",
-  active: "Aktywna",
-  closed: "Zamknięta",
-};
 
 export const LEGAL_CASE_STATUS_COLORS: Record<string, string> = {
   new: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
@@ -181,25 +168,10 @@ export const LEGAL_CASE_STATUS_COLORS: Record<string, string> = {
   closed: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
 };
 
-export const LEGAL_CASE_TYPE_LABELS: Record<string, string> = {
-  civil: "Cywilna",
-  criminal: "Karna",
-  administrative: "Administracyjna",
-  labor: "Pracownicza",
-  family: "Rodzinna",
-  commercial: "Gospodarcza",
-};
-
 export const CASE_DOCUMENT_CATEGORIES = [
-  { value: "pleadings", label: "Pisma procesowe" },
-  { value: "evidence", label: "Dowody" },
-  { value: "correspondence", label: "Korespondencja" },
-  { value: "court_decisions", label: "Orzeczenia" },
-  { value: "powers_of_attorney", label: "Pełnomocnictwa" },
-  { value: "contracts_annexes", label: "Umowy i aneksy" },
-  { value: "invoices_costs", label: "Faktury i koszty" },
-  { value: "internal_notes", label: "Notatki wewnętrzne" },
-  { value: "other", label: "Inne" },
+  "pleadings", "evidence", "correspondence", "court_decisions",
+  "powers_of_attorney", "contracts_annexes", "invoices_costs",
+  "internal_notes", "other",
 ] as const;
 
 export const ORG_STATUS_COLORS: Record<string, string> = {

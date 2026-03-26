@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, ArrowLeft, Wand2, Settings2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import type { CaseTemplate } from "@/lib/types";
 import { TemplateList } from "./template-list";
@@ -12,10 +13,10 @@ import { BlueprintManagement } from "./blueprint-management";
 type PageView = "list" | "form" | "wizard" | "blueprints";
 
 export function TemplateManagementPage() {
+  const t = useTranslations('LegalHub');
+
   const [view, setView] = useState<PageView>("list");
-  const [editingTemplate, setEditingTemplate] = useState<CaseTemplate | null>(
-    null
-  );
+  const [editingTemplate, setEditingTemplate] = useState<CaseTemplate | null>(null);
   const [wizardInitialContent, setWizardInitialContent] = useState("");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -39,7 +40,7 @@ export function TemplateManagementPage() {
     setView("list");
     setEditingTemplate(null);
     setWizardInitialContent("");
-    setRefreshTrigger((t) => t + 1);
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   const handleCancel = () => {
@@ -49,7 +50,7 @@ export function TemplateManagementPage() {
   };
 
   const handleDeleted = () => {
-    setRefreshTrigger((t) => t + 1);
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   const handleWizardComplete = (html: string) => {
@@ -62,9 +63,9 @@ export function TemplateManagementPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Szablony dokumentów</h1>
+          <h1 className="text-2xl font-bold">{t('templateManagement.title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Zarządzaj szablonami do generowania dokumentów
+            {t('templateManagement.subtitle')}
           </p>
         </div>
         {view === "list" && (
@@ -75,15 +76,15 @@ export function TemplateManagementPage() {
               onClick={() => setView("blueprints")}
             >
               <Settings2 className="w-4 h-4 mr-2" />
-              Zarządzaj planami
+              {t('templateManagement.manageBlueprints')}
             </Button>
             <Button variant="outline" size="sm" onClick={handleWizard}>
               <Wand2 className="w-4 h-4 mr-2" />
-              Kreator
+              {t('templateManagement.wizard')}
             </Button>
             <Button size="sm" onClick={handleNew}>
               <Plus className="w-4 h-4 mr-2" />
-              Ręcznie
+              {t('templateManagement.manual')}
             </Button>
           </div>
         )}
@@ -106,7 +107,7 @@ export function TemplateManagementPage() {
             className="text-muted-foreground"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Wróć do listy
+            {t('backToList')}
           </Button>
           <TemplateForm
             template={editingTemplate}

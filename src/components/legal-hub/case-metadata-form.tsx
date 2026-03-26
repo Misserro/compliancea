@@ -5,7 +5,8 @@ import { Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import type { LegalCase, OrgMember } from "@/lib/types";
-import { LEGAL_CASE_TYPES, LEGAL_CASE_TYPE_LABELS } from "@/lib/constants";
+import { useTranslations, useLocale } from "next-intl";
+import { LEGAL_CASE_TYPES } from "@/lib/constants";
 import { calculateCourtFee } from "@/lib/court-fee";
 
 interface CaseMetadataFormProps {
@@ -14,10 +15,7 @@ interface CaseMetadataFormProps {
   onSaved: () => void;
 }
 
-const REPRESENTING_LABELS: Record<string, string> = {
-  plaintiff: "Powód",
-  defendant: "Pozwany",
-};
+// REPRESENTING_LABELS moved to LegalHub.representing.* translations
 
 function parseExtensionData(extStr: string): Record<string, unknown> {
   try {
@@ -30,6 +28,10 @@ function parseExtensionData(extStr: string): Record<string, unknown> {
 
 export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFormProps) {
   const { data: sessionData } = useSession();
+  const t = useTranslations('LegalHub');
+  const tCommon = useTranslations('Common');
+  const tType = useTranslations("CaseTypes");
+  const locale = useLocale();
   const isAdmin = sessionData?.user?.orgRole !== "member";
 
   const [editing, setEditing] = useState(false);
@@ -213,9 +215,9 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
               value={form.case_type}
               onChange={(e) => setForm({ ...form, case_type: e.target.value })}
             >
-              {LEGAL_CASE_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {LEGAL_CASE_TYPE_LABELS[t] || t}
+              {LEGAL_CASE_TYPES.map((caseType) => (
+                <option key={caseType} value={caseType}>
+                  {tType(caseType)}
                 </option>
               ))}
             </select>
@@ -389,7 +391,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
         </div>
         <div>
           <div className="text-muted-foreground text-xs font-medium mb-1">Typ sprawy</div>
-          <div>{LEGAL_CASE_TYPE_LABELS[legalCase.case_type] || legalCase.case_type}</div>
+          <div>{tType(legalCase.case_type)}</div>
         </div>
         <div>
           <div className="text-muted-foreground text-xs font-medium mb-1">Numer referencyjny</div>
@@ -413,7 +415,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
         </div>
         <div>
           <div className="text-muted-foreground text-xs font-medium mb-1">Reprezentujemy</div>
-          <div>{representingSide ? (REPRESENTING_LABELS[representingSide] ?? representingSide) : "\u2014"}</div>
+          <div>{representingSide ? (t(`representing.${representingSide}` as Parameters<typeof t>[0]) ?? representingSide) : "\u2014"}</div>
         </div>
         <div>
           <div className="text-muted-foreground text-xs font-medium mb-1">Wartość przedmiotu sporu</div>

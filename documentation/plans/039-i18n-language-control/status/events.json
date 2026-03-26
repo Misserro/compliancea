@@ -1,0 +1,158 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-03-26T12:35:28.000Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution started for 039-i18n-language-control"
+    },
+    {
+      "timestamp": "2026-03-26T12:35:30.000Z",
+      "type": "team_spawned",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Knowledge agent knowledge-i18n spawned"
+    },
+    {
+      "timestamp": "2026-03-26T12:41:52.000Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "Team spawned for task-1: Infrastructure next-intl setup + language switcher (executor-1, reviewer-1, tester-1)"
+    },
+    {
+      "timestamp": "2026-03-26T12:41:52.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-26T12:46:30.000Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 completed successfully — Infrastructure next-intl setup + language switcher"
+    },
+    {
+      "timestamp": "2026-03-26T12:46:30.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 team shut down — executor-1, reviewer-1, tester-1 ended"
+    },
+    {
+      "timestamp": "2026-03-26T12:47:35.000Z",
+      "type": "team_spawned",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "Team spawned for task-2: Strings — App constants + sidebar navigation (executor-2, reviewer-2, tester-2)"
+    },
+    {
+      "timestamp": "2026-03-26T12:47:35.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "executor-2",
+      "message": "task-2 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-26T12:48:29.000Z",
+      "type": "team_spawned",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "Team spawned for task-3: Strings — Legal Hub all components (executor-3, reviewer-3, tester-3)"
+    },
+    {
+      "timestamp": "2026-03-26T12:48:29.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "executor-3",
+      "message": "task-3 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-26T12:49:18.000Z",
+      "type": "team_spawned",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "Team spawned for task-4: Strings — Auth + invite pages (executor-4, reviewer-4, tester-4)"
+    },
+    {
+      "timestamp": "2026-03-26T12:49:18.000Z",
+      "type": "stage_entered",
+      "task_id": "task-4",
+      "agent": "executor-4",
+      "message": "task-4 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-26T12:52:49.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "reviewer-2",
+      "message": "task-2 entered review stage — reviewer-2 active, executor-2 idle"
+    },
+    {
+      "timestamp": "2026-03-26T12:54:11.000Z",
+      "type": "stage_entered",
+      "task_id": "task-4",
+      "agent": "reviewer-4",
+      "message": "task-4 entered review stage — reviewer-4 active, executor-4 idle"
+    },
+    {
+      "timestamp": "2026-03-26T12:57:42.000Z",
+      "type": "task_completed",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4 completed successfully — Strings: Auth + invite pages (~504s total, 0 retries)"
+    },
+    {
+      "timestamp": "2026-03-26T12:57:42.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4 team shut down — executor-4, reviewer-4, tester-4 ended"
+    },
+    {
+      "timestamp": "2026-03-26T12:58:36.000Z",
+      "type": "team_spawned",
+      "task_id": "task-5",
+      "agent": "pm",
+      "message": "Team spawned for task-5: Strings — Contracts + Obligations + Dashboard (executor-5, reviewer-5, tester-5)"
+    },
+    {
+      "timestamp": "2026-03-26T12:58:36.000Z",
+      "type": "stage_entered",
+      "task_id": "task-5",
+      "agent": "executor-5",
+      "message": "task-5 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-26T13:00:10.000Z",
+      "type": "task_completed",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 completed successfully — Strings: App constants + sidebar navigation (~635s total, 0 retries)"
+    },
+    {
+      "timestamp": "2026-03-26T13:00:10.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 team shut down — executor-2, reviewer-2, tester-2 ended"
+    },
+    {
+      "timestamp": "2026-03-26T13:01:09.000Z",
+      "type": "team_spawned",
+      "task_id": "task-6",
+      "agent": "pm",
+      "message": "Team spawned for task-6: Strings — Documents Hub (executor-6, reviewer-6, tester-6)"
+    },
+    {
+      "timestamp": "2026-03-26T13:01:09.000Z",
+      "type": "stage_entered",
+      "task_id": "task-6",
+      "agent": "executor-6",
+      "message": "task-6 entered planning stage"
+    }
+  ]
+}

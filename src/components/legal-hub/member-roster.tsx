@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Pencil } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -38,6 +39,9 @@ interface ProfileFormState {
 }
 
 export function MemberRoster({ members, onProfileUpdated }: MemberRosterProps) {
+  const t = useTranslations('LegalHub');
+  const tCommon = useTranslations('Common');
+
   const [editingMember, setEditingMember] = useState<FirmMember | null>(null);
   const [formState, setFormState] = useState<ProfileFormState>({
     first_name: "",
@@ -96,7 +100,7 @@ export function MemberRoster({ members, onProfileUpdated }: MemberRosterProps) {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Failed to update profile");
+        setError(data.error || t('roster.updateError'));
         setSaving(false);
         return;
       }
@@ -104,7 +108,7 @@ export function MemberRoster({ members, onProfileUpdated }: MemberRosterProps) {
       closeEdit();
       onProfileUpdated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update profile");
+      setError(err instanceof Error ? err.message : t('roster.updateError'));
       setSaving(false);
     }
   };
@@ -112,22 +116,22 @@ export function MemberRoster({ members, onProfileUpdated }: MemberRosterProps) {
   return (
     <div className="space-y-3">
       <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-        Zespół kancelarii
+        {t('roster.title')}
       </h4>
 
       <div className="overflow-x-auto rounded-lg border">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">
-              <th className="text-left px-3 py-2 font-medium">Imie</th>
-              <th className="text-left px-3 py-2 font-medium">Nazwisko</th>
-              <th className="text-left px-3 py-2 font-medium">Email</th>
-              <th className="text-left px-3 py-2 font-medium">Telefon</th>
+              <th className="text-left px-3 py-2 font-medium">{t('roster.firstName')}</th>
+              <th className="text-left px-3 py-2 font-medium">{t('roster.lastName')}</th>
+              <th className="text-left px-3 py-2 font-medium">{t('roster.email')}</th>
+              <th className="text-left px-3 py-2 font-medium">{t('roster.phone')}</th>
               <th className="text-left px-3 py-2 font-medium">
-                Specjalizacja
+                {t('roster.specialization')}
               </th>
-              <th className="text-left px-3 py-2 font-medium">Nr wpisu</th>
-              <th className="text-right px-3 py-2 font-medium">Sprawy</th>
+              <th className="text-left px-3 py-2 font-medium">{t('roster.barNumber')}</th>
+              <th className="text-right px-3 py-2 font-medium">{t('roster.casesCount')}</th>
               <th className="px-3 py-2" />
             </tr>
           </thead>
@@ -185,7 +189,7 @@ export function MemberRoster({ members, onProfileUpdated }: MemberRosterProps) {
                   colSpan={8}
                   className="px-3 py-6 text-center text-muted-foreground"
                 >
-                  Brak czlonkow
+                  {t('roster.noMembers')}
                 </td>
               </tr>
             )}
@@ -203,7 +207,7 @@ export function MemberRoster({ members, onProfileUpdated }: MemberRosterProps) {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              Edytuj profil{" "}
+              {t('roster.editProfileTitle')}{" "}
               {editingMember
                 ? `- ${editingMember.name}`
                 : ""}
@@ -213,7 +217,7 @@ export function MemberRoster({ members, onProfileUpdated }: MemberRosterProps) {
           <div className="space-y-4 pt-2">
             <div>
               <Label htmlFor="edit-first-name" className="text-sm font-medium">
-                Imie
+                {t('roster.firstName')}
               </Label>
               <Input
                 id="edit-first-name"
@@ -221,14 +225,14 @@ export function MemberRoster({ members, onProfileUpdated }: MemberRosterProps) {
                 onChange={(e) =>
                   handleFieldChange("first_name", e.target.value)
                 }
-                placeholder="Imie"
+                placeholder={t('roster.firstNamePlaceholder')}
                 className="mt-1.5"
               />
             </div>
 
             <div>
               <Label htmlFor="edit-last-name" className="text-sm font-medium">
-                Nazwisko
+                {t('roster.lastName')}
               </Label>
               <Input
                 id="edit-last-name"
@@ -236,20 +240,20 @@ export function MemberRoster({ members, onProfileUpdated }: MemberRosterProps) {
                 onChange={(e) =>
                   handleFieldChange("last_name", e.target.value)
                 }
-                placeholder="Nazwisko"
+                placeholder={t('roster.lastNamePlaceholder')}
                 className="mt-1.5"
               />
             </div>
 
             <div>
               <Label htmlFor="edit-phone" className="text-sm font-medium">
-                Telefon
+                {t('roster.phone')}
               </Label>
               <Input
                 id="edit-phone"
                 value={formState.phone}
                 onChange={(e) => handleFieldChange("phone", e.target.value)}
-                placeholder="Telefon"
+                placeholder={t('roster.phonePlaceholder')}
                 className="mt-1.5"
               />
             </div>
@@ -259,7 +263,7 @@ export function MemberRoster({ members, onProfileUpdated }: MemberRosterProps) {
                 htmlFor="edit-specialization"
                 className="text-sm font-medium"
               >
-                Specjalizacja
+                {t('roster.specialization')}
               </Label>
               <Input
                 id="edit-specialization"
@@ -267,7 +271,7 @@ export function MemberRoster({ members, onProfileUpdated }: MemberRosterProps) {
                 onChange={(e) =>
                   handleFieldChange("specialization", e.target.value)
                 }
-                placeholder="Specjalizacja"
+                placeholder={t('roster.specializationPlaceholder')}
                 className="mt-1.5"
               />
             </div>
@@ -277,7 +281,7 @@ export function MemberRoster({ members, onProfileUpdated }: MemberRosterProps) {
                 htmlFor="edit-bar-number"
                 className="text-sm font-medium"
               >
-                Nr wpisu
+                {t('roster.barNumber')}
               </Label>
               <Input
                 id="edit-bar-number"
@@ -288,7 +292,7 @@ export function MemberRoster({ members, onProfileUpdated }: MemberRosterProps) {
                     e.target.value
                   )
                 }
-                placeholder="Nr wpisu na liste"
+                placeholder={t('roster.barNumberPlaceholder')}
                 className="mt-1.5"
               />
             </div>
@@ -301,14 +305,14 @@ export function MemberRoster({ members, onProfileUpdated }: MemberRosterProps) {
                 disabled={saving}
                 className="px-3 py-1.5 text-sm border rounded hover:bg-muted transition-colors"
               >
-                Anuluj
+                {tCommon('cancel')}
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {saving ? "Zapisywanie..." : "Zapisz"}
+                {saving ? t('roster.saving') : tCommon('save')}
               </button>
             </div>
           </div>

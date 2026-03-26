@@ -4,6 +4,7 @@ import { useState, useEffect, type ElementType } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, AlertTriangle, Briefcase } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslations } from "next-intl";
 
 interface DashboardData {
   docs: { total: number; processed: number; byType: Record<string, number> };
@@ -45,6 +46,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const t = useTranslations("Dashboard");
 
   useEffect(() => {
     fetch("/api/dashboard")
@@ -57,8 +59,8 @@ export default function DashboardPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Dashboard</h2>
-        <p className="text-sm text-muted-foreground mt-1">Overview of your compliance workspace.</p>
+        <h2 className="text-2xl font-semibold tracking-tight">{t("title")}</h2>
+        <p className="text-sm text-muted-foreground mt-1">{t("subtitle")}</p>
       </div>
 
       {/* KPI cards */}
@@ -68,20 +70,20 @@ export default function DashboardPage() {
         ) : data ? (
           <>
             <KpiCard
-              icon={FileText} label="Documents" href="/documents"
+              icon={FileText} label={t("documents")} href="/documents"
               value={data.docs.total}
-              sub={`${data.docs.processed} processed`}
+              sub={t("processedSub", { count: data.docs.processed })}
             />
             <KpiCard
-              icon={AlertTriangle} label="Overdue" href="/obligations"
+              icon={AlertTriangle} label={t("overdue")} href="/obligations"
               value={data.obligations.overdue}
-              sub={`${data.obligations.active} active obligations`}
+              sub={t("activeObligationsSub", { count: data.obligations.active })}
               accent={data.obligations.overdue > 0 ? "red" : undefined}
             />
             <KpiCard
-              icon={Briefcase} label="Contracts" href="/contracts"
+              icon={Briefcase} label={t("contracts")} href="/contracts"
               value={data.contracts.total}
-              sub={`${data.contracts.expiringSoon.length} expiring soon`}
+              sub={t("expiringSoonSub", { count: data.contracts.expiringSoon.length })}
             />
           </>
         ) : null}
@@ -92,8 +94,8 @@ export default function DashboardPage() {
         {/* Upcoming obligations */}
         <div className="rounded-xl border bg-card shadow-sm">
           <div className="px-5 py-4 border-b">
-            <h3 className="text-sm font-semibold">Upcoming Obligations</h3>
-            <p className="text-xs text-muted-foreground">Next 30 days</p>
+            <h3 className="text-sm font-semibold">{t("upcomingObligations")}</h3>
+            <p className="text-xs text-muted-foreground">{t("next30Days")}</p>
           </div>
           <div className="divide-y">
             {loading ? (
@@ -101,7 +103,7 @@ export default function DashboardPage() {
                 <div key={i} className="px-5 py-3"><Skeleton className="h-4 w-3/4" /></div>
               ))
             ) : !data || data.obligations.upcoming.length === 0 ? (
-              <p className="px-5 py-8 text-xs text-muted-foreground text-center">No upcoming deadlines.</p>
+              <p className="px-5 py-8 text-xs text-muted-foreground text-center">{t("noUpcomingDeadlines")}</p>
             ) : (
               data.obligations.upcoming.map(o => {
                 const days = Math.ceil((new Date(o.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -116,7 +118,7 @@ export default function DashboardPage() {
                       <p className="text-[11px] text-muted-foreground truncate">{o.document_name}</p>
                     </div>
                     <span className={`text-xs font-semibold shrink-0 ml-3 ${days <= 7 ? "text-destructive" : "text-muted-foreground"}`}>
-                      {days}d
+                      {t("daysShort", { count: days })}
                     </span>
                   </button>
                 );
@@ -128,8 +130,8 @@ export default function DashboardPage() {
         {/* Contracts expiring soon */}
         <div className="rounded-xl border bg-card shadow-sm">
           <div className="px-5 py-4 border-b">
-            <h3 className="text-sm font-semibold">Contracts Expiring Soon</h3>
-            <p className="text-xs text-muted-foreground">Next 60 days</p>
+            <h3 className="text-sm font-semibold">{t("contractsExpiringSoon")}</h3>
+            <p className="text-xs text-muted-foreground">{t("next60Days")}</p>
           </div>
           <div className="divide-y">
             {loading ? (
@@ -137,7 +139,7 @@ export default function DashboardPage() {
                 <div key={i} className="px-5 py-3"><Skeleton className="h-4 w-3/4" /></div>
               ))
             ) : !data || data.contracts.expiringSoon.length === 0 ? (
-              <p className="px-5 py-8 text-xs text-muted-foreground text-center">No contracts expiring soon.</p>
+              <p className="px-5 py-8 text-xs text-muted-foreground text-center">{t("noContractsExpiring")}</p>
             ) : (
               data.contracts.expiringSoon.map(c => (
                 <button
@@ -150,7 +152,7 @@ export default function DashboardPage() {
                     <p className="text-[11px] text-muted-foreground">{new Date(c.expiry_date).toLocaleDateString()}</p>
                   </div>
                   <span className={`text-xs font-semibold shrink-0 ml-3 ${c.daysLeft <= 14 ? "text-destructive" : "text-amber-600"}`}>
-                    {c.daysLeft}d
+                    {t("daysShort", { count: c.daysLeft })}
                   </span>
                 </button>
               ))

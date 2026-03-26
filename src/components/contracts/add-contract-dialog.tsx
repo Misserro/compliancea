@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { DEPARTMENTS } from "@/lib/constants";
 
 interface AddContractDialogProps {
@@ -24,6 +25,8 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const t = useTranslations("Contracts");
+  const tCommon = useTranslations("Common");
 
   const reset = () => {
     setStep("upload");
@@ -134,12 +137,12 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
       <div className="bg-background border rounded-lg shadow-lg w-full max-w-md p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold">Add New Contract</h2>
+          <h2 className="text-lg font-semibold">{t("addDialog.title")}</h2>
           {step !== "processing" && step !== "uploading-manual" && (
             <button
               onClick={handleClose}
               className="text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Close"
+              aria-label={tCommon("close")}
             >
               <X className="w-5 h-5" />
             </button>
@@ -150,7 +153,7 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
         {(step === "upload" || step === "error-upload") && (
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Contract Document</label>
+              <label className="text-sm font-medium mb-1.5 block">{t("addDialog.contractDocument")}</label>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -158,19 +161,19 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
                 className="w-full text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-muted file:text-foreground hover:file:bg-muted/80"
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               />
-              <p className="text-xs text-muted-foreground mt-1">PDF or DOCX, max 10 MB</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("addDialog.fileHint")}</p>
             </div>
 
             <div>
               <label className="text-sm font-medium mb-1.5 block">
-                Category <span className="text-muted-foreground font-normal">(optional)</span>
+                {t("addDialog.category")} <span className="text-muted-foreground font-normal">{t("addDialog.categoryOptional")}</span>
               </label>
               <select
                 className="w-full px-2 py-1.5 border rounded text-sm bg-background"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
-                <option value="">Select category…</option>
+                <option value="">{t("addDialog.selectCategory")}</option>
                 {DEPARTMENTS.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -186,21 +189,21 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
                 onClick={handleClose}
                 className="px-3 py-1.5 text-sm border rounded hover:bg-muted transition-colors"
               >
-                Cancel
+                {tCommon("cancel")}
               </button>
               <button
                 onClick={handleUploadManual}
                 disabled={!file || isSubmitting}
                 className="px-4 py-2 border border-input rounded text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Add manually
+                {t("addDialog.addManually")}
               </button>
               <button
                 onClick={handleUpload}
                 disabled={!file || isSubmitting}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Add with AI
+                {t("addDialog.addWithAI")}
               </button>
             </div>
           </div>
@@ -210,8 +213,8 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
         {step === "processing" && (
           <div className="py-10 text-center">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-sm text-muted-foreground">Processing contract…</p>
-            <p className="text-xs text-muted-foreground mt-1">This may take a moment.</p>
+            <p className="text-sm text-muted-foreground">{t("addDialog.processing")}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("addDialog.processingHint")}</p>
           </div>
         )}
 
@@ -219,8 +222,8 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
         {step === "uploading-manual" && (
           <div className="py-10 text-center">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-sm text-muted-foreground">Uploading contract…</p>
-            <p className="text-xs text-muted-foreground mt-1">This may take a moment.</p>
+            <p className="text-sm text-muted-foreground">{t("addDialog.uploading")}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("addDialog.processingHint")}</p>
           </div>
         )}
 
@@ -228,9 +231,9 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
         {step === "done" && (
           <div className="py-10 text-center">
             <p className="text-sm font-medium text-green-600 dark:text-green-400">
-              Contract added — {obligationsCount} obligation{obligationsCount !== 1 ? "s" : ""} extracted
+              {t("addDialog.done", { count: obligationsCount })}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">Closing…</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("addDialog.closing")}</p>
           </div>
         )}
 
@@ -243,13 +246,13 @@ export function AddContractDialog({ open, onOpenChange, onSuccess }: AddContract
                 onClick={handleClose}
                 className="px-3 py-1.5 text-sm border rounded hover:bg-muted transition-colors"
               >
-                Cancel
+                {tCommon("cancel")}
               </button>
               <button
                 onClick={handleRetryProcess}
                 className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
               >
-                Retry Processing
+                {t("addDialog.retryProcessing")}
               </button>
             </div>
           </div>

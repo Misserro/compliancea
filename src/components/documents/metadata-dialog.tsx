@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ interface MetadataDialogProps {
 }
 
 export function MetadataDialog({ document: doc, open, onOpenChange, onSave }: MetadataDialogProps) {
+  const t = useTranslations('Documents');
   const [saving, setSaving] = useState(false);
   const [docType, setDocType] = useState("");
   const [category, setCategory] = useState("");
@@ -98,7 +100,7 @@ export function MetadataDialog({ document: doc, open, onOpenChange, onSave }: Me
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Edit Metadata</DialogTitle>
+          <DialogTitle>{t('metadata.title')}</DialogTitle>
           {doc && (
             <p className="text-sm text-muted-foreground truncate">{doc.name}</p>
           )}
@@ -112,13 +114,13 @@ export function MetadataDialog({ document: doc, open, onOpenChange, onSave }: Me
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="meta-doc-type">Document Type</Label>
+            <Label htmlFor="meta-doc-type">{t('metadata.documentType')}</Label>
             <Select value={docType} onValueChange={setDocType}>
               <SelectTrigger id="meta-doc-type" className="mt-1.5">
-                <SelectValue placeholder="Unknown" />
+                <SelectValue placeholder={t('metadata.unknown')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unknown">Unknown</SelectItem>
+                <SelectItem value="unknown">{t('metadata.unknown')}</SelectItem>
                 {DOC_TYPES.map((t) => (
                   <SelectItem key={t} value={t}>
                     {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -129,13 +131,13 @@ export function MetadataDialog({ document: doc, open, onOpenChange, onSave }: Me
           </div>
 
           <div>
-            <Label htmlFor="meta-category">Category</Label>
+            <Label htmlFor="meta-category">{t('metadata.category')}</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger id="meta-category" className="mt-1.5">
-                <SelectValue placeholder="Unassigned" />
+                <SelectValue placeholder={t('metadata.unassigned')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unassigned">Unassigned</SelectItem>
+                <SelectItem value="unassigned">{t('metadata.unassigned')}</SelectItem>
                 {DEPARTMENTS.map((d) => (
                   <SelectItem key={d} value={d}>{d}</SelectItem>
                 ))}
@@ -144,13 +146,13 @@ export function MetadataDialog({ document: doc, open, onOpenChange, onSave }: Me
           </div>
 
           <div>
-            <Label htmlFor="meta-jurisdiction">Jurisdiction</Label>
+            <Label htmlFor="meta-jurisdiction">{t('metadata.jurisdiction')}</Label>
             <Select value={jurisdiction} onValueChange={setJurisdiction}>
               <SelectTrigger id="meta-jurisdiction" className="mt-1.5">
-                <SelectValue placeholder="Unknown" />
+                <SelectValue placeholder={t('metadata.unknown')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unknown">Unknown</SelectItem>
+                <SelectItem value="unknown">{t('metadata.unknown')}</SelectItem>
                 {JURISDICTIONS.map((j) => (
                   <SelectItem key={j} value={j}>{j}</SelectItem>
                 ))}
@@ -159,10 +161,10 @@ export function MetadataDialog({ document: doc, open, onOpenChange, onSave }: Me
           </div>
 
           <div>
-            <Label htmlFor="meta-sensitivity">Sensitivity</Label>
+            <Label htmlFor="meta-sensitivity">{t('metadata.sensitivity')}</Label>
             <Select value={sensitivity} onValueChange={setSensitivity}>
               <SelectTrigger id="meta-sensitivity" className="mt-1.5">
-                <SelectValue placeholder="Select..." />
+                <SelectValue placeholder={t('metadata.selectPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {SENSITIVITIES.map((s) => (
@@ -175,36 +177,36 @@ export function MetadataDialog({ document: doc, open, onOpenChange, onSave }: Me
           </div>
 
           <div>
-            <Label htmlFor="meta-status">Status</Label>
+            <Label htmlFor="meta-status">{t('metadata.status')}</Label>
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger id="meta-status" className="mt-1.5">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="in_review">In Review</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="archived">Archived</SelectItem>
+                <SelectItem value="draft">{t('metadata.statusDraft')}</SelectItem>
+                <SelectItem value="in_review">{t('metadata.statusInReview')}</SelectItem>
+                <SelectItem value="approved">{t('metadata.statusApproved')}</SelectItem>
+                <SelectItem value="archived">{t('metadata.statusArchived')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label htmlFor="meta-in-force">Enforcement</Label>
+            <Label htmlFor="meta-in-force">{t('metadata.enforcement')}</Label>
             <Select value={inForce} onValueChange={setInForce}>
               <SelectTrigger id="meta-in-force" className="mt-1.5">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unknown">Unknown</SelectItem>
-                <SelectItem value="in_force">In Force</SelectItem>
-                <SelectItem value="archival">Archival</SelectItem>
+                <SelectItem value="unknown">{t('metadata.enforcementUnknown')}</SelectItem>
+                <SelectItem value="in_force">{t('metadata.enforcementInForce')}</SelectItem>
+                <SelectItem value="archival">{t('metadata.enforcementArchival')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label htmlFor="meta-language">Language</Label>
+            <Label htmlFor="meta-language">{t('metadata.language')}</Label>
             <Input
               id="meta-language"
               value={language}
@@ -214,7 +216,7 @@ export function MetadataDialog({ document: doc, open, onOpenChange, onSave }: Me
           </div>
 
           <div>
-            <Label htmlFor="meta-client">Client/Counterparty</Label>
+            <Label htmlFor="meta-client">{t('metadata.clientCounterparty')}</Label>
             <Input
               id="meta-client"
               value={client}
@@ -225,22 +227,22 @@ export function MetadataDialog({ document: doc, open, onOpenChange, onSave }: Me
         </div>
 
         <div>
-          <Label htmlFor="meta-tags">Tags (comma-separated)</Label>
+          <Label htmlFor="meta-tags">{t('metadata.tagsLabel')}</Label>
           <Input
             id="meta-tags"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
-            placeholder="tag1, tag2, tag3"
+            placeholder={t('metadata.tagsPlaceholder')}
             className="mt-1.5"
           />
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('metadata.cancel')}
           </Button>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save Changes"}
+            {saving ? t('metadata.saving') : t('metadata.saveChanges')}
           </Button>
         </DialogFooter>
       </DialogContent>

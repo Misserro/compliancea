@@ -1,0 +1,23 @@
+{
+  "task_id": "task-4",
+  "task_name": "Strings: Auth + invite pages",
+  "team_name": "task-4-team",
+  "goal": "Login and register pages fully switch between English and Polish. Invite acceptance and no-org error pages switch language. TypeScript compiles clean.",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-26T12:49:18.000Z",
+  "ended_at": "2026-03-26T12:57:42.000Z",
+  "elapsed_seconds": 504,
+  "stages": {
+    "planning":       { "started_at": "2026-03-26T12:49:18.000Z", "ended_at": "2026-03-26T12:54:11.000Z", "elapsed_seconds": 173 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": "2026-03-26T12:54:11.000Z", "ended_at": "2026-03-26T12:57:42.000Z", "elapsed_seconds": 211 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-4", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-26T12:49:18.000Z", "ended_at": "2026-03-26T12:57:42.000Z" },
+    { "name": "reviewer-4", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-26T12:49:18.000Z", "ended_at": "2026-03-26T12:57:42.000Z" },
+    { "name": "tester-4",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-26T12:49:18.000Z", "ended_at": "2026-03-26T12:57:42.000Z" }
+  ]
+}

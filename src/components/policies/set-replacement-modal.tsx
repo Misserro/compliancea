@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Search } from "lucide-react";
 import {
   Dialog,
@@ -27,6 +28,7 @@ export function SetReplacementModal({
   onOpenChange,
   onResolved,
 }: SetReplacementModalProps) {
+  const t = useTranslations('Documents');
   const [documents, setDocuments] = useState<Document[]>([]);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
@@ -73,15 +75,15 @@ export function SetReplacementModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Set as replacement for…</DialogTitle>
+          <DialogTitle>{t('setReplacement.title')}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          Select the document that <strong>{document?.name}</strong> replaces. The selected document will be archived.
+          {t.rich('setReplacement.description', { name: document?.name ?? '', strong: (chunks) => <strong>{chunks}</strong> })}
         </p>
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
-            placeholder="Search documents…"
+            placeholder={t('setReplacement.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8"
@@ -89,7 +91,7 @@ export function SetReplacementModal({
         </div>
         <div className="max-h-64 overflow-y-auto space-y-1 border rounded-md p-1">
           {filtered.length === 0 && (
-            <p className="text-sm text-muted-foreground p-2">No documents found.</p>
+            <p className="text-sm text-muted-foreground p-2">{t('setReplacement.noDocuments')}</p>
           )}
           {filtered.map((d) => (
             <button
@@ -106,10 +108,10 @@ export function SetReplacementModal({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('setReplacement.cancel')}
           </Button>
           <Button onClick={handleConfirm} disabled={!selected || loading}>
-            Confirm replacement
+            {t('setReplacement.confirmButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

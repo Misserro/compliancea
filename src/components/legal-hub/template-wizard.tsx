@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { ArrowLeft, ArrowRight, Check, X, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,6 +27,7 @@ interface TemplateWizardProps {
 }
 
 export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
+  const t = useTranslations('LegalHub');
   const [step, setStep] = useState<WizardStep>("blueprint");
   const [customBlueprints, setCustomBlueprints] = useState<CustomBlueprint[]>(
     []
@@ -277,19 +279,19 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
             className="text-muted-foreground"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Wróć do listy
+            {t('wizard.backToList')}
           </Button>
           <div>
-            <h2 className="text-lg font-semibold">Wybierz plan</h2>
+            <h2 className="text-lg font-semibold">{t('wizard.selectBlueprint')}</h2>
             <p className="text-sm text-muted-foreground">
-              Wybierz strukturę, która poprowadzi Cię przez wypełnianie sekcji
+              {t('wizard.selectBlueprintSubtitle')}
             </p>
           </div>
         </div>
 
         <div>
           <h3 className="text-sm font-medium text-muted-foreground mb-3">
-            Predefiniowane
+            {t('wizard.predefined')}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {PREDEFINED_BLUEPRINTS.map((bp) => (
@@ -301,8 +303,8 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
                 <div className="font-medium text-sm">{bp.name}</div>
                 <div className="text-xs text-muted-foreground mt-1">
                   {bp.sections.length === 0
-                    ? "Zacznij od pustego — dodaj własną treść"
-                    : `${bp.sections.length} sekcji`}
+                    ? t('wizard.blankDescription')
+                    : t('wizard.sectionsCount', { count: bp.sections.length })}
                 </div>
               </button>
             ))}
@@ -322,7 +324,7 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
         {!loadingCustom && customBlueprints.length > 0 && (
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-3">
-              Własne
+              {t('wizard.custom')}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {customBlueprints.map((bp) => {
@@ -340,7 +342,7 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
                   >
                     <div className="font-medium text-sm">{bp.name}</div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      {sectionCount} sekcji
+                      {t('wizard.sectionsCount', { count: sectionCount })}
                     </div>
                   </button>
                 );
@@ -369,15 +371,15 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
             className="text-muted-foreground"
           >
             <X className="w-4 h-4 mr-1" />
-            Anuluj
+            {t('Common.cancel')}
           </Button>
           <div>
             <div className="text-xs text-muted-foreground">
-              Ostatni krok
+              {t('wizard.lastStep')}
             </div>
             <h2 className="text-lg font-semibold flex items-center gap-1.5">
               <Sparkles className="w-5 h-5" />
-              Ulepszanie dokumentu
+              {t('wizard.aiPolish')}
             </h2>
           </div>
         </div>
@@ -397,8 +399,8 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
         <div className="space-y-3">
           <label className="text-sm font-medium block">
             {polishState === "done"
-              ? "Ulepszona wersja"
-              : "Podgląd dokumentu"}
+              ? t('wizard.polishedVersion')
+              : t('wizard.previewDocument')}
           </label>
           <div
             className="rounded-md border border-input bg-background px-4 py-3 text-sm max-h-[400px] overflow-y-auto prose prose-sm max-w-none"
@@ -414,14 +416,14 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
             <div className="flex items-center gap-3">
               <Button size="sm" onClick={handlePolish}>
                 <Sparkles className="w-4 h-4 mr-1.5" />
-                Ulepsz z AI
+                {t('wizard.polishWithAI')}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleSkipPolish}
               >
-                Pomiń
+                {t('wizard.skip')}
               </Button>
             </div>
           )}
@@ -429,7 +431,7 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
           {polishState === "loading" && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
-              Ulepszanie dokumentu...
+              {t('wizard.enhancing')}
             </div>
           )}
 
@@ -437,14 +439,14 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
             <div className="flex items-center gap-3">
               <Button size="sm" onClick={handleAcceptPolished}>
                 <Check className="w-4 h-4 mr-1" />
-                Użyj ulepszonej wersji
+                {t('wizard.usePolished')}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleRevertToOriginal}
               >
-                Użyj oryginalnej wersji
+                {t('wizard.useOriginal')}
               </Button>
             </div>
           )}
@@ -457,14 +459,14 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
               <div className="flex items-center gap-3">
                 <Button size="sm" onClick={handlePolish}>
                   <Sparkles className="w-4 h-4 mr-1.5" />
-                  Spróbuj ponownie
+                  {t('wizard.tryAgain')}
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleSkipPolish}
                 >
-                  Pomiń
+                  {t('wizard.skip')}
                 </Button>
               </div>
             </div>
@@ -480,7 +482,7 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
             disabled={polishState === "loading"}
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Wstecz
+            {t('Common.back')}
           </Button>
           <div />
         </div>
@@ -510,11 +512,11 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
           className="text-muted-foreground"
         >
           <X className="w-4 h-4 mr-1" />
-          Anuluj
+          {t('Common.cancel')}
         </Button>
         <div>
           <div className="text-xs text-muted-foreground">
-            Sekcja {idx + 1} z {sections.length}
+            {t('wizard.sectionOf', { current: idx + 1, total: sections.length })}
           </div>
           <h2 className="text-lg font-semibold">{section.title}</h2>
         </div>
@@ -539,25 +541,25 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
       {/* Content area + variable chips */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-3">
-          <label className="text-sm font-medium block">Treść</label>
+          <label className="text-sm font-medium block">{t('wizard.content')}</label>
           <textarea
             ref={textareaRef}
             key={idx}
             value={section.content}
             onChange={(e) => updateContent(idx, e.target.value)}
-            placeholder={`Wpisz treść dla "${section.title}"...`}
+            placeholder={t('wizard.contentPlaceholder', { title: section.title })}
             className="w-full min-h-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
             rows={10}
           />
           <p className="text-xs text-muted-foreground">
-            Każda linia staje się akapitem. Kliknij zmienną, aby wstawić ją w miejscu kursora.
+            {t('wizard.contentHint')}
           </p>
 
           {/* AI Assist */}
           <div className="space-y-3 pt-3 border-t">
             <h3 className="text-sm font-medium flex items-center gap-1.5">
               <Sparkles className="w-4 h-4" />
-              Asystent AI
+              {t('wizard.aiAssistant')}
             </h3>
 
             {/* Mode toggle */}
@@ -571,7 +573,7 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
                     : "bg-background text-muted-foreground border-input hover:bg-muted/50"
                 }`}
               >
-                Szablon z zmiennymi
+                {t('wizard.aiModeTemplate')}
               </button>
               <button
                 type="button"
@@ -582,19 +584,19 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
                     : "bg-background text-muted-foreground border-input hover:bg-muted/50"
                 }`}
               >
-                Treść rzeczywista
+                {t('wizard.aiModeReal')}
               </button>
             </div>
 
             {/* Hint textarea */}
             <div>
               <label className="text-xs text-muted-foreground block mb-1">
-                Wskazówka dla AI — opcjonalnie
+                {t('wizard.aiHintLabel')}
               </label>
               <textarea
                 value={section.aiHint ?? ""}
                 onChange={(e) => updateAiHint(idx, e.target.value)}
-                placeholder="Np. skup się na terminach płatności..."
+                placeholder={t('wizard.aiHintPlaceholder')}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
                 rows={2}
               />
@@ -613,7 +615,7 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
               ) : (
                 <Sparkles className="w-4 h-4 mr-1.5" />
               )}
-              {aiLoading ? "Generowanie..." : "Generuj z AI"}
+              {aiLoading ? t('wizard.aiGenerating') : t('wizard.aiGenerate')}
             </Button>
 
             {/* Error display */}
@@ -625,9 +627,9 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
 
         {/* Variable chips */}
         <div className="space-y-3">
-          <h3 className="text-sm font-medium">Zmienne</h3>
+          <h3 className="text-sm font-medium">{t('wizard.variablesTitle')}</h3>
           <p className="text-xs text-muted-foreground">
-            Kliknij, aby wstawić w miejscu kursora
+            {t('wizard.variablesHint')}
           </p>
           <div className="flex flex-wrap gap-1.5 max-h-[300px] overflow-y-auto">
             {hintTokens.map((token) => (
@@ -648,17 +650,17 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
       <div className="flex items-center justify-between pt-2 border-t">
         <Button variant="outline" size="sm" onClick={handlePrev}>
           <ArrowLeft className="w-4 h-4 mr-1" />
-          {isFirst ? "Wróć do planów" : "Wstecz"}
+          {isFirst ? t('wizard.backToBlueprints') : t('Common.back')}
         </Button>
 
         {isLast ? (
           <Button size="sm" onClick={handleFinish}>
             <Check className="w-4 h-4 mr-1" />
-            Zakończ
+            {t('wizard.finish')}
           </Button>
         ) : (
           <Button size="sm" onClick={handleNext}>
-            Dalej
+            {t('wizard.next')}
             <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         )}

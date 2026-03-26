@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { LegalCase } from "@/lib/types";
 import {
   LEGAL_CASE_STATUS_COLORS,
-  LEGAL_CASE_STATUS_DISPLAY,
-  LEGAL_CASE_TYPE_LABELS,
 } from "@/lib/constants";
 
 interface CaseHeaderProps {
@@ -14,6 +13,10 @@ interface CaseHeaderProps {
 }
 
 export function CaseHeader({ legalCase }: CaseHeaderProps) {
+  const t = useTranslations('LegalHub');
+  const tStatus = useTranslations("CaseStatuses");
+  const tType = useTranslations("CaseTypes");
+
   if (!legalCase) {
     return null;
   }
@@ -21,10 +24,8 @@ export function CaseHeader({ legalCase }: CaseHeaderProps) {
   const statusColor =
     LEGAL_CASE_STATUS_COLORS[legalCase.status] ||
     LEGAL_CASE_STATUS_COLORS.new;
-  const statusDisplay =
-    LEGAL_CASE_STATUS_DISPLAY[legalCase.status] || legalCase.status;
-  const typeLabel =
-    LEGAL_CASE_TYPE_LABELS[legalCase.case_type] || legalCase.case_type;
+  const statusDisplay = tStatus(legalCase.status);
+  const typeLabel = tType(legalCase.case_type);
 
   return (
     <div className="space-y-2">
@@ -33,7 +34,7 @@ export function CaseHeader({ legalCase }: CaseHeaderProps) {
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        Wróć do spraw
+        {t('backToCases')}
       </Link>
 
       <div className="flex items-start justify-between">

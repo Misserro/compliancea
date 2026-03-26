@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { UploadSection } from "@/components/documents/upload-section";
 import { ActionBar } from "@/components/documents/action-bar";
 import { DocumentList } from "@/components/documents/document-list";
@@ -35,6 +36,7 @@ const permLevel = (perms: Record<string, string> | null | undefined, resource: s
 export default function DocumentsPage() {
   const router = useRouter();
   const { data: sessionData } = useSession();
+  const t = useTranslations('Documents');
   const permissions = sessionData?.user?.permissions;
   const canEdit = permLevel(permissions, 'documents') >= 2;
   const canDelete = permLevel(permissions, 'documents') >= 3;
@@ -64,11 +66,11 @@ export default function DocumentsPage() {
         setDocuments(data.documents || []);
       }
     } catch (err) {
-      toast.error(`Failed to load documents: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(`${t('loadError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadDocuments();
@@ -101,7 +103,7 @@ export default function DocumentsPage() {
         toast.error(data.error);
       }
     } catch (err) {
-      toast.error(`Scan failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(`${t('scanError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
   }
 
@@ -116,18 +118,18 @@ export default function DocumentsPage() {
         toast.error(data.error);
       }
     } catch (err) {
-      toast.error(`GDrive scan failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(`${t('gdriveScanError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
   }
 
   async function handleProcessAll() {
     const unprocessed = documents.filter((d) => !d.processed);
     if (unprocessed.length === 0) {
-      toast.info("All documents are already processed.");
+      toast.info(t('allProcessed'));
       return;
     }
 
-    toast.info(`Processing ${unprocessed.length} document(s)...`);
+    toast.info(t('processingCount', { count: unprocessed.length }));
     let processed = 0;
     let failed = 0;
 
@@ -150,7 +152,7 @@ export default function DocumentsPage() {
       });
     }
 
-    toast.success(`Processed ${processed}, failed ${failed}`);
+    toast.success(t('processedResult', { processed, failed }));
     await loadDocuments();
   }
 
@@ -165,7 +167,7 @@ export default function DocumentsPage() {
         toast.error(data.error);
       }
     } catch (err) {
-      toast.error(`Retag failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(`${t('retagError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
   }
 
@@ -183,7 +185,7 @@ export default function DocumentsPage() {
         );
       }
     } catch (err) {
-      toast.error(`Failed to update category: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(`${t('categoryError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
   }
 
@@ -193,13 +195,13 @@ export default function DocumentsPage() {
       const res = await fetch(`/api/documents/${id}/process`, { method: "POST" });
       const data = await res.json();
       if (res.ok) {
-        toast.success(data.message || "Document processed");
+        toast.success(data.message || t('documentProcessed'));
         await loadDocuments();
       } else {
         toast.error(data.error);
       }
     } catch (err) {
-      toast.error(`Process failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(`${t('processError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setProcessingIds((prev) => {
         const next = new Set(prev);
@@ -221,7 +223,7 @@ export default function DocumentsPage() {
         toast.error(data.error);
       }
     } catch (err) {
-      toast.error(`Retag failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(`${t('retagError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setRetaggingIds((prev) => {
         const next = new Set(prev);
@@ -236,13 +238,13 @@ export default function DocumentsPage() {
       const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
       if (res.ok) {
         setDocuments((prev) => prev.filter((d) => d.id !== id));
-        toast.success("Document deleted");
+        toast.success(t('documentDeleted'));
       } else {
         const data = await res.json();
         toast.error(data.error);
       }
     } catch (err) {
-      toast.error(`Delete failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(`${t('deleteError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
   }
 
@@ -257,9 +259,9 @@ export default function DocumentsPage() {
       setDocuments((prev) =>
         prev.map((d) => (d.id === id ? data.document : d))
       );
-      toast.success("Metadata saved");
+      toast.success(t('metadataSaved'));
     } else {
-      toast.error(data.error || "Failed to save metadata");
+      toast.error(data.error || t('metadataSaveError'));
     }
   }
 
@@ -274,9 +276,9 @@ export default function DocumentsPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Documents</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">{t('title')}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Upload, process, and manage your document library.
+          {t('subtitle')}
         </p>
       </div>
 
@@ -304,7 +306,7 @@ export default function DocumentsPage() {
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
-            placeholder="Search by name…"
+            placeholder={t('searchByName')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 h-9 text-sm"
@@ -322,10 +324,10 @@ export default function DocumentsPage() {
         {/* Status filter */}
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="h-9 w-[160px] text-sm">
-            <SelectValue placeholder="Filter by status" />
+            <SelectValue placeholder={t('filterByStatus')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="all">{t('allStatuses')}</SelectItem>
             {ALL_STATUSES.map((s) => (
               <SelectItem key={s} value={s}>
                 {s.replace("_", " ")}
@@ -338,7 +340,7 @@ export default function DocumentsPage() {
         {hasActiveFilters && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">
-              {filteredDocuments.length} of {documents.length} document{documents.length !== 1 ? "s" : ""}
+              {t('documentCount', { filtered: filteredDocuments.length, total: documents.length })}
             </span>
             <Button
               variant="ghost"
@@ -347,7 +349,7 @@ export default function DocumentsPage() {
               onClick={() => { setSearch(""); setStatusFilter("all"); }}
             >
               <X className="h-3 w-3 mr-1" />
-              Clear filters
+              {t('clearFilters')}
             </Button>
           </div>
         )}

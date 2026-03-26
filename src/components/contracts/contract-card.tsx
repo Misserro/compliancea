@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Download } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations, useLocale } from "next-intl";
 import type { Contract } from "@/lib/types";
-import { STATUS_COLORS, CONTRACT_STATUS_DISPLAY } from "@/lib/constants";
+import { STATUS_COLORS } from "@/lib/constants";
 import { ContractMetadataDisplay } from "./contract-metadata-display";
 import { InvoiceSection } from "./invoice-section";
 import { ContractDocumentsSection } from "./contract-documents-section";
@@ -17,55 +18,57 @@ interface ContractCardProps {
 }
 
 type StatusActionConfig = {
-  label: string;
+  labelKey: string;
   action: string;
   confirm?: boolean;
   variant: "forward" | "backward";
 };
 
 const STATUS_ACTIONS: Record<string, Array<StatusActionConfig>> = {
-  unsigned: [{ label: "→ To Sign", action: "sign", variant: "forward" }],
+  unsigned: [{ labelKey: "statusAction.toSign", action: "sign", variant: "forward" }],
   signed: [
-    { label: "← Inactive", action: "unsign", variant: "backward" },
-    { label: "→ Activate", action: "activate", variant: "forward" },
+    { labelKey: "statusAction.inactive", action: "unsign", variant: "backward" },
+    { labelKey: "statusAction.activate", action: "activate", variant: "forward" },
   ],
   active: [
-    { label: "← To Sign", action: "deactivate", variant: "backward" },
-    { label: "→ Terminate", action: "terminate", confirm: true, variant: "forward" },
+    { labelKey: "statusAction.deactivate", action: "deactivate", variant: "backward" },
+    { labelKey: "statusAction.terminate", action: "terminate", confirm: true, variant: "forward" },
   ],
-  terminated: [{ label: "← Reactivate", action: "reactivate", confirm: true, variant: "backward" }],
+  terminated: [{ labelKey: "statusAction.reactivate", action: "reactivate", confirm: true, variant: "backward" }],
 };
 
 const STATUS_ORDER = ["unsigned", "signed", "active", "terminated"] as const;
 
-function formatDate(dateString: string | null) {
-  if (!dateString) return null;
-  try {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return dateString;
-  }
-}
-
 export function ContractCard({ contract, onContractUpdate, onSelect, isSelected }: ContractCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const t = useTranslations("Contracts");
+  const locale = useLocale();
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return null;
+    try {
+      return new Date(dateString).toLocaleDateString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return dateString;
+    }
+  };
 
   const statusColor = STATUS_COLORS[contract.status] || STATUS_COLORS.unsigned;
-  const statusDisplay = CONTRACT_STATUS_DISPLAY[contract.status] || contract.status;
+  const statusDisplay = t(`contractStatus.${contract.status}`);
   const actions = STATUS_ACTIONS[contract.status] || [];
 
   const handleStatusAction = async (actionConfig: StatusActionConfig) => {
     if (actionConfig.confirm) {
-      const confirmed = window.confirm(
+      const confirmMessage =
         actionConfig.action === "terminate"
-          ? "Are you sure you want to terminate this contract? This will create a termination notice obligation with a 30-day deadline."
-          : `Are you sure you want to ${actionConfig.label.replace(/[←→]\s*/, "")} this contract?`
-      );
+          ? t("confirmTerminate")
+          : t("confirmAction", { action: t(actionConfig.labelKey).replace(/[←→]\s*/, "") });
+      const confirmed = window.confirm(confirmMessage);
       if (!confirmed) return;
     }
 
@@ -78,13 +81,13 @@ export function ContractCard({ contract, onContractUpdate, onSelect, isSelected 
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success(data.message || "Contract action successful");
+        toast.success(data.message || t("actionSuccess"));
         onContractUpdate?.();
       } else {
-        toast.error(data.error || "Action failed");
+        toast.error(data.error || t("actionFailed"));
       }
     } catch (err) {
-      toast.error(`Action failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(`${t("actionFailed")}: ${err instanceof Error ? err.message : ""}`);
     } finally {
       setActionLoading(false);
     }
@@ -98,14 +101,14 @@ export function ContractCard({ contract, onContractUpdate, onSelect, isSelected 
         body: JSON.stringify(metadata),
       });
       if (res.ok) {
-        toast.success("Contract info updated");
+        toast.success(t("infoUpdated"));
         onContractUpdate?.();
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to update contract info");
+        toast.error(data.error || t("updateFailed"));
       }
     } catch (err) {
-      toast.error(`Save failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(`${t("saveFailed")}: ${err instanceof Error ? err.message : ""}`);
     }
   };
 
@@ -142,10 +145,10 @@ export function ContractCard({ contract, onContractUpdate, onSelect, isSelected 
                 </span>
               </div>
               <div className="text-sm text-muted-foreground">
-                {contract.contracting_vendor || contract.client || "No vendor specified"}
+                {contract.contracting_vendor || contract.client || t("noVendor")}
                 {contract.expiry_date && (
                   <span className="ml-2 text-xs">
-                    · Expires {formatDate(contract.expiry_date)}
+                    · {t("expires", { date: formatDate(contract.expiry_date) ?? "" })}
                   </span>
                 )}
               </div>
@@ -163,7 +166,7 @@ export function ContractCard({ contract, onContractUpdate, onSelect, isSelected 
             <div className="space-y-4">
               <ContractMetadataDisplay contract={contract} onSave={handleMetadataSave} />
               <div>
-                <div className="text-xs font-medium text-muted-foreground mb-1.5">Document</div>
+                <div className="text-xs font-medium text-muted-foreground mb-1.5">{t("documentLabel")}</div>
                 <a
                   href={`/api/documents/${contract.id}/download`}
                   target="_blank"
@@ -180,7 +183,7 @@ export function ContractCard({ contract, onContractUpdate, onSelect, isSelected 
             {/* Right column: status strip + action buttons */}
             <div className="space-y-5">
               <div>
-                <div className="text-xs font-medium text-muted-foreground mb-2">Contract Status</div>
+                <div className="text-xs font-medium text-muted-foreground mb-2">{t("contractStatusLabel")}</div>
                 <div className="flex items-center gap-1 flex-wrap">
                   {STATUS_ORDER.map((s, i) => (
                     <div key={s} className="flex items-center gap-1">
@@ -191,10 +194,10 @@ export function ContractCard({ contract, onContractUpdate, onSelect, isSelected 
                             : "bg-muted text-muted-foreground"
                         }`}
                       >
-                        {CONTRACT_STATUS_DISPLAY[s]}
+                        {t(`contractStatus.${s}`)}
                       </span>
                       {i < STATUS_ORDER.length - 1 && (
-                        <span className="text-muted-foreground text-xs">→</span>
+                        <span className="text-muted-foreground text-xs">{"\u2192"}</span>
                       )}
                     </div>
                   ))}
@@ -203,7 +206,7 @@ export function ContractCard({ contract, onContractUpdate, onSelect, isSelected 
 
               {actions.length > 0 && (
                 <div>
-                  <div className="text-xs font-medium text-muted-foreground mb-2">Actions</div>
+                  <div className="text-xs font-medium text-muted-foreground mb-2">{t("actionsLabel")}</div>
                   <div className="flex flex-wrap gap-2">
                     {actions.map((actionConfig) => (
                       <button
@@ -221,7 +224,7 @@ export function ContractCard({ contract, onContractUpdate, onSelect, isSelected 
                           handleStatusAction(actionConfig);
                         }}
                       >
-                        {actionLoading ? "…" : actionConfig.label}
+                        {actionLoading ? "\u2026" : t(actionConfig.labelKey)}
                       </button>
                     ))}
                   </div>

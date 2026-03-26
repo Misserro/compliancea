@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ interface PlatformStorageConfig {
 }
 
 export function PlatformStorageConfig() {
+  const t = useTranslations("Admin.platformStorage");
   const [config, setConfig] = useState<PlatformStorageConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -94,7 +96,7 @@ export function PlatformStorageConfig() {
     const trimmedEndpoint = endpoint.trim();
 
     if (!trimmedBucket || !trimmedRegion || !trimmedAccessKeyId || !trimmedSecretKey) {
-      setError("All required fields must be filled.");
+      setError(t("allFieldsRequired"));
       return null;
     }
 
@@ -126,9 +128,9 @@ export function PlatformStorageConfig() {
       const data = await res.json();
       setTestResult(data);
       if (data.success) {
-        toast.success("Connection test successful");
+        toast.success(t("connectionTestSuccessful"));
       } else {
-        toast.error(data.error || "Connection test failed");
+        toast.error(data.error || t("connectionTestFailed"));
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
@@ -153,7 +155,7 @@ export function PlatformStorageConfig() {
       });
 
       if (res.ok) {
-        toast.success("Platform S3 configuration saved");
+        toast.success(t("configSaved"));
         setEditing(false);
         setBucket("");
         setRegion("");
@@ -164,7 +166,7 @@ export function PlatformStorageConfig() {
         await loadConfig();
       } else {
         const data = await res.json();
-        const msg = data.error || "Failed to save configuration.";
+        const msg = data.error || t("failedToSaveConfig");
         setError(msg);
         toast.error(msg);
       }
@@ -191,10 +193,10 @@ export function PlatformStorageConfig() {
         setAccessKeyId("");
         setSecretKey("");
         setEndpoint("");
-        toast.success("Platform S3 configuration removed");
+        toast.success(t("configRemoved"));
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to remove configuration");
+        toast.error(data.error || t("failedToRemoveConfig"));
       }
     } catch (err) {
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -209,7 +211,7 @@ export function PlatformStorageConfig() {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <HardDrive className="size-4" />
-            Platform Storage
+            {t("title")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -237,35 +239,35 @@ export function PlatformStorageConfig() {
         {isConfigured && !editing && (
           <>
             <p className="text-sm text-muted-foreground">
-              Platform-wide S3 storage is configured. Organizations with &quot;Platform S3&quot; storage policy will use this bucket.
+              {t("configuredDesc")}
             </p>
             <div className="rounded-lg border p-4 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Bucket</span>
+                <span className="text-muted-foreground">{t("bucket")}</span>
                 <span className="font-medium">{config.bucket}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Region</span>
+                <span className="text-muted-foreground">{t("region")}</span>
                 <span className="font-medium">{config.region}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Access Key ID</span>
+                <span className="text-muted-foreground">{t("accessKeyId")}</span>
                 <span className="font-medium">{config.accessKeyId}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Secret Access Key</span>
+                <span className="text-muted-foreground">{t("secretAccessKey")}</span>
                 <span className="font-medium">*****</span>
               </div>
               {config.endpoint && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Endpoint</span>
+                  <span className="text-muted-foreground">{t("endpoint")}</span>
                   <span className="font-medium">{config.endpoint}</span>
                 </div>
               )}
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handleEdit}>
-                Edit
+                {t("edit")}
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -276,24 +278,23 @@ export function PlatformStorageConfig() {
                     disabled={removing}
                   >
                     {removing && <Loader2 className="size-4 animate-spin" />}
-                    Remove configuration
+                    {t("removeConfiguration")}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Remove platform S3 configuration</AlertDialogTitle>
+                    <AlertDialogTitle>{t("removeConfirmTitle")}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to remove the platform S3 storage configuration?
-                      Organizations using &quot;Platform S3&quot; policy will fall back to local storage.
+                      {t("removeConfirmDesc")}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleRemove}
                       className="bg-destructive text-white hover:bg-destructive/90"
                     >
-                      Remove
+                      {t("remove")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -306,67 +307,66 @@ export function PlatformStorageConfig() {
           <div className="space-y-4">
             {!isConfigured && (
               <p className="text-sm text-muted-foreground">
-                Configure a platform-wide S3-compatible bucket (AWS S3, Cloudflare R2, MinIO).
-                Organizations with &quot;Platform S3&quot; storage policy will use this bucket.
+                {t("configureDesc")}
               </p>
             )}
 
             <div>
-              <Label htmlFor="platform-s3-bucket">Bucket Name</Label>
+              <Label htmlFor="platform-s3-bucket">{t("bucketNameLabel")}</Label>
               <Input
                 id="platform-s3-bucket"
                 value={bucket}
                 onChange={(e) => setBucket(e.target.value)}
-                placeholder="my-platform-bucket"
+                placeholder={t("bucketPlaceholder")}
                 className="mt-1.5"
                 disabled={saving || testing}
               />
             </div>
 
             <div>
-              <Label htmlFor="platform-s3-region">Region</Label>
+              <Label htmlFor="platform-s3-region">{t("regionLabel")}</Label>
               <Input
                 id="platform-s3-region"
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
-                placeholder="us-east-1"
+                placeholder={t("regionPlaceholder")}
                 className="mt-1.5"
                 disabled={saving || testing}
               />
             </div>
 
             <div>
-              <Label htmlFor="platform-s3-access-key">Access Key ID</Label>
+              <Label htmlFor="platform-s3-access-key">{t("accessKeyIdLabel")}</Label>
               <Input
                 id="platform-s3-access-key"
                 value={accessKeyId}
                 onChange={(e) => setAccessKeyId(e.target.value)}
-                placeholder="AKIAIOSFODNN7EXAMPLE"
+                placeholder={t("accessKeyPlaceholder")}
                 className="mt-1.5"
                 disabled={saving || testing}
               />
             </div>
 
             <div>
-              <Label htmlFor="platform-s3-secret-key">Secret Access Key</Label>
+              <Label htmlFor="platform-s3-secret-key">{t("secretKeyLabel")}</Label>
               <Input
                 id="platform-s3-secret-key"
                 type="password"
                 value={secretKey}
                 onChange={(e) => setSecretKey(e.target.value)}
-                placeholder="Enter secret access key"
+                placeholder={t("secretKeyPlaceholder")}
                 className="mt-1.5"
                 disabled={saving || testing}
               />
             </div>
 
             <div>
-              <Label htmlFor="platform-s3-endpoint">Endpoint URL (optional)</Label>
+              <Label htmlFor="platform-s3-endpoint">{t("endpointLabel")}</Label>
               <Input
                 id="platform-s3-endpoint"
                 value={endpoint}
                 onChange={(e) => setEndpoint(e.target.value)}
-                placeholder="https://... (leave blank for AWS S3)"
+                placeholder={t("endpointPlaceholder")}
                 className="mt-1.5"
                 disabled={saving || testing}
               />
@@ -384,8 +384,8 @@ export function PlatformStorageConfig() {
                   <XCircle className="size-4" />
                 )}
                 {testResult.success
-                  ? "Connection successful"
-                  : testResult.error || "Connection failed"}
+                  ? t("connectionSuccessful")
+                  : testResult.error || t("connectionFailed")}
               </div>
             )}
 
@@ -394,15 +394,15 @@ export function PlatformStorageConfig() {
             <div className="flex gap-2">
               <Button variant="outline" onClick={handleTest} disabled={saving || testing}>
                 {testing && <Loader2 className="size-4 animate-spin" />}
-                {testing ? "Testing..." : "Test Connection"}
+                {testing ? t("testing") : t("testConnection")}
               </Button>
               <Button onClick={handleSave} disabled={saving || testing}>
                 {saving && <Loader2 className="size-4 animate-spin" />}
-                {saving ? "Saving..." : "Save"}
+                {saving ? t("saving") : t("save")}
               </Button>
               {editing && (
                 <Button variant="outline" onClick={handleCancel} disabled={saving || testing}>
-                  Cancel
+                  {t("cancel")}
                 </Button>
               )}
             </div>

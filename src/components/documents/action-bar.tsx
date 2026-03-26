@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FolderSearch, HardDrive, Play, Tags, ChevronDown, ChevronUp } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
 interface ActionBarProps {
@@ -21,6 +22,7 @@ export function ActionBar({
   allExpanded,
   onToggleExpand,
 }: ActionBarProps) {
+  const t = useTranslations('Documents');
   const [scanning, setScanning] = useState(false);
   const [scanningGDrive, setScanningGDrive] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -38,7 +40,7 @@ export function ActionBar({
         }}
       >
         <FolderSearch className="mr-2 h-4 w-4" />
-        {scanning ? "Scanning..." : "Scan Server Folder"}
+        {scanning ? t('actionBar.scanning') : t('actionBar.scanServer')}
       </Button>
 
       <Button
@@ -51,7 +53,7 @@ export function ActionBar({
         }}
       >
         <HardDrive className="mr-2 h-4 w-4" />
-        {scanningGDrive ? "Scanning..." : "Scan Google Drive"}
+        {scanningGDrive ? t('actionBar.scanningGDrive') : t('actionBar.scanGDrive')}
       </Button>
 
       <Button
@@ -64,7 +66,7 @@ export function ActionBar({
         }}
       >
         <Play className="mr-2 h-4 w-4" />
-        {processing ? "Processing..." : "Process All"}
+        {processing ? t('actionBar.processing') : t('actionBar.processAll')}
       </Button>
 
       <Button
@@ -77,7 +79,7 @@ export function ActionBar({
         }}
       >
         <Tags className="mr-2 h-4 w-4" />
-        {retagging ? "Retagging..." : "Retag All"}
+        {retagging ? t('actionBar.retagging') : t('actionBar.retagAll')}
       </Button>
 
       <Button variant="ghost" size="sm" onClick={onToggleExpand}>
@@ -86,7 +88,7 @@ export function ActionBar({
         ) : (
           <ChevronDown className="mr-2 h-4 w-4" />
         )}
-        {allExpanded ? "Hide Details" : "Show All Details"}
+        {allExpanded ? t('actionBar.hideDetails') : t('actionBar.showAllDetails')}
       </Button>
     </div>
   );

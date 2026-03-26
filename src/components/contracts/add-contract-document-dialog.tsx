@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -47,6 +48,8 @@ export function AddContractDocumentDialog({
   const [activeTab, setActiveTab] = useState<"upload" | "link">("upload");
   const [documentType, setDocumentType] = useState("other");
   const [label, setLabel] = useState("");
+  const t = useTranslations("Contracts");
+  const tCommon = useTranslations("Common");
 
   // Upload tab state
   const fileRef = useRef<HTMLInputElement>(null);
@@ -101,7 +104,7 @@ export function AddContractDocumentDialog({
       if (activeTab === "upload") {
         const file = fileRef.current?.files?.[0];
         if (!file) {
-          toast.error("Please select a file");
+          toast.error(t("addDocumentDialog.selectFile"));
           setSaving(false);
           return;
         }
@@ -118,17 +121,17 @@ export function AddContractDocumentDialog({
         });
         const data = await res.json();
         if (res.ok) {
-          toast.success("Document uploaded");
+          toast.success(t("addDocumentDialog.uploaded"));
           resetForm();
           onSaved();
           onOpenChange(false);
         } else {
-          toast.error(data.error || "Failed to upload document");
+          toast.error(data.error || t("documents.removeFailed"));
         }
       } else {
         // link mode
         if (!selectedDocId) {
-          toast.error("Please select a document from the library");
+          toast.error(t("addDocumentDialog.selectDocument"));
           setSaving(false);
           return;
         }
@@ -145,16 +148,16 @@ export function AddContractDocumentDialog({
         });
         const data = await res.json();
         if (res.ok) {
-          toast.success("Document linked");
+          toast.success(t("addDocumentDialog.linked"));
           resetForm();
           onSaved();
           onOpenChange(false);
         } else {
-          toast.error(data.error || "Failed to link document");
+          toast.error(data.error || t("documents.removeFailed"));
         }
       }
     } catch (err) {
-      toast.error(`Save failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(err instanceof Error ? err.message : t("saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -164,7 +167,7 @@ export function AddContractDocumentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add Contract Document</DialogTitle>
+          <DialogTitle>{t("addDocumentDialog.title")}</DialogTitle>
         </DialogHeader>
 
         {/* Tab buttons */}
@@ -179,7 +182,7 @@ export function AddContractDocumentDialog({
             )}
             onClick={() => setActiveTab("upload")}
           >
-            Upload new
+            {t("addDocumentDialog.uploadNew")}
           </button>
           <button
             type="button"
@@ -191,14 +194,14 @@ export function AddContractDocumentDialog({
             )}
             onClick={() => setActiveTab("link")}
           >
-            Link existing
+            {t("addDocumentDialog.linkExisting")}
           </button>
         </div>
 
         <div className="space-y-4 py-2">
           {activeTab === "upload" && (
             <div>
-              <Label htmlFor="contract-doc-file">File *</Label>
+              <Label htmlFor="contract-doc-file">{t("addDocumentDialog.file")}</Label>
               <Input
                 id="contract-doc-file"
                 type="file"
@@ -206,26 +209,26 @@ export function AddContractDocumentDialog({
                 ref={fileRef}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                PDF or DOCX. Max 10MB.
+                {t("addDocumentDialog.fileHint")}
               </p>
             </div>
           )}
 
           {activeTab === "link" && (
             <div>
-              <Label htmlFor="contract-doc-search">Search library documents</Label>
+              <Label htmlFor="contract-doc-search">{t("addDocumentDialog.searchLibrary")}</Label>
               <Input
                 id="contract-doc-search"
-                placeholder="Search by name, type, or category..."
+                placeholder={t("addDocumentDialog.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <div className="mt-2 max-h-48 overflow-y-auto rounded border bg-muted/30">
                 {libraryLoading ? (
-                  <p className="text-sm text-muted-foreground p-3">Loading documents...</p>
+                  <p className="text-sm text-muted-foreground p-3">{t("addDocumentDialog.loadingDocs")}</p>
                 ) : filteredDocs.length === 0 ? (
                   <p className="text-sm text-muted-foreground p-3">
-                    {searchQuery ? "No matching documents." : "No documents in library."}
+                    {searchQuery ? t("addDocumentDialog.noMatchingDocs") : t("addDocumentDialog.noLibraryDocs")}
                   </p>
                 ) : (
                   filteredDocs.map((doc) => (
@@ -256,15 +259,15 @@ export function AddContractDocumentDialog({
 
           {/* Shared fields */}
           <div>
-            <Label htmlFor="contract-doc-type">Document Type</Label>
+            <Label htmlFor="contract-doc-type">{t("addDocumentDialog.documentType")}</Label>
             <Select value={documentType} onValueChange={setDocumentType}>
               <SelectTrigger id="contract-doc-type">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {CONTRACT_DOCUMENT_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
+                {CONTRACT_DOCUMENT_TYPES.map((docType) => (
+                  <SelectItem key={docType.value} value={docType.value}>
+                    {t(`documentType.${docType.value}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -272,10 +275,10 @@ export function AddContractDocumentDialog({
           </div>
 
           <div>
-            <Label htmlFor="contract-doc-label">Label (optional)</Label>
+            <Label htmlFor="contract-doc-label">{t("addDocumentDialog.labelOptional")}</Label>
             <Input
               id="contract-doc-label"
-              placeholder="e.g., Amendment #1, Exhibit A"
+              placeholder={t("addDocumentDialog.labelPlaceholder")}
               value={label}
               onChange={(e) => setLabel(e.target.value)}
             />
@@ -284,14 +287,14 @@ export function AddContractDocumentDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button onClick={handleSave} disabled={saving}>
             {saving
-              ? "Saving..."
+              ? t("addDocumentDialog.saving")
               : activeTab === "upload"
-              ? "Upload"
-              : "Link Document"}
+              ? t("addDocumentDialog.upload")
+              : t("addDocumentDialog.linkDocument")}
           </Button>
         </DialogFooter>
       </DialogContent>

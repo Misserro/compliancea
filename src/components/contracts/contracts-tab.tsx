@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { Plus, MessageSquare } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { ContractList } from "./contract-list";
 import { ContractChatPanel } from "./contract-chat-panel";
 import { AddContractDialog } from "./add-contract-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { CONTRACT_STATUS_DISPLAY } from "@/lib/constants";
+import { CONTRACT_STATUSES } from "@/lib/constants";
 import { PERMISSION_LEVELS, type PermissionLevel } from "@/lib/permissions";
 import { useSession } from "next-auth/react";
 
@@ -17,11 +18,12 @@ const permLevel = (perms: Record<string, string> | null | undefined, resource: s
 export function ContractsTab() {
   const { data: sessionData } = useSession();
   const canEdit = permLevel(sessionData?.user?.permissions, 'contracts') >= 2;
+  const t = useTranslations("Contracts");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(
-    Object.keys(CONTRACT_STATUS_DISPLAY)
+    [...CONTRACT_STATUSES]
   );
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState<number | null>(null);
@@ -45,7 +47,7 @@ export function ContractsTab() {
     <div className="space-y-4">
       {/* Header row */}
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-lg font-semibold">All Contracts</h3>
+        <h3 className="text-lg font-semibold">{t("allContracts")}</h3>
         <div className="flex items-center gap-2">
           <Button
             variant={chatOpen ? "default" : "outline"}
@@ -54,7 +56,7 @@ export function ContractsTab() {
             className="gap-1.5"
           >
             <MessageSquare className="h-4 w-4" />
-            {chatOpen ? "Close Chat" : "Ask AI"}
+            {chatOpen ? t("closeChat") : t("askAI")}
           </Button>
           {canEdit && (
             <button
@@ -62,7 +64,7 @@ export function ContractsTab() {
               onClick={() => setShowAddDialog(true)}
             >
               <Plus className="w-4 h-4" />
-              Add New Contract
+              {t("addNewContract")}
             </button>
           )}
         </div>
@@ -74,12 +76,12 @@ export function ContractsTab() {
         <div className="space-y-4">
           <div className="space-y-2">
             <Input
-              placeholder="Search by name or vendor…"
+              placeholder={t("searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             <div className="flex flex-wrap gap-x-4 gap-y-1">
-              {Object.entries(CONTRACT_STATUS_DISPLAY).map(([key, label]) => (
+              {CONTRACT_STATUSES.map((key) => (
                 <label key={key} className="flex items-center gap-1.5 text-sm cursor-pointer">
                   <input
                     type="checkbox"
@@ -87,7 +89,7 @@ export function ContractsTab() {
                     onChange={() => toggleStatus(key)}
                     className="rounded border-input"
                   />
-                  {label}
+                  {t(`contractStatus.${key}`)}
                 </label>
               ))}
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -89,6 +90,7 @@ export function DiffModal({
   oldVersion,
   newVersion,
 }: DiffModalProps) {
+  const t = useTranslations('Documents');
   const [hunks, setHunks] = useState<Hunk[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,7 +106,7 @@ export function DiffModal({
         if (data.error) setError(data.error);
         else setHunks(data.hunks || []);
       })
-      .catch(() => setError("Failed to load diff"))
+      .catch(() => setError(t('diffModal.loadError')))
       .finally(() => setLoading(false));
   }, [open, newDocumentId, oldDocumentId]);
 
@@ -130,13 +132,13 @@ export function DiffModal({
         {error && <p className="text-sm text-destructive p-4">{error}</p>}
 
         {!loading && !error && blocks.length === 0 && (
-          <p className="text-sm text-muted-foreground p-4">No differences found.</p>
+          <p className="text-sm text-muted-foreground p-4">{t('diffModal.noDifferences')}</p>
         )}
 
         {!loading && !error && blocks.length > 0 && (
           <div className="overflow-y-auto flex-1 space-y-3 pr-1">
             <p className="text-xs text-muted-foreground px-1">
-              {blocks.length} change{blocks.length !== 1 ? "s" : ""} found
+              {t('diffModal.changesFound', { count: blocks.length })}
             </p>
 
             {blocks.map((block, blockIdx) => (

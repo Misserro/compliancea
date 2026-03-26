@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Upload } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ interface UploadSectionProps {
 }
 
 export function UploadSection({ onUploadComplete, onStatusMessage }: UploadSectionProps) {
+  const t = useTranslations('Documents');
   const [uploading, setUploading] = useState(false);
   const [category, setCategory] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -28,7 +30,7 @@ export function UploadSection({ onUploadComplete, onStatusMessage }: UploadSecti
   async function handleUpload() {
     const file = fileInputRef.current?.files?.[0];
     if (!file) {
-      onStatusMessage("Please select a file to upload.", "error");
+      onStatusMessage(t('upload.selectFile'), "error");
       return;
     }
 
@@ -47,7 +49,7 @@ export function UploadSection({ onUploadComplete, onStatusMessage }: UploadSecti
 
       const data = await res.json();
       if (res.ok) {
-        onStatusMessage(`Uploaded: ${data.document?.name || file.name}`, "success");
+        onStatusMessage(t('upload.uploaded', { name: data.document?.name || file.name }), "success");
         if (fileInputRef.current) fileInputRef.current.value = "";
         setCategory("");
         onUploadComplete();
@@ -66,7 +68,7 @@ export function UploadSection({ onUploadComplete, onStatusMessage }: UploadSecti
       <CardContent className="pt-6">
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex-1 min-w-[200px]">
-            <Label htmlFor="upload-file">Upload Document</Label>
+            <Label htmlFor="upload-file">{t('upload.label')}</Label>
             <Input
               id="upload-file"
               ref={fileInputRef}
@@ -76,13 +78,13 @@ export function UploadSection({ onUploadComplete, onStatusMessage }: UploadSecti
             />
           </div>
           <div className="w-[180px]">
-            <Label htmlFor="upload-category">Category</Label>
+            <Label htmlFor="upload-category">{t('upload.category')}</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger id="upload-category" className="mt-1.5">
-                <SelectValue placeholder="No Category" />
+                <SelectValue placeholder={t('upload.noCategory')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No Category</SelectItem>
+                <SelectItem value="none">{t('upload.noCategory')}</SelectItem>
                 {DEPARTMENTS.map((dept) => (
                   <SelectItem key={dept} value={dept}>
                     {dept}
@@ -93,7 +95,7 @@ export function UploadSection({ onUploadComplete, onStatusMessage }: UploadSecti
           </div>
           <Button onClick={handleUpload} disabled={uploading}>
             <Upload className="mr-2 h-4 w-4" />
-            {uploading ? "Uploading..." : "Upload"}
+            {uploading ? t('upload.uploading') : t('upload.button')}
           </Button>
         </div>
       </CardContent>

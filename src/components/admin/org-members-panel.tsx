@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ interface OrgMembersPanelProps {
 }
 
 export function OrgMembersPanel({ orgId, orgName }: OrgMembersPanelProps) {
+  const t = useTranslations("Admin.membersPanel");
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
@@ -74,7 +76,7 @@ export function OrgMembersPanel({ orgId, orgName }: OrgMembersPanelProps) {
 
   async function handleAddMember() {
     if (!addEmail.trim()) {
-      toast.error("Email is required");
+      toast.error(t("emailRequired"));
       return;
     }
     setAdding(true);
@@ -86,12 +88,12 @@ export function OrgMembersPanel({ orgId, orgName }: OrgMembersPanelProps) {
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success(`Added ${addEmail.trim()} to ${orgName}`);
+        toast.success(t("addedMember", { email: addEmail.trim(), orgName }));
         setAddEmail("");
         setAddRole("member");
         setMembers(data.members ?? []);
       } else {
-        toast.error(data.error || "Failed to add member");
+        toast.error(data.error || t("failedToAddMember"));
       }
     } catch (err) {
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
@@ -108,12 +110,12 @@ export function OrgMembersPanel({ orgId, orgName }: OrgMembersPanelProps) {
         method: "DELETE",
       });
       if (res.ok || res.status === 204) {
-        toast.success(`Removed ${removeTarget.name || removeTarget.email} from ${orgName}`);
+        toast.success(t("removedMember", { name: removeTarget.name || removeTarget.email, orgName }));
         setMembers((prev) => prev.filter((m) => m.user_id !== removeTarget.user_id));
         setRemoveTarget(null);
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to remove member");
+        toast.error(data.error || t("failedToRemoveMember"));
       }
     } catch (err) {
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
@@ -129,7 +131,7 @@ export function OrgMembersPanel({ orgId, orgName }: OrgMembersPanelProps) {
         onClick={() => setExpanded((v) => !v)}
       >
         <Users className="size-3.5" />
-        {expanded ? "Hide members" : `Manage members`}
+        {expanded ? t("hideMembers") : t("manageMembers")}
       </button>
 
       {expanded && (
@@ -137,7 +139,7 @@ export function OrgMembersPanel({ orgId, orgName }: OrgMembersPanelProps) {
           {/* Add member */}
           <div className="flex gap-2">
             <Input
-              placeholder="user@example.com"
+              placeholder={t("emailPlaceholder")}
               value={addEmail}
               onChange={(e) => setAddEmail(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddMember()}
@@ -149,9 +151,9 @@ export function OrgMembersPanel({ orgId, orgName }: OrgMembersPanelProps) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="member">Member</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="owner">Owner</SelectItem>
+                <SelectItem value="member">{t("roleMember")}</SelectItem>
+                <SelectItem value="admin">{t("roleAdmin")}</SelectItem>
+                <SelectItem value="owner">{t("roleOwner")}</SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -161,15 +163,15 @@ export function OrgMembersPanel({ orgId, orgName }: OrgMembersPanelProps) {
               disabled={adding || !addEmail.trim()}
             >
               <UserPlus className="size-3.5" />
-              {adding ? "Adding…" : "Add"}
+              {adding ? t("adding") : t("add")}
             </Button>
           </div>
 
           {/* Members list */}
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <p className="text-sm text-muted-foreground">{t("loading")}</p>
           ) : members.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No members yet.</p>
+            <p className="text-sm text-muted-foreground">{t("noMembers")}</p>
           ) : (
             <div className="rounded-md border divide-y text-sm">
               {members.map((m) => (
@@ -207,20 +209,19 @@ export function OrgMembersPanel({ orgId, orgName }: OrgMembersPanelProps) {
       <AlertDialog open={removeTarget !== null} onOpenChange={(open) => !open && setRemoveTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove member</AlertDialogTitle>
+            <AlertDialogTitle>{t("removeMember")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Remove <strong>{removeTarget?.name || removeTarget?.email}</strong> from{" "}
-              <strong>{orgName}</strong>? Their access will end on the next request.
+              {t("removeMemberConfirm", { name: removeTarget?.name || removeTarget?.email || "", orgName })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={removing}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={removing}>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleRemoveMember}
               disabled={removing}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              {removing ? "Removing…" : "Remove"}
+              {removing ? t("removing") : t("remove")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

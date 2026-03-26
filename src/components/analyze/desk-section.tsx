@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -16,6 +17,7 @@ interface DeskSectionProps {
 type DeskMode = "regulator" | "questionnaire" | "nda";
 
 export function DeskSection({ documents }: DeskSectionProps) {
+  const t = useTranslations('Documents');
   const [mode, setMode] = useState<DeskMode>("regulator");
 
   return (
@@ -28,19 +30,19 @@ export function DeskSection({ documents }: DeskSectionProps) {
         <div className="flex items-center gap-2">
           <RadioGroupItem value="regulator" id="mode-regulator" />
           <Label htmlFor="mode-regulator" className="cursor-pointer">
-            Regulator Query
+            {t('desk.regulatorQuery')}
           </Label>
         </div>
         <div className="flex items-center gap-2">
           <RadioGroupItem value="questionnaire" id="mode-questionnaire" />
           <Label htmlFor="mode-questionnaire" className="cursor-pointer">
-            Questionnaire
+            {t('desk.questionnaire')}
           </Label>
         </div>
         <div className="flex items-center gap-2">
           <RadioGroupItem value="nda" id="mode-nda" />
           <Label htmlFor="mode-nda" className="cursor-pointer">
-            NDA Review
+            {t('desk.ndaReview')}
           </Label>
         </div>
       </RadioGroup>

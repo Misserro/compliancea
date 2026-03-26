@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Send, X, MessageSquare, Loader2 } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -46,27 +47,23 @@ interface ContractChatPanelProps {
   onClose: () => void;
 }
 
-const EXAMPLE_PROMPTS = [
-  "Which contracts expire in the next 60 days?",
-  "Show overdue payment obligations",
-  "Find contracts missing an expiry date",
-  "Summarize the selected contract",
-];
-
-function formatDate(d: string | null | undefined): string | null {
-  if (!d) return null;
-  try {
-    return new Date(d).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return d;
-  }
-}
-
 function ContractResultCard({ contract }: { contract: ContractResult }) {
+  const t = useTranslations("Contracts");
+  const locale = useLocale();
+
+  const formatDate = (d: string | null | undefined): string | null => {
+    if (!d) return null;
+    try {
+      return new Date(d).toLocaleDateString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return d;
+    }
+  };
+
   const expiry = formatDate(contract.expiry_date);
   const deadline = formatDate(contract.nextDeadline);
   return (
@@ -75,22 +72,38 @@ function ContractResultCard({ contract }: { contract: ContractResult }) {
       <div className="flex flex-wrap gap-x-2 text-muted-foreground">
         <span className="capitalize">{contract.status}</span>
         {contract.contracting_vendor && <span>{contract.contracting_vendor}</span>}
-        {expiry && <span>Expires {expiry}</span>}
+        {expiry && <span>{t("chat.expires", { date: expiry })}</span>}
         {(contract.overdueObligations ?? 0) > 0 && (
           <span className="text-destructive font-medium">
-            {contract.overdueObligations} overdue
+            {t("chat.overdueLabel", { count: contract.overdueObligations ?? 0 })}
           </span>
         )}
         {(contract.activeObligations ?? 0) > 0 && !(contract.overdueObligations) && (
-          <span>{contract.activeObligations} active obligations</span>
+          <span>{t("chat.activeObligations", { count: contract.activeObligations ?? 0 })}</span>
         )}
-        {deadline && <span>Next: {deadline}</span>}
+        {deadline && <span>{t("chat.next", { date: deadline })}</span>}
       </div>
     </div>
   );
 }
 
 function ObligationResultCard({ obligation }: { obligation: ObligationResult }) {
+  const t = useTranslations("Contracts");
+  const locale = useLocale();
+
+  const formatDate = (d: string | null | undefined): string | null => {
+    if (!d) return null;
+    try {
+      return new Date(d).toLocaleDateString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return d;
+    }
+  };
+
   const due = formatDate(obligation.due_date);
   return (
     <div className="text-xs p-2 rounded border bg-background space-y-0.5">
@@ -98,7 +111,7 @@ function ObligationResultCard({ obligation }: { obligation: ObligationResult }) 
       <div className="flex flex-wrap gap-x-2 text-muted-foreground">
         <span>{obligation.document_name}</span>
         {obligation.category && <span className="capitalize">{obligation.category}</span>}
-        {due && <span>Due {due}</span>}
+        {due && <span>{t("chat.due", { date: due })}</span>}
         {obligation.payment_amount != null && (
           <span className="font-medium">
             {obligation.payment_amount} {obligation.payment_currency}
@@ -119,6 +132,14 @@ export function ContractChatPanel({
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const t = useTranslations("Contracts");
+
+  const EXAMPLE_PROMPTS = [
+    t("chat.examplePrompt1"),
+    t("chat.examplePrompt2"),
+    t("chat.examplePrompt3"),
+    t("chat.examplePrompt4"),
+  ];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -157,7 +178,7 @@ export function ContractChatPanel({
       if (!res.ok) {
         setMessages([
           ...newMessages,
-          { role: "assistant", content: "", error: data.error || "An error occurred." },
+          { role: "assistant", content: "", error: data.error || t("chat.errorOccurred") },
         ]);
         return;
       }
@@ -177,7 +198,7 @@ export function ContractChatPanel({
         {
           role: "assistant",
           content: "",
-          error: err instanceof Error ? err.message : "Network error. Please try again.",
+          error: err instanceof Error ? err.message : t("chat.networkError"),
         },
       ]);
     } finally {
@@ -194,7 +215,7 @@ export function ContractChatPanel({
       <div className="flex items-center justify-between px-4 py-2.5 border-b bg-muted/30 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
-          <span className="font-medium text-sm">Contract Assistant</span>
+          <span className="font-medium text-sm">{t("chat.title")}</span>
           {selectedContractName && (
             <span
               className="text-xs text-muted-foreground truncate max-w-[120px]"
@@ -214,7 +235,7 @@ export function ContractChatPanel({
         {messages.length === 0 && !loading && (
           <div className="pt-2 space-y-3">
             <p className="text-xs text-muted-foreground text-center">
-              Ask anything about your contracts
+              {t("chat.askAnything")}
             </p>
             <div className="space-y-1.5">
               {EXAMPLE_PROMPTS.map((prompt) => (
@@ -295,7 +316,7 @@ export function ContractChatPanel({
       <div className="border-t px-3 py-2 flex gap-2 shrink-0">
         <Input
           ref={inputRef}
-          placeholder="Ask about your contracts…"
+          placeholder={t("chat.inputPlaceholder")}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {

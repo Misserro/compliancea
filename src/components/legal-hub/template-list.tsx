@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Pencil, Trash2 } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CaseTemplate } from "@/lib/types";
@@ -17,6 +18,10 @@ export function TemplateList({
   onEdit,
   onDeleted,
 }: TemplateListProps) {
+  const t = useTranslations('LegalHub');
+  const tCommon = useTranslations('Common');
+  const locale = useLocale();
+
   const [templates, setTemplates] = useState<CaseTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,24 +34,24 @@ export function TemplateList({
         const res = await fetch("/api/legal-hub/templates");
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || "Nie udało się załadować szablonów");
+          throw new Error(data.error || t('template.fetchError'));
         }
         const data = await res.json();
         setTemplates(data.templates || []);
       } catch (err) {
         console.error("Error fetching templates:", err);
-        setError(err instanceof Error ? err.message : "Nie udało się pobrać");
+        setError(err instanceof Error ? err.message : t('template.fetchError'));
       } finally {
         setLoading(false);
       }
     };
     fetchTemplates();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, t]);
 
   const handleDelete = async (template: CaseTemplate) => {
     if (
       !window.confirm(
-        `Czy na pewno chcesz usunąć szablon "${template.name}"?`
+        t('template.deleteConfirm', { name: template.name })
       )
     ) {
       return;
@@ -58,12 +63,12 @@ export function TemplateList({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Nie udało się usunąć");
+        throw new Error(data.error || t('template.deleteError'));
       }
       onDeleted();
     } catch (err) {
       console.error("Error deleting template:", err);
-      alert(err instanceof Error ? err.message : "Nie udało się usunąć szablonu");
+      alert(err instanceof Error ? err.message : t('template.deleteError'));
     }
   };
 
@@ -88,7 +93,7 @@ export function TemplateList({
   if (templates.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground text-sm">
-        Brak szablonów. Utwórz pierwszy szablon, aby rozpocząć generowanie dokumentów.
+        {t('template.noTemplates')}
       </div>
     );
   }
@@ -98,11 +103,11 @@ export function TemplateList({
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-muted/50 border-b">
-            <th className="text-left font-medium px-4 py-3">Nazwa</th>
-            <th className="text-left font-medium px-4 py-3">Typ</th>
-            <th className="text-left font-medium px-4 py-3">Status</th>
-            <th className="text-left font-medium px-4 py-3">Utworzono</th>
-            <th className="text-right font-medium px-4 py-3">Akcje</th>
+            <th className="text-left font-medium px-4 py-3">{t('template.tableNameHeader')}</th>
+            <th className="text-left font-medium px-4 py-3">{t('template.tableTypeHeader')}</th>
+            <th className="text-left font-medium px-4 py-3">{t('template.tableStatusHeader')}</th>
+            <th className="text-left font-medium px-4 py-3">{t('template.tableCreatedHeader')}</th>
+            <th className="text-right font-medium px-4 py-3">{t('template.tableActionsHeader')}</th>
           </tr>
         </thead>
         <tbody>
@@ -127,11 +132,11 @@ export function TemplateList({
                       : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                   }`}
                 >
-                  {template.is_active ? "Aktywny" : "Nieaktywny"}
+                  {template.is_active ? t('template.statusActive') : t('template.statusInactive')}
                 </span>
               </td>
               <td className="px-4 py-3 text-muted-foreground">
-                {new Date(template.created_at).toLocaleDateString()}
+                {new Date(template.created_at).toLocaleDateString(locale)}
               </td>
               <td className="px-4 py-3 text-right">
                 <div className="flex items-center justify-end gap-1">
@@ -139,7 +144,7 @@ export function TemplateList({
                     variant="ghost"
                     size="sm"
                     onClick={() => onEdit(template)}
-                    title="Edytuj"
+                    title={tCommon('edit')}
                   >
                     <Pencil className="w-4 h-4" />
                   </Button>
@@ -148,7 +153,7 @@ export function TemplateList({
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDelete(template)}
-                      title="Usuń"
+                      title={tCommon('delete')}
                       className="text-destructive hover:text-destructive"
                     >
                       <Trash2 className="w-4 h-4" />

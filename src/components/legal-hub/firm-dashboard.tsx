@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { FirmStatsPanel } from "./firm-stats-panel";
 import { MemberRoster, type FirmMember } from "./member-roster";
 
@@ -15,6 +16,7 @@ interface FirmStats {
 export function FirmDashboard() {
   const { data: sessionData, status } = useSession();
   const router = useRouter();
+  const t = useTranslations('LegalHub');
   const isAdmin = sessionData?.user?.orgRole !== "member";
 
   const [firmStats, setFirmStats] = useState<FirmStats | null>(null);
@@ -49,9 +51,9 @@ export function FirmDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">Moja kancelaria</h2>
+        <h2 className="text-xl font-semibold">{t('firmDashboard.title')}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Statystyki spraw i zarządzanie zespołem
+          {t('firmDashboard.subtitle')}
         </p>
       </div>
       <FirmStatsPanel

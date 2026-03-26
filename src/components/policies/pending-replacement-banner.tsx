@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { AlertTriangle, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ export function PendingReplacementBanner({
   confidence,
   onResolved,
 }: PendingReplacementBannerProps) {
+  const t = useTranslations('Documents');
   const [loading, setLoading] = useState(false);
 
   async function handleConfirm() {
@@ -44,7 +46,7 @@ export function PendingReplacementBanner({
       const res = await fetch(`/api/documents/${documentId}/dismiss-replacement`, { method: "POST" });
       const data = await res.json();
       if (res.ok) {
-        toast.info("Suggestion dismissed");
+        toast.info(t('replacement.dismissed'));
         onResolved();
       } else {
         toast.error(data.error);
@@ -58,9 +60,9 @@ export function PendingReplacementBanner({
     <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 px-3 py-2 text-sm">
       <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
       <span className="flex-1 text-amber-800 dark:text-amber-300">
-        May replace <strong>{candidateName}</strong> (v{candidateVersion}){" "}
+        {t.rich('replacement.mayReplace', { name: candidateName, version: candidateVersion, strong: (chunks) => <strong>{chunks}</strong> })}{" "}
         <span className="text-amber-600 dark:text-amber-500 text-xs">
-          {Math.round(confidence * 100)}% match
+          {t('replacement.match', { percent: Math.round(confidence * 100) })}
         </span>
       </span>
       <Button
@@ -71,7 +73,7 @@ export function PendingReplacementBanner({
         disabled={loading}
       >
         <Check className="h-3 w-3 mr-1" />
-        Confirm
+        {t('replacement.confirm')}
       </Button>
       <Button
         size="sm"

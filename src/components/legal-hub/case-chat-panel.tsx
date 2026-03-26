@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Send, MessageSquare, Loader2, AlertTriangle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,13 +26,6 @@ interface ChatMessage {
 interface CaseChatPanelProps {
   caseId: number;
 }
-
-const EXAMPLE_PROMPTS = [
-  "Jaki jest numer referencyjny sprawy?",
-  "Kto jest pozwanym w tej sprawie?",
-  "Kiedy jest najbliższa rozprawa?",
-  "Znajdź informacje w dokumentach sprawy",
-];
 
 function isStructuredAnswer(data: unknown): data is StructuredAnswer {
   return (
@@ -57,12 +51,20 @@ function isActionProposal(data: unknown): data is ActionProposal {
 
 export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
   const router = useRouter();
+  const t = useTranslations('LegalHub');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [indexingCount, setIndexingCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const EXAMPLE_PROMPTS = [
+    t('chat.examplePrompt1'),
+    t('chat.examplePrompt2'),
+    t('chat.examplePrompt3'),
+    t('chat.examplePrompt4'),
+  ];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -140,7 +142,7 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
           {
             role: "assistant",
             content: "",
-            error: data.error || "Wystąpił błąd.",
+            error: data.error || t('chat.errorOccurred'),
           },
         ]);
         return;
@@ -184,7 +186,7 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
           error:
             err instanceof Error
               ? err.message
-              : "Błąd sieci. Spróbuj ponownie.",
+              : t('chat.networkError'),
         },
       ]);
     } finally {
@@ -200,7 +202,7 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-2.5 border-b bg-muted/30 shrink-0">
         <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
-        <span className="font-medium text-sm">Asystent sprawy</span>
+        <span className="font-medium text-sm">{t('chat.title')}</span>
       </div>
 
       {/* Indexing status banner */}
@@ -208,9 +210,7 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
         <div className="flex items-center gap-2 px-4 py-2 border-b bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 shrink-0">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
           <span className="text-xs">
-            {indexingCount}{" "}
-            {indexingCount === 1 ? "dokument jest" : "dokument(ów) jest"} w
-            trakcie indeksowania — odpowiedzi mogą być niekompletne.
+            {t('chat.indexingBanner', { count: indexingCount })}
           </span>
         </div>
       )}
@@ -220,7 +220,7 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
         {messages.length === 0 && !loading && (
           <div className="pt-2 space-y-3">
             <p className="text-xs text-muted-foreground text-center">
-              Zadaj pytanie o tę sprawę
+              {t('chat.askAboutCase')}
             </p>
             <div className="space-y-1.5">
               {EXAMPLE_PROMPTS.map((prompt) => (
@@ -262,7 +262,7 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
                   <AnnotatedAnswer answer={msg.structuredAnswer} />
                   {msg.structuredAnswer.confidence === "low" && (
                     <p className="text-xs text-muted-foreground mt-2">
-                      Ograniczone dowody — odpowiedź może być niekompletna.
+                      {t('chat.limitedEvidence')}
                     </p>
                   )}
                 </>
@@ -292,7 +292,7 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
       <div className="border-t px-3 py-2 flex gap-2 shrink-0">
         <Input
           ref={inputRef}
-          placeholder="Zadaj pytanie o sprawę…"
+          placeholder={t('chat.inputPlaceholder')}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {

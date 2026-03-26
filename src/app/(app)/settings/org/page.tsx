@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ interface OrgData {
 }
 
 export default function OrgSettingsPage() {
+  const t = useTranslations("Settings.org");
   const { data: sessionData, update: updateSession } = useSession();
   const [org, setOrg] = useState<OrgData | null>(null);
   const [editName, setEditName] = useState("");
@@ -50,11 +52,11 @@ export default function OrgSettingsPage() {
         setDefaults(data.defaults);
       } else {
         const err = await res.json();
-        toast.error(err.error || "Failed to load default permissions");
+        toast.error(err.error || t("failedToLoadDefaultPermissions"));
       }
     } catch (err) {
       toast.error(
-        `Failed to load permissions: ${err instanceof Error ? err.message : "Unknown error"}`
+        t("failedToLoadPermissions", { error: err instanceof Error ? err.message : "Unknown error" })
       );
     } finally {
       setDefaultsLoading(false);
@@ -70,10 +72,10 @@ export default function OrgSettingsPage() {
         setEditName(data.name);
       } else {
         const err = await res.json();
-        toast.error(err.error || "Failed to load organization");
+        toast.error(err.error || t("failedToLoadOrg"));
       }
     } catch (err) {
-      toast.error(`Failed to load organization: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(t("failedToLoadOrgError", { error: err instanceof Error ? err.message : "Unknown error" }));
     } finally {
       setLoading(false);
     }
@@ -107,7 +109,7 @@ export default function OrgSettingsPage() {
         const data = await res.json();
         setDefaults(data.defaults);
         toast.success(
-          `Default ${RESOURCE_LABELS[resource as keyof typeof RESOURCE_LABELS]} permission updated`
+          t("defaultPermissionUpdated", { resource: RESOURCE_LABELS[resource as keyof typeof RESOURCE_LABELS] })
         );
       } else {
         // Revert on failure
@@ -115,7 +117,7 @@ export default function OrgSettingsPage() {
           prev ? { ...prev, [resource]: previousLevel } : prev
         );
         const err = await res.json();
-        toast.error(err.error || "Failed to update default permission");
+        toast.error(err.error || t("failedToUpdateDefaultPermission"));
       }
     } catch (err) {
       // Revert on failure
@@ -145,15 +147,15 @@ export default function OrgSettingsPage() {
         const data = await res.json();
         setOrg(data.org);
         setEditName(data.org.name);
-        toast.success("Organization name updated");
+        toast.success(t("orgNameUpdated"));
         // Trigger session refresh so sidebar picks up the new name
         await updateSession();
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to update");
+        toast.error(data.error || t("failedToUpdate"));
       }
     } catch (err) {
-      toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(`${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setSaving(false);
     }
@@ -185,7 +187,7 @@ export default function OrgSettingsPage() {
   if (!org) {
     return (
       <div className="p-6 max-w-4xl mx-auto">
-        <p className="text-muted-foreground">Organization not found.</p>
+        <p className="text-muted-foreground">{t("orgNotFound")}</p>
       </div>
     );
   }
@@ -193,9 +195,9 @@ export default function OrgSettingsPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Organization</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">{t("title")}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Manage your organization settings.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -203,19 +205,19 @@ export default function OrgSettingsPage() {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Building2 className="size-4" />
-            General
+            {t("general")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Organization Name</label>
+            <label className="text-sm font-medium">{t("orgName")}</label>
             {canEdit ? (
               <div className="flex gap-2">
                 <Input
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   maxLength={80}
-                  placeholder="Organization name"
+                  placeholder={t("orgNamePlaceholder")}
                   className="max-w-md"
                 />
                 <Button
@@ -223,7 +225,7 @@ export default function OrgSettingsPage() {
                   disabled={saving || !editName.trim() || editName.trim() === org.name}
                   size="sm"
                 >
-                  {saving ? "Saving..." : "Save"}
+                  {saving ? t("saving") : t("save")}
                 </Button>
               </div>
             ) : (
@@ -232,7 +234,7 @@ export default function OrgSettingsPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Slug</label>
+            <label className="text-sm font-medium">{t("slug")}</label>
             <p className="text-sm text-muted-foreground">{org.slug}</p>
           </div>
 
@@ -241,13 +243,13 @@ export default function OrgSettingsPage() {
               <Users className="size-4 text-muted-foreground" />
               <span className="text-sm">
                 <span className="font-medium">{org.memberCount}</span>{" "}
-                {org.memberCount === 1 ? "member" : "members"}
+                {org.memberCount === 1 ? t("memberSingular") : t("memberPlural")}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="size-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">
-                Created {formatDate(org.createdAt)}
+                {t("created", { date: formatDate(org.createdAt) })}
               </span>
             </div>
           </div>
@@ -268,10 +270,10 @@ export default function OrgSettingsPage() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Shield className="size-4" />
-              Default Member Permissions
+              {t("defaultPermissions")}
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Default permission levels applied to new members when they join the organization.
+              {t("defaultPermissionsDesc")}
             </p>
           </CardHeader>
           <CardContent>

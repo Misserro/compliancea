@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Trash2, Download, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -25,24 +26,27 @@ interface ContractDocumentsSectionProps {
   onUpdate?: () => void;
 }
 
-function formatDate(dateString: string | null): string {
-  if (!dateString) return "\u2014";
-  try {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return dateString;
-  }
-}
-
 export function ContractDocumentsSection({ contractId, onUpdate }: ContractDocumentsSectionProps) {
   const [documents, setDocuments] = useState<ContractDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deletingDocId, setDeletingDocId] = useState<number | null>(null);
+  const t = useTranslations("Contracts");
+  const tCommon = useTranslations("Common");
+  const locale = useLocale();
+
+  const formatDate = (dateString: string | null): string => {
+    if (!dateString) return "\u2014";
+    try {
+      return new Date(dateString).toLocaleDateString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return dateString;
+    }
+  };
 
   const fetchDocuments = useCallback(async () => {
     try {
@@ -69,15 +73,15 @@ export function ContractDocumentsSection({ contractId, onUpdate }: ContractDocum
         { method: "DELETE" }
       );
       if (res.ok) {
-        toast.success("Document removed");
+        toast.success(t("documents.removed"));
         fetchDocuments();
         onUpdate?.();
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to delete document");
+        toast.error(data.error || t("documents.removeFailed"));
       }
     } catch (err) {
-      toast.error(`Delete failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(err instanceof Error ? err.message : t("documents.removeFailed"));
     }
   };
 
@@ -88,32 +92,32 @@ export function ContractDocumentsSection({ contractId, onUpdate }: ContractDocum
 
   if (loading) {
     return (
-      <div className="text-sm text-muted-foreground py-2">Loading documents...</div>
+      <div className="text-sm text-muted-foreground py-2">{t("documents.loading")}</div>
     );
   }
 
   return (
     <div data-slot="contract-documents-section">
       <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm font-semibold text-foreground">Documents</h4>
+        <h4 className="text-sm font-semibold text-foreground">{t("documents.title")}</h4>
         <Button
           variant="outline"
           size="sm"
           onClick={() => setDialogOpen(true)}
         >
           <Plus className="w-3.5 h-3.5 mr-1" />
-          Add Document
+          {t("documents.add")}
         </Button>
       </div>
 
       {/* Document list */}
       {documents.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No documents attached.</p>
+        <p className="text-sm text-muted-foreground">{t("documents.noDocuments")}</p>
       ) : (
         <div className="space-y-2">
           {documents.map((doc) => {
             const typeColor = CONTRACT_DOCUMENT_TYPE_COLORS[doc.document_type] || CONTRACT_DOCUMENT_TYPE_COLORS.other;
-            const displayName = doc.linked_document_name || doc.file_name || "Untitled";
+            const displayName = doc.linked_document_name || doc.file_name || t("documents.untitled");
             const isLinked = !!doc.document_id;
 
             return (
@@ -124,7 +128,7 @@ export function ContractDocumentsSection({ contractId, onUpdate }: ContractDocum
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <div className="flex-shrink-0">
                     <Badge className={cn(typeColor)}>
-                      {doc.document_type}
+                      {t(`documentType.${doc.document_type}`)}
                     </Badge>
                   </div>
                   <div className="min-w-0 flex-1">
@@ -137,7 +141,7 @@ export function ContractDocumentsSection({ contractId, onUpdate }: ContractDocum
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {isLinked ? "Linked from library" : "Uploaded"} · {formatDate(doc.added_at)}
+                      {isLinked ? t("documents.linkedFromLibrary") : t("documents.uploaded")} · {formatDate(doc.added_at)}
                     </div>
                   </div>
                 </div>
@@ -149,7 +153,7 @@ export function ContractDocumentsSection({ contractId, onUpdate }: ContractDocum
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-1.5 rounded hover:bg-muted transition-colors"
-                    title="Download document"
+                    title={t("documents.downloadDocument")}
                     onClick={(e) => e.stopPropagation()}
                   >
                     {isLinked ? (
@@ -166,7 +170,7 @@ export function ContractDocumentsSection({ contractId, onUpdate }: ContractDocum
                       e.stopPropagation();
                       setDeletingDocId(doc.id);
                     }}
-                    title="Remove document"
+                    title={t("documents.removeDocument")}
                   >
                     <Trash2 className="w-3.5 h-3.5 text-destructive" />
                   </button>
@@ -190,13 +194,13 @@ export function ContractDocumentsSection({ contractId, onUpdate }: ContractDocum
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove document?</AlertDialogTitle>
+            <AlertDialogTitle>{t("documents.removeConfirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove the document attachment from this contract. This action cannot be undone.
+              {t("documents.removeConfirmDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (deletingDocId) {
@@ -205,7 +209,7 @@ export function ContractDocumentsSection({ contractId, onUpdate }: ContractDocum
                 }
               }}
             >
-              Remove
+              {tCommon("remove")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

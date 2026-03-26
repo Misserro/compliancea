@@ -12,6 +12,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,14 +40,14 @@ interface SectionRow {
   sectionKey: string | null;
 }
 
-const SECTION_KEY_OPTIONS: Array<{ value: string | null; label: string }> = [
-  { value: null, label: "Niestandardowa" },
-  { value: "court_header", label: "Oznaczenie sądu" },
-  { value: "parties", label: "Strony" },
-  { value: "claim", label: "Roszczenie" },
-  { value: "factual_basis", label: "Uzasadnienie" },
-  { value: "closing", label: "Zamknięcie" },
-  { value: "deadlines", label: "Terminy" },
+const SECTION_KEY_VALUES: Array<{ value: string | null; labelKey: string }> = [
+  { value: null, labelKey: "custom" },
+  { value: "court_header", labelKey: "court_header" },
+  { value: "parties", labelKey: "parties" },
+  { value: "claim", labelKey: "claim" },
+  { value: "factual_basis", labelKey: "factual_basis" },
+  { value: "closing", labelKey: "closing" },
+  { value: "deadlines", labelKey: "deadlines" },
 ];
 
 function parseSections(json: string): SectionRow[] {
@@ -66,6 +68,10 @@ interface BlueprintManagementProps {
 }
 
 export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
+  const t = useTranslations('LegalHub');
+  const tCommon = useTranslations('Common');
+  const locale = useLocale();
+
   const [blueprints, setBlueprints] = useState<CustomBlueprint[]>([]);
   const [loading, setLoading] = useState(true);
   // 'new' = create form, CustomBlueprint = edit form, undefined = list view
@@ -90,19 +96,19 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
       const res = await fetch("/api/legal-hub/wizard/blueprints");
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Nie udało się pobrać planów");
+        throw new Error(data.error || t('blueprint.fetchError'));
       }
       const data = await res.json();
       setBlueprints(data.blueprints || []);
     } catch (err) {
       console.error("Error fetching blueprints:", err);
       toast.error(
-        err instanceof Error ? err.message : "Nie udało się pobrać planów"
+        err instanceof Error ? err.message : t('blueprint.fetchError')
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchBlueprints();
@@ -134,15 +140,15 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
       );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Nie udało się usunąć");
+        throw new Error(data.error || t('blueprint.deleteError'));
       }
-      toast.success("Plan usunięty");
+      toast.success(t('blueprint.blueprintDeleted'));
       setDeleteTarget(null);
       await fetchBlueprints();
     } catch (err) {
       console.error("Error deleting blueprint:", err);
       toast.error(
-        err instanceof Error ? err.message : "Nie udało się usunąć planu"
+        err instanceof Error ? err.message : t('blueprint.deleteError')
       );
       setDeleteTarget(null);
     } finally {
@@ -153,7 +159,7 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
   const handleSave = async () => {
     const trimmedName = formName.trim();
     if (!trimmedName) {
-      toast.error("Nazwa jest wymagana");
+      toast.error(t('blueprint.nameRequired'));
       return;
     }
 
@@ -161,7 +167,7 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
     try {
       const sectionsJson = JSON.stringify(
         formSections.map((s) => ({
-          title: s.title.trim() || "Bez tytułu",
+          title: s.title.trim() || t('blueprint.untitled'),
           sectionKey: s.sectionKey,
         }))
       );
@@ -180,16 +186,16 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Nie udało się zapisać planu");
+        throw new Error(data.error || t('blueprint.saveError'));
       }
 
-      toast.success(isNew ? "Plan utworzony" : "Plan zaktualizowany");
+      toast.success(isNew ? t('blueprint.blueprintCreated') : t('blueprint.blueprintUpdated'));
       setEditingBlueprint(undefined);
       await fetchBlueprints();
     } catch (err) {
       console.error("Error saving blueprint:", err);
       toast.error(
-        err instanceof Error ? err.message : "Nie udało się zapisać planu"
+        err instanceof Error ? err.message : t('blueprint.saveError')
       );
     } finally {
       setSaving(false);
@@ -238,37 +244,37 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
           className="text-muted-foreground"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
-          Wróć do planów
+          {t('backToBlueprints')}
         </Button>
 
         <h2 className="text-lg font-semibold">
-          {editingBlueprint === "new" ? "Nowy plan" : "Edytuj plan"}
+          {editingBlueprint === "new" ? t('blueprint.newBlueprint') : t('blueprint.editBlueprint')}
         </h2>
 
         <div className="space-y-4 max-w-2xl">
           <div>
             <label className="text-sm font-medium mb-1 block">
-              Nazwa <span className="text-destructive">*</span>
+              {t('blueprint.nameLabel')} <span className="text-destructive">*</span>
             </label>
             <Input
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
-              placeholder="Nazwa planu"
+              placeholder={t('blueprint.namePlaceholder')}
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium">Sekcje</label>
+              <label className="text-sm font-medium">{t('blueprint.sections')}</label>
               <Button variant="outline" size="sm" onClick={addSection}>
                 <Plus className="w-4 h-4 mr-1" />
-                Dodaj sekcję
+                {t('blueprint.addSection')}
               </Button>
             </div>
 
             {formSections.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center border rounded-lg">
-                Brak sekcji. Dodaj sekcje lub zapisz jako pusty plan.
+                {t('blueprint.noSections')}
               </p>
             ) : (
               <div className="space-y-2">
@@ -282,7 +288,7 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
                       onChange={(e) =>
                         updateSectionTitle(index, e.target.value)
                       }
-                      placeholder="Tytuł sekcji"
+                      placeholder={t('blueprint.sectionTitlePlaceholder')}
                       className="flex-1"
                     />
                     <select
@@ -295,12 +301,12 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
                         )
                       }
                     >
-                      {SECTION_KEY_OPTIONS.map((opt) => (
+                      {SECTION_KEY_VALUES.map((opt) => (
                         <option
                           key={opt.value ?? "__null__"}
                           value={opt.value || ""}
                         >
-                          {opt.label}
+                          {t(`sectionKey.${opt.labelKey}`)}
                         </option>
                       ))}
                     </select>
@@ -336,7 +342,7 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
               </div>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              Klucz sekcji określa, które zmienne są podpowiadane w kreatorze.
+              {t('blueprint.sectionKeyHint')}
             </p>
           </div>
 
@@ -352,8 +358,8 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
                 <Save className="w-4 h-4 mr-2" />
               )}
               {editingBlueprint === "new"
-                ? "Utwórz plan"
-                : "Zapisz zmiany"}
+                ? t('blueprint.createBlueprint')
+                : t('blueprint.saveChanges')}
             </Button>
             <Button
               variant="outline"
@@ -361,7 +367,7 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
               onClick={handleCancelEdit}
               disabled={saving}
             >
-              Anuluj
+              {tCommon('cancel')}
             </Button>
           </div>
         </div>
@@ -380,18 +386,18 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
           className="text-muted-foreground"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
-          Wróć do szablonów
+          {t('backToTemplates')}
         </Button>
         <Button onClick={handleNew} size="sm">
           <Plus className="w-4 h-4 mr-2" />
-          Nowy plan
+          {t('blueprint.newBlueprint')}
         </Button>
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold">Własne plany</h2>
+        <h2 className="text-lg font-semibold">{t('blueprint.title')}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Twórz zestawy sekcji do użycia w kreatorze szablonów
+          {t('blueprint.subtitle')}
         </p>
       </div>
 
@@ -403,17 +409,17 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
         </div>
       ) : blueprints.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground text-sm">
-          Brak własnych planów. Utwórz pierwszy plan, aby użyć go w kreatorze szablonów.
+          {t('blueprint.noBlueprints')}
         </div>
       ) : (
         <div className="border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted/50 border-b">
-                <th className="text-left font-medium px-4 py-3">Nazwa</th>
-                <th className="text-left font-medium px-4 py-3">Sekcje</th>
-                <th className="text-left font-medium px-4 py-3">Utworzono</th>
-                <th className="text-right font-medium px-4 py-3">Akcje</th>
+                <th className="text-left font-medium px-4 py-3">{t('blueprint.tableNameHeader')}</th>
+                <th className="text-left font-medium px-4 py-3">{t('blueprint.tableSectionsHeader')}</th>
+                <th className="text-left font-medium px-4 py-3">{t('blueprint.tableCreatedHeader')}</th>
+                <th className="text-right font-medium px-4 py-3">{t('blueprint.tableActionsHeader')}</th>
               </tr>
             </thead>
             <tbody>
@@ -426,7 +432,7 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
                       {sectionCount}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {new Date(bp.created_at).toLocaleDateString()}
+                      {new Date(bp.created_at).toLocaleDateString(locale)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -434,7 +440,7 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEdit(bp)}
-                          title="Edytuj"
+                          title={tCommon('edit')}
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
@@ -442,7 +448,7 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
                           variant="ghost"
                           size="sm"
                           onClick={() => setDeleteTarget(bp)}
-                          title="Usuń"
+                          title={tCommon('delete')}
                           className="text-destructive hover:text-destructive"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -464,20 +470,19 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Usuń plan</AlertDialogTitle>
+            <AlertDialogTitle>{t('blueprint.deleteConfirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Czy na pewno chcesz usunąć &quot;{deleteTarget?.name}&quot;?
-              Ten plan nie będzie już dostępny w kreatorze szablonów.
+              {t('blueprint.deleteConfirmDesc', { name: deleteTarget?.name ?? '' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Anuluj</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{tCommon('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={deleting}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              {deleting ? "Usuwanie..." : "Usuń"}
+              {deleting ? t('blueprint.deleting') : tCommon('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

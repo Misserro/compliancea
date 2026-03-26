@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,6 +19,7 @@ interface QuestionnaireSectionProps {
 }
 
 export function QuestionnaireSection({ documents }: QuestionnaireSectionProps) {
+  const t = useTranslations('Documents');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pastedText, setPastedText] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -35,7 +37,7 @@ export function QuestionnaireSection({ documents }: QuestionnaireSectionProps) {
 
     if (!file && !hasText) {
       setStatus({
-        message: "Please upload a file or paste questionnaire text.",
+        message: t('questionnaire.uploadOrPaste'),
         type: "error",
       });
       return;
@@ -44,7 +46,7 @@ export function QuestionnaireSection({ documents }: QuestionnaireSectionProps) {
     setLoading(true);
     setQuestions([]);
     setApproved(new Set());
-    setStatus({ message: "Processing questionnaire...", type: "info" });
+    setStatus({ message: t('questionnaire.processingStatus'), type: "info" });
 
     try {
       const fd = new FormData();
@@ -66,7 +68,7 @@ export function QuestionnaireSection({ documents }: QuestionnaireSectionProps) {
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: res.statusText }));
         setStatus({
-          message: `Processing failed: ${data.error || "Unknown error"}`,
+          message: t('questionnaire.processingFailed', { error: data.error || "Unknown error" }),
           type: "error",
         });
         return;
@@ -76,12 +78,12 @@ export function QuestionnaireSection({ documents }: QuestionnaireSectionProps) {
       const qs: QuestionnaireQuestion[] = data.questions || [];
       setQuestions(qs);
       setStatus({
-        message: `Processed ${qs.length} question(s).`,
+        message: t('questionnaire.processedCount', { count: qs.length }),
         type: "success",
       });
     } catch (err) {
       setStatus({
-        message: `Network error: ${err instanceof Error ? err.message : String(err)}`,
+        message: t('questionnaire.networkError', { error: err instanceof Error ? err.message : String(err) }),
         type: "error",
       });
     } finally {
@@ -117,12 +119,12 @@ export function QuestionnaireSection({ documents }: QuestionnaireSectionProps) {
   async function handleApproveSubmit() {
     const approvedQuestions = questions.filter((q) => approved.has(q.number));
     if (approvedQuestions.length === 0) {
-      setStatus({ message: "No questions approved.", type: "error" });
+      setStatus({ message: t('questionnaire.noApproved'), type: "error" });
       return;
     }
 
     setLoading(true);
-    setStatus({ message: "Submitting approved answers...", type: "info" });
+    setStatus({ message: t('questionnaire.submitting'), type: "info" });
 
     try {
       const res = await fetch("/api/desk/questionnaire/approve", {
@@ -134,7 +136,7 @@ export function QuestionnaireSection({ documents }: QuestionnaireSectionProps) {
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: res.statusText }));
         setStatus({
-          message: `Approval failed: ${data.error || "Unknown error"}`,
+          message: t('questionnaire.approvalFailed', { error: data.error || "Unknown error" }),
           type: "error",
         });
         return;
@@ -142,12 +144,12 @@ export function QuestionnaireSection({ documents }: QuestionnaireSectionProps) {
 
       const data = await res.json();
       setStatus({
-        message: data.message || `Approved ${approvedQuestions.length} question(s).`,
+        message: data.message || t('questionnaire.approved', { count: approvedQuestions.length }),
         type: "success",
       });
     } catch (err) {
       setStatus({
-        message: `Network error: ${err instanceof Error ? err.message : String(err)}`,
+        message: t('questionnaire.networkError', { error: err instanceof Error ? err.message : String(err) }),
         type: "error",
       });
     } finally {
@@ -198,7 +200,7 @@ export function QuestionnaireSection({ documents }: QuestionnaireSectionProps) {
       {/* File input */}
       <div className="space-y-2">
         <Label htmlFor="questionnaire-file">
-          Questionnaire file (PDF, DOCX, or Excel)
+          {t('questionnaire.fileLabel')}
         </Label>
         <Input
           id="questionnaire-file"
@@ -210,10 +212,10 @@ export function QuestionnaireSection({ documents }: QuestionnaireSectionProps) {
 
       {/* Or paste text */}
       <div className="space-y-2">
-        <Label htmlFor="questionnaire-text">Or paste questionnaire text</Label>
+        <Label htmlFor="questionnaire-text">{t('questionnaire.pasteLabel')}</Label>
         <Textarea
           id="questionnaire-text"
-          placeholder="Paste your questionnaire questions here..."
+          placeholder={t('questionnaire.pastePlaceholder')}
           value={pastedText}
           onChange={(e) => setPastedText(e.target.value)}
           rows={4}
@@ -222,7 +224,7 @@ export function QuestionnaireSection({ documents }: QuestionnaireSectionProps) {
 
       {/* Library document selection */}
       <div className="space-y-2">
-        <Label>Select library documents for answering</Label>
+        <Label>{t('questionnaire.selectDocs')}</Label>
         <DocumentSelectList
           documents={documents}
           selectedIds={selectedIds}
@@ -233,7 +235,7 @@ export function QuestionnaireSection({ documents }: QuestionnaireSectionProps) {
 
       {/* Process button */}
       <Button onClick={handleProcess} disabled={loading}>
-        {loading ? "Processing..." : "Process Questionnaire"}
+        {loading ? t('questionnaire.processing') : t('questionnaire.processButton')}
       </Button>
 
       {/* Status */}
@@ -247,24 +249,24 @@ export function QuestionnaireSection({ documents }: QuestionnaireSectionProps) {
           {/* Action buttons */}
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={approveAll}>
-              Approve All
+              {t('questionnaire.approveAll')}
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={approveHighConfidence}
             >
-              Approve High Confidence
+              {t('questionnaire.approveHighConfidence')}
             </Button>
             <Button variant="outline" size="sm" onClick={exportCsv}>
-              Export as CSV
+              {t('questionnaire.exportCsv')}
             </Button>
             <Button
               size="sm"
               onClick={handleApproveSubmit}
               disabled={loading || approved.size === 0}
             >
-              Submit Approved ({approved.size})
+              {t('questionnaire.submitApproved', { count: approved.size })}
             </Button>
           </div>
 
@@ -300,7 +302,7 @@ export function QuestionnaireSection({ documents }: QuestionnaireSectionProps) {
                 {/* Editable answer */}
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">
-                    Answer
+                    {t('questionnaire.answer')}
                   </Label>
                   <Textarea
                     value={q.answer}
@@ -314,7 +316,7 @@ export function QuestionnaireSection({ documents }: QuestionnaireSectionProps) {
                 {q.evidence && q.evidence.length > 0 && (
                   <div>
                     <Label className="text-xs text-muted-foreground">
-                      Evidence
+                      {t('questionnaire.evidence')}
                     </Label>
                     <div className="mt-1 space-y-1">
                       {q.evidence.map((ev, j) => (

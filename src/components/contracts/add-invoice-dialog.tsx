@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTranslations } from "next-intl";
 import { INVOICE_CURRENCIES } from "@/lib/constants";
 import type { Invoice } from "@/lib/types";
 
@@ -37,6 +38,7 @@ export function AddInvoiceDialog({
   onSaved,
   editInvoice,
 }: AddInvoiceDialogProps) {
+  const t = useTranslations('Contracts');
   const isEdit = !!editInvoice;
   const [saving, setSaving] = useState(false);
   const [amount, setAmount] = useState(editInvoice ? String(editInvoice.amount) : "");
@@ -60,7 +62,7 @@ export function AddInvoiceDialog({
   const handleSave = async () => {
     const amountNum = parseFloat(amount);
     if (!amount || isNaN(amountNum) || amountNum < 0) {
-      toast.error("Please enter a valid amount");
+      toast.error(t('addInvoiceDialog.validAmountError'));
       return;
     }
 
@@ -86,11 +88,11 @@ export function AddInvoiceDialog({
         );
         const data = await res.json();
         if (res.ok) {
-          toast.success("Invoice updated");
+          toast.success(t('addInvoiceDialog.updated'));
           onSaved();
           onOpenChange(false);
         } else {
-          toast.error(data.error || "Failed to update invoice");
+          toast.error(data.error || t('addInvoiceDialog.saveFailed'));
         }
       } else {
         // POST — multipart form data
@@ -116,16 +118,16 @@ export function AddInvoiceDialog({
         });
         const data = await res.json();
         if (res.ok) {
-          toast.success("Invoice added");
+          toast.success(t('addInvoiceDialog.added'));
           resetForm();
           onSaved();
           onOpenChange(false);
         } else {
-          toast.error(data.error || "Failed to add invoice");
+          toast.error(data.error || t('addInvoiceDialog.saveFailed'));
         }
       }
     } catch (err) {
-      toast.error(`Save failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(t('addInvoiceDialog.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -135,13 +137,13 @@ export function AddInvoiceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Invoice" : "Add Invoice"}</DialogTitle>
+          <DialogTitle>{isEdit ? t('addInvoiceDialog.editTitle') : t('addInvoiceDialog.addTitle')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="invoice-amount">Amount *</Label>
+              <Label htmlFor="invoice-amount">{t('addInvoiceDialog.amount')}</Label>
               <Input
                 id="invoice-amount"
                 type="number"
@@ -153,7 +155,7 @@ export function AddInvoiceDialog({
               />
             </div>
             <div>
-              <Label htmlFor="invoice-currency">Currency</Label>
+              <Label htmlFor="invoice-currency">{t('addInvoiceDialog.currency')}</Label>
               <Select value={currency} onValueChange={setCurrency}>
                 <SelectTrigger id="invoice-currency">
                   <SelectValue />
@@ -170,10 +172,10 @@ export function AddInvoiceDialog({
           </div>
 
           <div>
-            <Label htmlFor="invoice-description">Description</Label>
+            <Label htmlFor="invoice-description">{t('addInvoiceDialog.description')}</Label>
             <Input
               id="invoice-description"
-              placeholder="Optional description"
+              placeholder={t('addInvoiceDialog.descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -181,7 +183,7 @@ export function AddInvoiceDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="invoice-date-issue">Date of Issue</Label>
+              <Label htmlFor="invoice-date-issue">{t('addInvoiceDialog.dateOfIssue')}</Label>
               <Input
                 id="invoice-date-issue"
                 type="date"
@@ -190,7 +192,7 @@ export function AddInvoiceDialog({
               />
             </div>
             <div>
-              <Label htmlFor="invoice-date-payment">Date of Payment</Label>
+              <Label htmlFor="invoice-date-payment">{t('addInvoiceDialog.dateOfPayment')}</Label>
               <Input
                 id="invoice-date-payment"
                 type="date"
@@ -203,7 +205,7 @@ export function AddInvoiceDialog({
           {!isEdit && (
             <>
               <div>
-                <Label htmlFor="invoice-file">Invoice File</Label>
+                <Label htmlFor="invoice-file">{t('addInvoiceDialog.invoiceFile')}</Label>
                 <Input
                   id="invoice-file"
                   type="file"
@@ -211,12 +213,12 @@ export function AddInvoiceDialog({
                   ref={invoiceFileRef}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  PDF, DOCX, JPG, or PNG. Max 10MB.
+                  {t('addInvoiceDialog.fileHint')}
                 </p>
               </div>
 
               <div>
-                <Label htmlFor="payment-confirmation-file">Payment Confirmation</Label>
+                <Label htmlFor="payment-confirmation-file">{t('addInvoiceDialog.paymentConfirmation')}</Label>
                 <Input
                   id="payment-confirmation-file"
                   type="file"
@@ -224,7 +226,7 @@ export function AddInvoiceDialog({
                   ref={paymentFileRef}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  PDF, DOCX, JPG, or PNG. Max 10MB.
+                  {t('addInvoiceDialog.fileHint')}
                 </p>
               </div>
             </>
@@ -233,10 +235,10 @@ export function AddInvoiceDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t('addInvoiceDialog.cancel')}
           </Button>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : isEdit ? "Update" : "Add Invoice"}
+            {saving ? t('addInvoiceDialog.saving') : isEdit ? t('addInvoiceDialog.update') : t('addInvoiceDialog.addInvoice')}
           </Button>
         </DialogFooter>
       </DialogContent>

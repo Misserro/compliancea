@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -38,6 +39,7 @@ export function AdminUserList({
   users: AdminUser[];
   currentUserId: number;
 }) {
+  const t = useTranslations("Admin.userList");
   const router = useRouter();
   const [togglingId, setTogglingId] = useState<number | null>(null);
 
@@ -52,13 +54,13 @@ export function AdminUserList({
       if (res.ok) {
         toast.success(
           user.isSuperAdmin
-            ? `Revoked super admin from ${user.name || user.email}`
-            : `Granted super admin to ${user.name || user.email}`
+            ? t("revokedSuperAdmin", { name: user.name || user.email })
+            : t("grantedSuperAdmin", { name: user.name || user.email })
         );
         router.refresh();
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to update user");
+        toast.error(data.error || t("failedToUpdateUser"));
       }
     } catch (err) {
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
@@ -72,7 +74,7 @@ export function AdminUserList({
       const res = await fetch("/api/admin/users", { method: "POST" });
       const data = await res.json();
       if (res.ok) {
-        toast.success(data.message || "Super admin granted to all users");
+        toast.success(data.message || t("superAdminGrantedToAll"));
         router.refresh();
       } else {
         toast.error(data.error || "Failed");
@@ -87,7 +89,7 @@ export function AdminUserList({
       <div className="flex items-center justify-end">
         <Button variant="outline" size="sm" onClick={handleGrantAll}>
           <Shield className="size-3.5 mr-1.5" />
-          Grant super admin to all
+          {t("grantSuperAdminToAll")}
         </Button>
       </div>
 
@@ -95,25 +97,25 @@ export function AdminUserList({
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr>
-              <th className="text-left px-4 py-3 font-medium">User</th>
-              <th className="text-left px-4 py-3 font-medium">Organizations</th>
-              <th className="text-left px-4 py-3 font-medium">Joined</th>
-              <th className="px-4 py-3 font-medium text-right">Super Admin</th>
+              <th className="text-left px-4 py-3 font-medium">{t("userHeader")}</th>
+              <th className="text-left px-4 py-3 font-medium">{t("organizationsHeader")}</th>
+              <th className="text-left px-4 py-3 font-medium">{t("joinedHeader")}</th>
+              <th className="px-4 py-3 font-medium text-right">{t("superAdminHeader")}</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {users.map((user) => (
               <tr key={user.id} className="hover:bg-muted/30 transition-colors">
                 <td className="px-4 py-3">
-                  <div className="font-medium">{user.name || <span className="text-muted-foreground">(no name)</span>}</div>
+                  <div className="font-medium">{user.name || <span className="text-muted-foreground">{t("noName")}</span>}</div>
                   <div className="text-xs text-muted-foreground">{user.email}</div>
                   {user.id === currentUserId && (
-                    <Badge variant="outline" className="text-xs mt-0.5">You</Badge>
+                    <Badge variant="outline" className="text-xs mt-0.5">{t("you")}</Badge>
                   )}
                 </td>
                 <td className="px-4 py-3">
                   {user.orgs.length === 0 ? (
-                    <span className="text-muted-foreground text-xs">None</span>
+                    <span className="text-muted-foreground text-xs">{t("none")}</span>
                   ) : (
                     <div className="flex flex-wrap gap-1">
                       {user.orgs.map((o, i) => (
@@ -150,7 +152,7 @@ export function AdminUserList({
             {users.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
-                  No users found.
+                  {t("noUsers")}
                 </td>
               </tr>
             )}

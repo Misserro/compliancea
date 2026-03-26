@@ -1,5 +1,6 @@
 import { ensureDb } from "@/lib/server-utils";
 import { getOrgInviteByToken } from "@/lib/db-imports";
+import { getTranslations } from "next-intl/server";
 import { InviteAcceptClient } from "./invite-accept-client";
 
 interface InvitePageProps {
@@ -8,6 +9,7 @@ interface InvitePageProps {
 
 export default async function InvitePage({ params }: InvitePageProps) {
   const { token } = await params;
+  const t = await getTranslations("Auth");
 
   await ensureDb();
   const invite = getOrgInviteByToken(token);
@@ -22,9 +24,9 @@ export default async function InvitePage({ params }: InvitePageProps) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Invalid Invite</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("invalidInvite")}</h1>
           <p className="text-muted-foreground">
-            This invite link is invalid or has been revoked.
+            {t("invalidInviteDesc")}
           </p>
         </div>
       </div>
@@ -41,9 +43,9 @@ export default async function InvitePage({ params }: InvitePageProps) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Invite Already Used</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("inviteAlreadyUsed")}</h1>
           <p className="text-muted-foreground">
-            This invite has already been used.
+            {t("inviteAlreadyUsedDesc")}
           </p>
         </div>
       </div>
@@ -60,9 +62,9 @@ export default async function InvitePage({ params }: InvitePageProps) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Invite Expired</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("inviteExpired")}</h1>
           <p className="text-muted-foreground">
-            This invite has expired. Ask your admin to resend the invite.
+            {t("inviteExpiredDesc")}
           </p>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { GitBranch, CheckCircle, Archive, GitCompare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +15,7 @@ interface VersionHistoryPanelProps {
 }
 
 export function VersionHistoryPanel({ documentId, documentName }: VersionHistoryPanelProps) {
+  const t = useTranslations('Documents');
   const [versions, setVersions] = useState<DocumentVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [diffOpen, setDiffOpen] = useState(false);
@@ -43,7 +45,7 @@ export function VersionHistoryPanel({ documentId, documentName }: VersionHistory
 
   if (versions.length <= 1) {
     return (
-      <p className="text-xs text-muted-foreground p-3">No previous versions.</p>
+      <p className="text-xs text-muted-foreground p-3">{t('versionHistory.noPrevious')}</p>
     );
   }
 
@@ -51,7 +53,7 @@ export function VersionHistoryPanel({ documentId, documentName }: VersionHistory
     <div className="p-3 space-y-1">
       <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-2">
         <GitBranch className="h-3.5 w-3.5" />
-        Version history
+        {t('versionHistory.title')}
       </div>
 
       {versions.map((v, idx) => {
@@ -76,7 +78,7 @@ export function VersionHistoryPanel({ documentId, documentName }: VersionHistory
                   : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
               }`}
             >
-              {isCurrent ? "Active" : "Archived"}
+              {isCurrent ? t('versionHistory.active') : t('versionHistory.archived')}
             </span>
             {next && (
               <Button
@@ -89,7 +91,7 @@ export function VersionHistoryPanel({ documentId, documentName }: VersionHistory
                 }}
               >
                 <GitCompare className="h-3 w-3 mr-1" />
-                Diff
+                {t('versionHistory.diff')}
               </Button>
             )}
           </div>

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,15 +51,16 @@ function formatDate(dateStr: string): string {
   }
 }
 
-function statusLabel(status: string, daysUntilDeletion?: number): string {
-  if (status === "active") return "Active";
+function statusLabel(status: string, daysUntilDeletion: number | undefined, t: (key: string, values?: Record<string, string | number | Date>) => string): string {
+  if (status === "active") return t("statusActive");
   if (status === "pending_deletion") {
-    return `Pending Deletion (${daysUntilDeletion ?? 0}d left)`;
+    return t("statusPendingDeletion", { days: daysUntilDeletion ?? 0 });
   }
-  return "Expired";
+  return t("statusExpired");
 }
 
 export function AdminOrgList({ orgs, platformConfigured }: { orgs: Org[]; platformConfigured: boolean }) {
+  const t = useTranslations("Admin.orgList");
   const router = useRouter();
   const [createOpen, setCreateOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -86,11 +88,11 @@ export function AdminOrgList({ orgs, platformConfigured }: { orgs: Org[]; platfo
     const trimmedSlug = editSlug.trim();
 
     if (!trimmedName) {
-      toast.error("Organization name is required");
+      toast.error(t("orgNameRequired"));
       return;
     }
     if (!trimmedSlug || !/^[a-z0-9-]+$/.test(trimmedSlug)) {
-      toast.error("Slug must contain only lowercase letters, numbers, and hyphens");
+      toast.error(t("slugInvalid"));
       return;
     }
 
@@ -102,12 +104,12 @@ export function AdminOrgList({ orgs, platformConfigured }: { orgs: Org[]; platfo
         body: JSON.stringify({ name: trimmedName, slug: trimmedSlug }),
       });
       if (res.ok) {
-        toast.success("Organization updated");
+        toast.success(t("orgUpdated"));
         setEditingId(null);
         router.refresh();
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to update organization");
+        toast.error(data.error || t("failedToUpdateOrg"));
       }
     } catch (err) {
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -123,11 +125,11 @@ export function AdminOrgList({ orgs, platformConfigured }: { orgs: Org[]; platfo
         method: "DELETE",
       });
       if (res.ok || res.status === 204) {
-        toast.success("Organization deleted");
+        toast.success(t("orgDeleted"));
         router.refresh();
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to delete organization");
+        toast.error(data.error || t("failedToDeleteOrg"));
       }
     } catch (err) {
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -143,11 +145,11 @@ export function AdminOrgList({ orgs, platformConfigured }: { orgs: Org[]; platfo
         method: "POST",
       });
       if (res.ok) {
-        toast.success("Organization restored");
+        toast.success(t("orgRestored"));
         router.refresh();
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to restore organization");
+        toast.error(data.error || t("failedToRestoreOrg"));
       }
     } catch (err) {
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -165,11 +167,11 @@ export function AdminOrgList({ orgs, platformConfigured }: { orgs: Org[]; platfo
         body: JSON.stringify({ storage_policy: policy }),
       });
       if (res.ok) {
-        toast.success("Storage policy updated");
+        toast.success(t("storagePolicyUpdated"));
         router.refresh();
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to update storage policy");
+        toast.error(data.error || t("failedToUpdateStoragePolicy"));
       }
     } catch (err) {
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -182,7 +184,7 @@ export function AdminOrgList({ orgs, platformConfigured }: { orgs: Org[]; platfo
     <>
       <div className="flex items-center justify-end">
         <Button onClick={() => setCreateOpen(true)}>
-          <Plus /> Create organization
+          <Plus /> {t("createOrganization")}
         </Button>
       </div>
 
@@ -190,13 +192,13 @@ export function AdminOrgList({ orgs, platformConfigured }: { orgs: Org[]; platfo
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr>
-              <th className="text-left px-4 py-3 font-medium">Name</th>
-              <th className="text-left px-4 py-3 font-medium">Slug</th>
-              <th className="text-left px-4 py-3 font-medium">Members</th>
-              <th className="text-left px-4 py-3 font-medium">Status</th>
-              <th className="text-left px-4 py-3 font-medium">Storage</th>
-              <th className="text-left px-4 py-3 font-medium">Created</th>
-              <th className="px-4 py-3 font-medium text-right">Actions</th>
+              <th className="text-left px-4 py-3 font-medium">{t("nameHeader")}</th>
+              <th className="text-left px-4 py-3 font-medium">{t("slugHeader")}</th>
+              <th className="text-left px-4 py-3 font-medium">{t("membersHeader")}</th>
+              <th className="text-left px-4 py-3 font-medium">{t("statusHeader")}</th>
+              <th className="text-left px-4 py-3 font-medium">{t("storageHeader")}</th>
+              <th className="text-left px-4 py-3 font-medium">{t("createdHeader")}</th>
+              <th className="px-4 py-3 font-medium text-right">{t("actionsHeader")}</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -238,7 +240,7 @@ export function AdminOrgList({ orgs, platformConfigured }: { orgs: Org[]; platfo
                       variant="outline"
                       className={cn(ORG_STATUS_COLORS[org.status] || "")}
                     >
-                      {statusLabel(org.status, org.daysUntilDeletion)}
+                      {statusLabel(org.status, org.daysUntilDeletion, t)}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
@@ -248,9 +250,9 @@ export function AdminOrgList({ orgs, platformConfigured }: { orgs: Org[]; platfo
                       onChange={(e) => handleStoragePolicyChange(org.id, e.target.value)}
                       disabled={updatingPolicyId === org.id || org.status !== "active"}
                     >
-                      <option value="local">Local</option>
-                      <option value="platform_s3">Platform S3</option>
-                      <option value="own_s3">Own S3</option>
+                      <option value="local">{t("storageLocal")}</option>
+                      <option value="platform_s3">{t("storagePlatformS3")}</option>
+                      <option value="own_s3">{t("storageOwnS3")}</option>
                     </select>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
@@ -299,21 +301,18 @@ export function AdminOrgList({ orgs, platformConfigured }: { orgs: Org[]; platfo
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Delete organization</AlertDialogTitle>
+                                <AlertDialogTitle>{t("deleteOrganization")}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Are you sure you want to delete &quot;{org.name}&quot;?
-                                  All {org.memberCount} member{org.memberCount !== 1 ? "s" : ""} will
-                                  lose access immediately. Data will be permanently deleted
-                                  after 30 days.
+                                  {t("deleteOrgConfirm", { name: org.name, count: org.memberCount })}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => handleDelete(org.id)}
                                   className="bg-destructive text-white hover:bg-destructive/90"
                                 >
-                                  Delete
+                                  {t("delete")}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -327,7 +326,7 @@ export function AdminOrgList({ orgs, platformConfigured }: { orgs: Org[]; platfo
                           disabled={restoringId === org.id}
                         >
                           <RotateCcw className="size-4" />
-                          {restoringId === org.id ? "Restoring..." : "Restore"}
+                          {restoringId === org.id ? t("restoring") : t("restore")}
                         </Button>
                       ) : null}
                     </div>
@@ -365,7 +364,7 @@ export function AdminOrgList({ orgs, platformConfigured }: { orgs: Org[]; platfo
                   colSpan={7}
                   className="px-4 py-8 text-center text-muted-foreground"
                 >
-                  No organizations found.
+                  {t("noOrganizations")}
                 </td>
               </tr>
             )}

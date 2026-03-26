@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { useTranslations, useLocale } from "next-intl";
 import type { LegalCase } from "@/lib/types";
 import {
   LEGAL_CASE_STATUSES,
   LEGAL_CASE_STATUS_COLORS,
-  LEGAL_CASE_STATUS_DISPLAY,
 } from "@/lib/constants";
 
 interface CaseStatusSectionProps {
@@ -21,21 +21,25 @@ interface StatusHistoryEntry {
   note: string | null;
 }
 
-function formatDateTime(dateString: string) {
-  try {
-    return new Date(dateString).toLocaleString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return dateString;
-  }
-}
-
 export function CaseStatusSection({ legalCase, caseId, onRefresh }: CaseStatusSectionProps) {
+  const t = useTranslations('LegalHub');
+  const tStatus = useTranslations("CaseStatuses");
+  const locale = useLocale();
+
+  function formatDateTime(dateString: string) {
+    try {
+      return new Date(dateString).toLocaleString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return dateString;
+    }
+  }
+
   const [selectedStatus, setSelectedStatus] = useState(legalCase.status);
   const [note, setNote] = useState("");
   const [transitioning, setTransitioning] = useState(false);
@@ -43,8 +47,7 @@ export function CaseStatusSection({ legalCase, caseId, onRefresh }: CaseStatusSe
   const statusColor =
     LEGAL_CASE_STATUS_COLORS[legalCase.status] ||
     LEGAL_CASE_STATUS_COLORS.new;
-  const statusDisplay =
-    LEGAL_CASE_STATUS_DISPLAY[legalCase.status] || legalCase.status;
+  const statusDisplay = tStatus(legalCase.status);
 
   let statusHistory: StatusHistoryEntry[] = [];
   try {
@@ -58,7 +61,7 @@ export function CaseStatusSection({ legalCase, caseId, onRefresh }: CaseStatusSe
 
   const handleTransition = async () => {
     if (selectedStatus === legalCase.status) {
-      toast.error("Wybierz inny status");
+      toast.error(t('status.selectDifferent'));
       return;
     }
 
@@ -75,7 +78,7 @@ export function CaseStatusSection({ legalCase, caseId, onRefresh }: CaseStatusSe
         throw new Error(data.error || "Failed to change status");
       }
 
-      toast.success(`Status zmieniony na ${LEGAL_CASE_STATUS_DISPLAY[selectedStatus] || selectedStatus}`);
+      toast.success(t('status.changedTo', { status: tStatus(selectedStatus) }));
       setNote("");
       onRefresh();
     } catch (err) {
@@ -87,11 +90,11 @@ export function CaseStatusSection({ legalCase, caseId, onRefresh }: CaseStatusSe
 
   return (
     <div className="bg-card border rounded-lg p-4 space-y-4">
-      <span className="text-xs font-medium text-muted-foreground">Status</span>
+      <span className="text-xs font-medium text-muted-foreground">{t('status.title')}</span>
 
       {/* Current status */}
       <div className="flex items-center gap-3">
-        <span className="text-sm text-muted-foreground">Aktualny:</span>
+        <span className="text-sm text-muted-foreground">{t('status.current')}</span>
         <span className={`px-3 py-1 rounded text-sm font-medium ${statusColor}`}>
           {statusDisplay}
         </span>
@@ -101,7 +104,7 @@ export function CaseStatusSection({ legalCase, caseId, onRefresh }: CaseStatusSe
       <div className="flex items-end gap-3 flex-wrap">
         <div className="flex-1 min-w-[180px]">
           <label className="text-muted-foreground text-xs font-medium mb-1 block">
-            Zmień na
+            {t('status.changeTo')}
           </label>
           <select
             className="w-full px-2 py-1.5 border rounded text-sm bg-background"
@@ -110,21 +113,21 @@ export function CaseStatusSection({ legalCase, caseId, onRefresh }: CaseStatusSe
           >
             {LEGAL_CASE_STATUSES.map((s) => (
               <option key={s} value={s}>
-                {LEGAL_CASE_STATUS_DISPLAY[s] || s}
+                {tStatus(s)}
               </option>
             ))}
           </select>
         </div>
         <div className="flex-1 min-w-[180px]">
           <label className="text-muted-foreground text-xs font-medium mb-1 block">
-            Notatka (opcjonalnie)
+            {t('status.noteLabel')}
           </label>
           <input
             type="text"
             className="w-full px-2 py-1.5 border rounded text-sm bg-background"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Powód zmiany..."
+            placeholder={t('status.notePlaceholder')}
           />
         </div>
         <button
@@ -132,21 +135,20 @@ export function CaseStatusSection({ legalCase, caseId, onRefresh }: CaseStatusSe
           onClick={handleTransition}
           disabled={transitioning || selectedStatus === legalCase.status}
         >
-          {transitioning ? "Zmiana..." : "Zmień status"}
+          {transitioning ? t('status.changing') : t('status.changeStatus')}
         </button>
       </div>
 
       {/* Status history timeline */}
       {reversedHistory.length > 0 && (
         <div className="space-y-2">
-          <span className="text-xs font-medium text-muted-foreground">Historia</span>
+          <span className="text-xs font-medium text-muted-foreground">{t('status.history')}</span>
           <div className="space-y-1.5">
             {reversedHistory.map((entry, index) => {
               const entryColor =
                 LEGAL_CASE_STATUS_COLORS[entry.status] ||
                 LEGAL_CASE_STATUS_COLORS.new;
-              const entryDisplay =
-                LEGAL_CASE_STATUS_DISPLAY[entry.status] || entry.status;
+              const entryDisplay = tStatus(entry.status);
 
               return (
                 <div

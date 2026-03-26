@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -36,6 +37,7 @@ export function OrgMigrationPanel({
   platformConfigured,
   orgS3Configured,
 }: OrgMigrationPanelProps) {
+  const t = useTranslations("Admin.migrationPanel");
   const [expanded, setExpanded] = useState(false);
   const [job, setJob] = useState<MigrationStatus | null>(null);
   const [loading, setLoading] = useState(false);
@@ -88,14 +90,14 @@ export function OrgMigrationPanel({
         body: JSON.stringify({ type }),
       });
       if (res.ok) {
-        toast.success("Migration started");
+        toast.success(t("migrationStarted"));
         await fetchStatus();
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to start migration");
+        toast.error(data.error || t("failedToStartMigration"));
       }
     } catch {
-      toast.error("Failed to start migration");
+      toast.error(t("failedToStartMigration"));
     } finally {
       setTriggering(false);
     }
@@ -122,7 +124,7 @@ export function OrgMigrationPanel({
         onClick={() => setExpanded((v) => !v)}
       >
         <Database className="size-3.5" />
-        {expanded ? "Hide migration" : "Migrate files"}
+        {expanded ? t("hideMigration") : t("migrateFiles")}
       </button>
 
       {expanded && (
@@ -130,7 +132,7 @@ export function OrgMigrationPanel({
           {loading ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Loading...
+              {t("loading")}
             </div>
           ) : (
             <>
@@ -143,12 +145,12 @@ export function OrgMigrationPanel({
                       <TooltipTrigger asChild>
                         <span tabIndex={0}>
                           <Button size="sm" disabled className="pointer-events-none">
-                            Migrate Local to Platform S3
+                            {t("migrateLocalToPlatformS3")}
                           </Button>
                         </span>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Platform S3 not configured</p>
+                        <p>{t("platformS3NotConfigured")}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -161,7 +163,7 @@ export function OrgMigrationPanel({
                     {triggering || isRunning ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-1" />
                     ) : null}
-                    Migrate Local to Platform S3
+                    {t("migrateLocalToPlatformS3")}
                   </Button>
                 )}
 
@@ -174,15 +176,15 @@ export function OrgMigrationPanel({
                           <TooltipTrigger asChild>
                             <span tabIndex={0}>
                               <Button size="sm" disabled className="pointer-events-none">
-                                Migrate Own S3 to Platform S3
+                                {t("migrateOwnS3ToPlatformS3")}
                               </Button>
                             </span>
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>
                               {!platformConfigured
-                                ? "Platform S3 not configured"
-                                : "Org S3 credentials not configured"}
+                                ? t("platformS3NotConfigured")
+                                : t("orgS3NotConfigured")}
                             </p>
                           </TooltipContent>
                         </Tooltip>
@@ -197,7 +199,7 @@ export function OrgMigrationPanel({
                         {triggering || isRunning ? (
                           <Loader2 className="h-4 w-4 animate-spin mr-1" />
                         ) : null}
-                        Migrate Own S3 to Platform S3
+                        {t("migrateOwnS3ToPlatformS3")}
                       </Button>
                     )}
                   </>
@@ -208,7 +210,7 @@ export function OrgMigrationPanel({
               {isRunning && total > 0 && (
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>{processed} of {total} files processed</span>
+                    <span>{t("filesProcessed", { processed, total })}</span>
                     <span>{percent}%</span>
                   </div>
                   <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
@@ -218,9 +220,9 @@ export function OrgMigrationPanel({
                     />
                   </div>
                   <div className="flex gap-4 text-xs text-muted-foreground">
-                    <span className="text-green-600">{migrated} migrated</span>
-                    {failed > 0 && <span className="text-red-600">{failed} failed</span>}
-                    {skipped > 0 && <span className="text-yellow-600">{skipped} skipped</span>}
+                    <span className="text-green-600">{t("migratedLabel", { count: migrated })}</span>
+                    {failed > 0 && <span className="text-red-600">{t("failedLabel", { count: failed })}</span>}
+                    {skipped > 0 && <span className="text-yellow-600">{t("skippedLabel", { count: skipped })}</span>}
                   </div>
                 </div>
               )}
@@ -228,7 +230,7 @@ export function OrgMigrationPanel({
               {isRunning && total === 0 && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Scanning files...
+                  {t("scanningFiles")}
                 </div>
               )}
 
@@ -237,20 +239,20 @@ export function OrgMigrationPanel({
                 <div className="rounded-md border p-3 space-y-1">
                   <div className="flex items-center gap-2 text-sm font-medium text-green-700">
                     <CheckCircle2 className="h-4 w-4" />
-                    Migration Complete
+                    {t("migrationComplete")}
                   </div>
                   <div className="text-sm text-muted-foreground space-y-0.5">
-                    <p>{migrated} file{migrated !== 1 ? "s" : ""} migrated</p>
+                    <p>{t("filesMigrated", { count: migrated })}</p>
                     {failed > 0 && (
-                      <p className="text-red-600">{failed} file{failed !== 1 ? "s" : ""} failed</p>
+                      <p className="text-red-600">{t("filesFailed", { count: failed })}</p>
                     )}
                     {skipped > 0 && (
-                      <p className="text-yellow-600">{skipped} file{skipped !== 1 ? "s" : ""} skipped</p>
+                      <p className="text-yellow-600">{t("filesSkipped", { count: skipped })}</p>
                     )}
-                    {total === 0 && <p>No files found to migrate.</p>}
+                    {total === 0 && <p>{t("noFilesToMigrate")}</p>}
                     {job?.completedAt && (
                       <p className="text-xs mt-1">
-                        Completed at {new Date(job.completedAt).toLocaleString()}
+                        {t("completedAt", { date: new Date(job.completedAt).toLocaleString() })}
                       </p>
                     )}
                   </div>
@@ -262,13 +264,13 @@ export function OrgMigrationPanel({
                 <div className="rounded-md border border-red-200 bg-red-50 p-3 space-y-1">
                   <div className="flex items-center gap-2 text-sm font-medium text-red-700">
                     <XCircle className="h-4 w-4" />
-                    Migration Failed
+                    {t("migrationFailed")}
                   </div>
                   {job?.error && (
                     <p className="text-sm text-red-600">{job.error}</p>
                   )}
                   <div className="text-sm text-muted-foreground">
-                    <p>{migrated} migrated, {failed} failed, {skipped} skipped of {total} total</p>
+                    <p>{t("migrationSummary", { migrated, failed, skipped, total })}</p>
                   </div>
                 </div>
               )}
@@ -277,7 +279,7 @@ export function OrgMigrationPanel({
               {(isCompleted || isFailed) && failed > 0 && (
                 <div className="flex items-start gap-2 text-xs text-yellow-700 bg-yellow-50 rounded p-2">
                   <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-                  <span>Some files failed to migrate. You can re-run the migration to retry failed files.</span>
+                  <span>{t("retryHint")}</span>
                 </div>
               )}
             </>

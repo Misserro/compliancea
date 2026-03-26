@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
@@ -21,6 +22,7 @@ interface PendingReplacement {
 }
 
 export default function PoliciesPage() {
+  const t = useTranslations('Documents');
   const [documents, setDocuments] = useState<Document[]>([]);
   const [pendingReplacements, setPendingReplacements] = useState<PendingReplacement[]>([]);
   const [docTypes, setDocTypes] = useState<string[]>(["policy", "procedure"]);
@@ -49,11 +51,11 @@ export default function PoliciesPage() {
         if (data.policiesTabDocTypes) setDocTypes(data.policiesTabDocTypes);
       }
     } catch (err) {
-      toast.error(`Failed to load: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(t('policies.loadError', { error: err instanceof Error ? err.message : "Unknown error" }));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadData();
@@ -86,9 +88,9 @@ export default function PoliciesPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Policies</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">{t('policies.title')}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Policies, procedures, and other controlled documents with version history.
+          {t('policies.subtitle')}
         </p>
       </div>
 
@@ -97,7 +99,7 @@ export default function PoliciesPage() {
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
-            placeholder="Search by name…"
+            placeholder={t('policies.searchByName')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 h-9 text-sm"
@@ -114,11 +116,11 @@ export default function PoliciesPage() {
         <div className="flex items-center gap-2">
           <Switch id="active-only" checked={activeOnly} onCheckedChange={setActiveOnly} />
           <Label htmlFor="active-only" className="text-sm cursor-pointer">
-            Active only
+            {t('policies.activeOnly')}
           </Label>
         </div>
         <span className="text-xs text-muted-foreground">
-          {filtered.length} document{filtered.length !== 1 ? "s" : ""}
+          {t('policies.documentCount', { count: filtered.length })}
         </span>
       </div>
 

@@ -507,7 +507,8 @@ describe("Layout org guard — static code verification (Criterion 4)", () => {
     const content: string = readFileSync(noOrgPath, "utf-8");
     // Should be a meaningful page, not empty
     expect(content.length).toBeGreaterThan(50);
-    expect(content.toLowerCase()).toContain("organization");
+    // Page uses i18n translation keys — check for noOrg key reference
+    expect(content).toMatch(/noOrg|organization/i);
   });
 });
 

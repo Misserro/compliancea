@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,28 +57,29 @@ function formatDate(dateStr: string): string {
   }
 }
 
-function formatRelativeExpiry(dateStr: string): string {
+function formatRelativeExpiry(dateStr: string, t: (key: string, values?: Record<string, string | number | Date>) => string): string {
   try {
     const now = new Date();
     const expires = new Date(dateStr);
     const diffMs = expires.getTime() - now.getTime();
 
-    if (diffMs <= 0) return "Expired";
+    if (diffMs <= 0) return t("expired");
 
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    if (diffDays > 1) return `Expires in ${diffDays} days`;
-    if (diffDays === 1) return "Expires tomorrow";
-    if (diffHours > 1) return `Expires in ${diffHours} hours`;
-    if (diffHours === 1) return "Expires in 1 hour";
-    return "Expires soon";
+    if (diffDays > 1) return t("expiresInDays", { count: diffDays });
+    if (diffDays === 1) return t("expiresTomorrow");
+    if (diffHours > 1) return t("expiresInHours", { count: diffHours });
+    if (diffHours === 1) return t("expiresIn1Hour");
+    return t("expiresSoon");
   } catch {
     return dateStr;
   }
 }
 
 export default function MembersPage() {
+  const t = useTranslations("Settings.members");
   const { data: sessionData } = useSession();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,10 +110,10 @@ export default function MembersPage() {
         setMembers(data.members);
       } else {
         const err = await res.json();
-        toast.error(err.error || "Failed to load members");
+        toast.error(err.error || t("failedToLoadMembers"));
       }
     } catch (err) {
-      toast.error(`Failed to load members: ${err instanceof Error ? err.message : "Unknown error"}`);
+      toast.error(t("failedToLoadMembersError", { error: err instanceof Error ? err.message : "Unknown error" }));
     } finally {
       setLoading(false);
     }
@@ -151,10 +153,10 @@ export default function MembersPage() {
         setMembers((prev) =>
           prev.map((m) => (m.userId === userId ? { ...m, role: newRole } : m))
         );
-        toast.success("Role updated");
+        toast.success(t("roleUpdated"));
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to update role");
+        toast.error(data.error || t("failedToUpdateRole"));
       }
     } catch (err) {
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -171,10 +173,10 @@ export default function MembersPage() {
       });
       if (res.ok) {
         setMembers((prev) => prev.filter((m) => m.userId !== userId));
-        toast.success("Member removed");
+        toast.success(t("memberRemoved"));
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to remove member");
+        toast.error(data.error || t("failedToRemoveMember"));
       }
     } catch (err) {
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -187,7 +189,7 @@ export default function MembersPage() {
     e.preventDefault();
     const trimmedEmail = inviteEmail.trim();
     if (!trimmedEmail) {
-      toast.error("Email is required");
+      toast.error(t("emailRequired"));
       return;
     }
 
@@ -205,7 +207,7 @@ export default function MembersPage() {
         setInviteEmail("");
         loadInvites();
       } else {
-        toast.error(data.error || "Failed to generate invite");
+        toast.error(data.error || t("failedToGenerateInvite"));
       }
     } catch (err) {
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -218,9 +220,9 @@ export default function MembersPage() {
     if (!inviteResult) return;
     try {
       await navigator.clipboard.writeText(inviteResult.inviteUrl);
-      toast.success("Link copied!");
+      toast.success(t("linkCopied"));
     } catch {
-      toast.error("Failed to copy link");
+      toast.error(t("failedToCopyLink"));
     }
   }
 
@@ -232,10 +234,10 @@ export default function MembersPage() {
       });
       if (res.ok || res.status === 204) {
         setPendingInvites((prev) => prev.filter((inv) => inv.token !== token));
-        toast.success("Invite revoked");
+        toast.success(t("inviteRevoked"));
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to revoke invite");
+        toast.error(data.error || t("failedToRevokeInvite"));
       }
     } catch (err) {
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -271,9 +273,9 @@ export default function MembersPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Members</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Organization members and their roles.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -281,7 +283,7 @@ export default function MembersPage() {
         <div className="rounded-lg border p-8 text-center">
           <Users className="size-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">
-            You are the only member of this organization.
+            {t("onlyMember")}
           </p>
         </div>
       ) : null}
@@ -290,11 +292,11 @@ export default function MembersPage() {
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr>
-              <th className="text-left px-4 py-3 font-medium">Name</th>
-              <th className="text-left px-4 py-3 font-medium">Email</th>
-              <th className="text-left px-4 py-3 font-medium">Role</th>
-              <th className="text-left px-4 py-3 font-medium">Joined</th>
-              {canManage && <th className="px-4 py-3 font-medium text-right">Actions</th>}
+              <th className="text-left px-4 py-3 font-medium">{t("nameHeader")}</th>
+              <th className="text-left px-4 py-3 font-medium">{t("emailHeader")}</th>
+              <th className="text-left px-4 py-3 font-medium">{t("roleHeader")}</th>
+              <th className="text-left px-4 py-3 font-medium">{t("joinedHeader")}</th>
+              {canManage && <th className="px-4 py-3 font-medium text-right">{t("actionsHeader")}</th>}
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -311,7 +313,7 @@ export default function MembersPage() {
                       <span className="text-muted-foreground italic">--</span>
                     )}
                     {isSelf && (
-                      <span className="text-xs text-muted-foreground ml-2">(you)</span>
+                      <span className="text-xs text-muted-foreground ml-2">{t("you")}</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{member.email}</td>
@@ -334,7 +336,7 @@ export default function MembersPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setPermDialogMember(member)}
-                            title="Manage permissions"
+                            title={t("managePermissions")}
                           >
                             <Shield className="size-4" />
                           </Button>
@@ -373,21 +375,18 @@ export default function MembersPage() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Remove member</AlertDialogTitle>
+                                <AlertDialogTitle>{t("removeMember")}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Are you sure you want to remove{" "}
-                                  <strong>{member.name || member.email}</strong> from
-                                  the organization? They will lose access to all
-                                  organization data.
+                                  {t("removeMemberConfirm", { name: member.name || member.email })}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => handleRemove(member.userId)}
                                   className="bg-destructive text-white hover:bg-destructive/90"
                                 >
-                                  Remove
+                                  {t("remove")}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -405,7 +404,7 @@ export default function MembersPage() {
                   colSpan={canManage ? 5 : 4}
                   className="px-4 py-8 text-center text-muted-foreground"
                 >
-                  No members found.
+                  {t("noMembers")}
                 </td>
               </tr>
             )}
@@ -417,9 +416,9 @@ export default function MembersPage() {
       {canManage && (
         <div className="space-y-4">
           <div>
-            <h2 className="text-lg font-semibold tracking-tight">Invite Member</h2>
+            <h2 className="text-lg font-semibold tracking-tight">{t("inviteMember")}</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Generate a shareable invite link for a new member.
+              {t("inviteSubtitle")}
             </p>
           </div>
 
@@ -427,7 +426,7 @@ export default function MembersPage() {
             <div className="flex-1 max-w-sm">
               <Input
                 type="email"
-                placeholder="Email address"
+                placeholder={t("emailPlaceholder")}
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 disabled={inviteLoading}
@@ -444,7 +443,7 @@ export default function MembersPage() {
             </Select>
             <Button type="submit" disabled={inviteLoading}>
               <Mail className="size-4" />
-              {inviteLoading ? "Generating..." : "Generate invite link"}
+              {inviteLoading ? t("generating") : t("generateInviteLink")}
             </Button>
           </form>
 
@@ -463,7 +462,7 @@ export default function MembersPage() {
                 onClick={handleCopyLink}
               >
                 <Copy className="size-4" />
-                Copy
+                {t("copy")}
               </Button>
               <Button
                 type="button"
@@ -481,16 +480,16 @@ export default function MembersPage() {
       {/* Pending Invites Section -- only shown when there are pending invites */}
       {canManage && pendingInvites.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold tracking-tight">Pending Invites</h2>
+          <h2 className="text-lg font-semibold tracking-tight">{t("pendingInvites")}</h2>
 
           <div className="rounded-lg border overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium">Email</th>
-                  <th className="text-left px-4 py-3 font-medium">Role</th>
-                  <th className="text-left px-4 py-3 font-medium">Expires</th>
-                  <th className="px-4 py-3 font-medium text-right">Actions</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("emailHeader")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("roleHeader")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("expires")}</th>
+                  <th className="px-4 py-3 font-medium text-right">{t("actionsHeader")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -508,7 +507,7 @@ export default function MembersPage() {
                     <td className="px-4 py-3 text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
                         <Clock className="size-3" />
-                        {formatRelativeExpiry(invite.expiresAt)}
+                        {formatRelativeExpiry(invite.expiresAt, t)}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -520,25 +519,23 @@ export default function MembersPage() {
                             className="text-destructive hover:text-destructive"
                             disabled={revokingToken === invite.token}
                           >
-                            {revokingToken === invite.token ? "Revoking..." : "Revoke"}
+                            {revokingToken === invite.token ? t("revoking") : t("revoke")}
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Revoke invite</AlertDialogTitle>
+                            <AlertDialogTitle>{t("revokeInvite")}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to revoke the invite for{" "}
-                              <strong>{invite.email}</strong>? The invite link will
-                              become invalid immediately.
+                              {t("revokeInviteConfirm", { email: invite.email })}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleRevokeInvite(invite.token)}
                               className="bg-destructive text-white hover:bg-destructive/90"
                             >
-                              Revoke
+                              {t("revoke")}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>

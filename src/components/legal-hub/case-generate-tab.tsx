@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import {
   FileDown,
@@ -35,6 +36,7 @@ export function CaseGenerateTab({
   parties,
   deadlines,
 }: CaseGenerateTabProps) {
+  const t = useTranslations('LegalHub');
   const [templates, setTemplates] = useState<CaseTemplate[]>([]);
   const [generatedDocs, setGeneratedDocs] = useState<CaseGeneratedDoc[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
@@ -102,7 +104,7 @@ export function CaseGenerateTab({
 
   const handleGenerate = async () => {
     if (!selectedTemplateId) {
-      setError("Wybierz szablon");
+      setError(t('generate.selectTemplateError'));
       return;
     }
 
@@ -124,7 +126,7 @@ export function CaseGenerateTab({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Nie udało się wygenerować dokumentu");
+        throw new Error(data.error || t('generate.generateError'));
       }
 
       const data = await res.json();
@@ -138,7 +140,7 @@ export function CaseGenerateTab({
       await fetchGeneratedDocs();
     } catch (err) {
       console.error("Error generating document:", err);
-      setError(err instanceof Error ? err.message : "Generowanie nie powiodło się");
+      setError(err instanceof Error ? err.message : t('generate.generateFailed'));
     } finally {
       setGenerating(false);
     }
@@ -175,7 +177,7 @@ export function CaseGenerateTab({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Nie udało się zapisać");
+        throw new Error(data.error || t('generate.saveError'));
       }
 
       const data = await res.json();
@@ -183,7 +185,7 @@ export function CaseGenerateTab({
       await fetchGeneratedDocs();
     } catch (err) {
       console.error("Error saving document:", err);
-      setError(err instanceof Error ? err.message : "Zapisywanie nie powiodło się");
+      setError(err instanceof Error ? err.message : t('generate.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -202,21 +204,21 @@ export function CaseGenerateTab({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Nie udało się wyeksportować");
+        throw new Error(data.error || t('generate.exportError'));
       }
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${activeDoc.document_name || "dokument"}.docx`;
+      a.download = `${activeDoc.document_name || "document"}.docx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Error exporting document:", err);
-      setError(err instanceof Error ? err.message : "Eksport nie powiódł się");
+      setError(err instanceof Error ? err.message : t('generate.exportFailed'));
     } finally {
       setExporting(false);
     }
@@ -224,9 +226,7 @@ export function CaseGenerateTab({
 
   const handleDeleteDoc = async (doc: CaseGeneratedDoc) => {
     if (
-      !window.confirm(
-        `Usunąć wygenerowany dokument "${doc.document_name}"?`
-      )
+      !window.confirm(t('generate.deleteConfirm', { name: doc.document_name }))
     ) {
       return;
     }
@@ -238,7 +238,7 @@ export function CaseGenerateTab({
       );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Nie udało się usunąć");
+        throw new Error(data.error || t('generate.deleteError'));
       }
 
       if (activeDoc?.id === doc.id) {
@@ -247,7 +247,7 @@ export function CaseGenerateTab({
       await fetchGeneratedDocs();
     } catch (err) {
       console.error("Error deleting document:", err);
-      alert(err instanceof Error ? err.message : "Nie udało się usunąć");
+      alert(err instanceof Error ? err.message : t('generate.deleteError'));
     }
   };
 
@@ -263,18 +263,18 @@ export function CaseGenerateTab({
         {/* Left column: Template selector + generate */}
         <div className="space-y-4">
           <div className="border rounded-lg p-4 space-y-4">
-            <h3 className="text-sm font-semibold">Generuj nowy dokument</h3>
+            <h3 className="text-sm font-semibold">{t('generate.title')}</h3>
 
             {loadingTemplates ? (
               <Skeleton className="h-10 w-full" />
             ) : templates.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Brak dostępnych szablonów. Utwórz jeden w{" "}
+                {t('generate.noTemplates')}{" "}
                 <a
                   href="/legal-hub/templates"
                   className="underline text-primary"
                 >
-                  Szablonach
+                  {t('generate.templatesLink')}
                 </a>
                 .
               </p>
@@ -282,18 +282,18 @@ export function CaseGenerateTab({
               <>
                 <div>
                   <label className="text-sm font-medium mb-1 block">
-                    Wybierz szablon
+                    {t('generate.selectTemplate')}
                   </label>
                   <select
                     value={selectedTemplateId}
                     onChange={(e) => setSelectedTemplateId(e.target.value)}
                     className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                   >
-                    <option value="">-- Wybierz szablon --</option>
-                    {templates.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                        {t.document_type ? ` (${t.document_type})` : ""}
+                    <option value="">{t('generate.selectTemplatePlaceholder')}</option>
+                    {templates.map((tmpl) => (
+                      <option key={tmpl.id} value={tmpl.id}>
+                        {tmpl.name}
+                        {tmpl.document_type ? ` (${tmpl.document_type})` : ""}
                       </option>
                     ))}
                   </select>
@@ -301,12 +301,12 @@ export function CaseGenerateTab({
 
                 <div>
                   <label className="text-sm font-medium mb-1 block">
-                    Nazwa dokumentu
+                    {t('generate.documentName')}
                   </label>
                   <Input
                     value={documentName}
                     onChange={(e) => setDocumentName(e.target.value)}
-                    placeholder="Nazwa dla generowanego dokumentu"
+                    placeholder={t('generate.documentNamePlaceholder')}
                   />
                 </div>
 
@@ -321,7 +321,7 @@ export function CaseGenerateTab({
                   ) : (
                     <Wand2 className="w-4 h-4 mr-2" />
                   )}
-                  {generating ? "Generowanie..." : "Generuj dokument"}
+                  {generating ? t('generate.generating') : t('generate.generateDocument')}
                 </Button>
               </>
             )}
@@ -329,7 +329,7 @@ export function CaseGenerateTab({
 
           {/* Generated documents history */}
           <div className="border rounded-lg p-4 space-y-3">
-            <h3 className="text-sm font-semibold">Wygenerowane dokumenty</h3>
+            <h3 className="text-sm font-semibold">{t('generate.generatedDocuments')}</h3>
             {loadingDocs ? (
               <div className="space-y-2">
                 <Skeleton className="h-10 w-full" />
@@ -337,7 +337,7 @@ export function CaseGenerateTab({
               </div>
             ) : generatedDocs.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Nie wygenerowano jeszcze żadnych dokumentów.
+                {t('generate.noGeneratedDocs')}
               </p>
             ) : (
               <div className="divide-y max-h-[400px] overflow-y-auto">
@@ -372,7 +372,7 @@ export function CaseGenerateTab({
                         onClick={() => handleOpenDoc(doc)}
                         className="text-xs"
                       >
-                        Otwórz
+                        {t('generate.openDoc')}
                       </Button>
                       <Button
                         variant="ghost"
@@ -380,7 +380,7 @@ export function CaseGenerateTab({
                         onClick={() => handleDeleteDoc(doc)}
                         className="text-destructive hover:text-destructive text-xs"
                       >
-                        Usuń
+                        {t('generate.deleteDoc')}
                       </Button>
                     </div>
                   </div>
@@ -400,7 +400,7 @@ export function CaseGenerateTab({
                     {activeDoc.document_name}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Edycja wygenerowanego dokumentu
+                    {t('generate.editingGeneratedDoc')}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -409,7 +409,7 @@ export function CaseGenerateTab({
                     size="sm"
                     onClick={handleSave}
                     disabled={saving}
-                    title="Zapisz zmiany"
+                    title={t('generate.saveChanges')}
                   >
                     {saving ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -422,7 +422,7 @@ export function CaseGenerateTab({
                     size="sm"
                     onClick={handleExport}
                     disabled={exporting}
-                    title="Eksportuj jako DOCX"
+                    title={t('generate.exportDocx')}
                   >
                     {exporting ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -434,7 +434,7 @@ export function CaseGenerateTab({
                     variant="ghost"
                     size="sm"
                     onClick={handleCloseEditor}
-                    title="Zamknij edytor"
+                    title={t('generate.closeEditor')}
                   >
                     <X className="w-4 h-4" />
                   </Button>
@@ -450,9 +450,7 @@ export function CaseGenerateTab({
           ) : (
             <div className="border rounded-lg p-8 text-center text-muted-foreground text-sm">
               <Wand2 className="w-8 h-8 mx-auto mb-3 opacity-40" />
-              <p>
-                Wybierz szablon i wygeneruj dokument lub otwórz istniejący z historii.
-              </p>
+              <p>{t('generate.editorPlaceholder')}</p>
             </div>
           )}
         </div>

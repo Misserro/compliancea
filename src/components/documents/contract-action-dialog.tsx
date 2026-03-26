@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,7 @@ export function ContractActionDialog({
   onNavigateToObligations,
   onRefreshDocuments,
 }: ContractActionDialogProps) {
+  const t = useTranslations('Documents');
   const [summary, setSummary] = useState<ContractSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [executing, setExecuting] = useState(false);
@@ -78,11 +80,11 @@ export function ContractActionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Contract Management</DialogTitle>
+          <DialogTitle>{t('contract.title')}</DialogTitle>
         </DialogHeader>
 
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">{t('contract.loading')}</p>
         ) : summary ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -94,24 +96,24 @@ export function ContractActionDialog({
 
             {summary.client && (
               <p className="text-sm text-muted-foreground">
-                Client: {summary.client}
+                {t('contract.client', { name: summary.client })}
               </p>
             )}
 
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="bg-muted p-2 rounded">
-                <div className="text-muted-foreground text-xs">Total Obligations</div>
+                <div className="text-muted-foreground text-xs">{t('contract.totalObligations')}</div>
                 <div className="font-medium">{summary.totalObligations}</div>
               </div>
               <div className="bg-muted p-2 rounded">
-                <div className="text-muted-foreground text-xs">Overdue</div>
+                <div className="text-muted-foreground text-xs">{t('contract.overdue')}</div>
                 <div className="font-medium text-destructive">{summary.overdueCount}</div>
               </div>
             </div>
 
             {summary.nextDeadline && (
               <p className="text-sm text-muted-foreground">
-                Next deadline: {new Date(summary.nextDeadline).toLocaleDateString()}
+                {t('contract.nextDeadline', { date: new Date(summary.nextDeadline).toLocaleDateString() })}
               </p>
             )}
 
@@ -124,11 +126,11 @@ export function ContractActionDialog({
                   size="sm"
                   disabled={executing}
                   onClick={() => {
-                    if (action.confirm && !confirm(action.confirm)) return;
+                    if (action.confirmKey && !confirm(t(action.confirmKey))) return;
                     executeAction(action.value);
                   }}
                 >
-                  {action.label}
+                  {t(action.labelKey)}
                 </Button>
               ))}
             </div>
@@ -148,15 +150,15 @@ export function ContractActionDialog({
                   onNavigateToObligations();
                 }}
               >
-                View All Obligations
+                {t('contract.viewAllObligations')}
               </Button>
               <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-                Close
+                {t('contract.close')}
               </Button>
             </div>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Contract not found.</p>
+          <p className="text-sm text-muted-foreground">{t('contract.notFound')}</p>
         )}
       </DialogContent>
     </Dialog>
@@ -167,15 +169,15 @@ function getAvailableActions(status: string) {
   switch (status) {
     case "unsigned":
       return [
-        { value: "sign", label: "Sign Contract", variant: "default", confirm: null },
+        { value: "sign", labelKey: "contract.signContract" as const, variant: "default", confirmKey: null },
       ];
     case "signed":
       return [
-        { value: "activate", label: "Activate", variant: "default", confirm: null },
+        { value: "activate", labelKey: "contract.activate" as const, variant: "default", confirmKey: null },
       ];
     case "active":
       return [
-        { value: "terminate", label: "Terminate", variant: "destructive", confirm: "Are you sure you want to terminate this contract?" },
+        { value: "terminate", labelKey: "contract.terminate" as const, variant: "destructive", confirmKey: "contract.terminateConfirm" as const },
       ];
     case "terminated":
       return [];

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -31,6 +32,8 @@ export function ActionProposalCard({
   onApplied,
   onRejected,
 }: ActionProposalCardProps) {
+  const t = useTranslations('LegalHub');
+  const tCommon = useTranslations('Common');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
@@ -50,14 +53,14 @@ export function ActionProposalCard({
       );
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Wystąpił błąd podczas stosowania zmian.");
+        setError(data.error || t('actionProposal.applyError'));
         return;
       }
       setApplied(true);
       onApplied();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Błąd sieci. Spróbuj ponownie."
+        err instanceof Error ? err.message : t('actionProposal.networkError')
       );
     } finally {
       setLoading(false);
@@ -77,7 +80,7 @@ export function ActionProposalCard({
         </p>
         <Separator />
         <div className="space-y-1.5">
-          <p className="text-xs font-medium">Proponowane zmiany:</p>
+          <p className="text-xs font-medium">{t('actionProposal.proposedChanges')}</p>
           <ul className="list-disc list-inside space-y-0.5">
             {proposal.actions.map((action, i) => (
               <li key={i} className="text-xs text-muted-foreground">
@@ -90,11 +93,11 @@ export function ActionProposalCard({
       <CardFooter>
         {applied ? (
           <p className="text-xs text-green-700 dark:text-green-400">
-            Zmiany zostały zastosowane.
+            {t('actionProposal.changesApplied')}
           </p>
         ) : rejected ? (
           <p className="text-xs text-muted-foreground">
-            Propozycja odrzucona.
+            {t('actionProposal.proposalRejected')}
           </p>
         ) : (
           <div className="space-y-2">
@@ -105,7 +108,7 @@ export function ActionProposalCard({
                 disabled={loading}
               >
                 {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                Zatwierdź
+                {t('actionProposal.approve')}
               </Button>
               <Button
                 size="sm"
@@ -113,7 +116,7 @@ export function ActionProposalCard({
                 onClick={handleCancel}
                 disabled={loading}
               >
-                Anuluj
+                {tCommon('cancel')}
               </Button>
             </div>
             {error && (

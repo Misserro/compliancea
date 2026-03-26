@@ -1,7 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
-  LEGAL_CASE_STATUS_DISPLAY,
   LEGAL_CASE_STATUS_COLORS,
 } from "@/lib/constants";
 
@@ -16,11 +16,14 @@ export function FirmStatsPanel({
   finalizedLast30Days,
   loading,
 }: FirmStatsPanelProps) {
+  const t = useTranslations('LegalHub');
+  const tStatus = useTranslations("CaseStatuses");
+
   if (loading) {
     return (
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-          Statystyki spraw
+          {t('firmStats.title')}
         </h4>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -42,12 +45,12 @@ export function FirmStatsPanel({
   return (
     <div className="space-y-3">
       <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-        Statystyki spraw
+        {t('firmStats.title')}
       </h4>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {/* Total cases card */}
         <div className="rounded-lg border p-3">
-          <p className="text-xs text-muted-foreground mb-1">Wszystkie sprawy</p>
+          <p className="text-xs text-muted-foreground mb-1">{t('firmStats.totalCases')}</p>
           <p className="text-2xl font-bold">{totalCases}</p>
         </div>
 
@@ -61,7 +64,7 @@ export function FirmStatsPanel({
                 }`}
               />
               <p className="text-xs text-muted-foreground truncate">
-                {LEGAL_CASE_STATUS_DISPLAY[status] || status}
+                {tStatus(status)}
               </p>
             </div>
             <p className="text-2xl font-bold">{count}</p>
@@ -71,7 +74,7 @@ export function FirmStatsPanel({
         {/* Finalized last 30 days */}
         <div className="rounded-lg border p-3 border-green-200 dark:border-green-800">
           <p className="text-xs text-muted-foreground mb-1">
-            Zamknięte (30 dni)
+            {t('firmStats.closedLast30Days')}
           </p>
           <p className="text-2xl font-bold text-green-700 dark:text-green-400">
             {finalizedLast30Days}

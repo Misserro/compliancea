@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronDown, ChevronRight, Download, GitBranch, GitMerge } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,7 @@ function PolicyRow({
   pending: PendingReplacement | undefined;
   onRefresh: () => void;
 }) {
+  const t = useTranslations('Documents');
   const [historyOpen, setHistoryOpen] = useState(false);
   const [replaceModalOpen, setReplaceModalOpen] = useState(false);
 
@@ -64,7 +66,7 @@ function PolicyRow({
                   : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
               }`}
             >
-              {isActive ? "Active" : "Archived"}
+              {isActive ? t('policies.active') : t('policies.archived')}
             </Badge>
             {doc.category && (
               <Badge variant="secondary" className="text-xs px-1.5 py-0">
@@ -83,20 +85,20 @@ function PolicyRow({
           size="sm"
           className="h-7 px-2 text-xs"
           onClick={() => window.open(`/api/documents/${doc.id}/download?download=true`, '_blank')}
-          title="Download document"
+          title={t('policies.downloadDocument')}
         >
           <Download className="h-3.5 w-3.5 mr-1" />
-          Download
+          {t('policies.download')}
         </Button>
         <Button
           variant="ghost"
           size="sm"
           className="h-7 px-2 text-xs"
           onClick={() => setReplaceModalOpen(true)}
-          title="Set as replacement for another document"
+          title={t('policies.replaceTitle')}
         >
           <GitMerge className="h-3.5 w-3.5 mr-1" />
-          Replace
+          {t('policies.replace')}
         </Button>
         <Button
           variant="ghost"
@@ -105,7 +107,7 @@ function PolicyRow({
           onClick={() => setHistoryOpen((v) => !v)}
         >
           <GitBranch className="h-3.5 w-3.5 mr-1" />
-          History
+          {t('policies.history')}
         </Button>
       </div>
 
@@ -140,13 +142,14 @@ function PolicyRow({
 }
 
 export function PoliciesList({ documents, pendingReplacements, onRefresh }: PoliciesListProps) {
+  const t = useTranslations('Documents');
   const pendingMap = new Map(pendingReplacements.map((p) => [p.new_document_id, p]));
 
   if (documents.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <p>No policy documents found.</p>
-        <p className="text-sm mt-1">Upload a policy or procedure, or adjust the document types in Settings.</p>
+        <p>{t('policies.noDocuments')}</p>
+        <p className="text-sm mt-1">{t('policies.noDocumentsHint')}</p>
       </div>
     );
   }

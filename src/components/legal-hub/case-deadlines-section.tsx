@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus, Pencil, Trash2, X, Check, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations, useLocale } from "next-intl";
 import type { CaseDeadline } from "@/lib/types";
 
 interface CaseDeadlinesSectionProps {
@@ -15,15 +16,6 @@ const DEADLINE_TYPES = [
   "hearing", "response_deadline", "appeal_deadline",
   "filing_deadline", "payment", "other",
 ] as const;
-
-const DEADLINE_TYPE_LABELS: Record<string, string> = {
-  hearing: "Rozprawa",
-  response_deadline: "Termin odpowiedzi",
-  appeal_deadline: "Termin odwołania",
-  filing_deadline: "Termin złożenia",
-  payment: "Płatność",
-  other: "Inny",
-};
 
 const DEADLINE_STATUS_COLORS: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
@@ -55,19 +47,22 @@ function isOverdue(deadline: CaseDeadline): boolean {
   return due < now;
 }
 
-function formatDate(dateString: string) {
-  try {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return dateString;
-  }
-}
-
 export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadlinesSectionProps) {
+  const t = useTranslations('LegalHub');
+  const locale = useLocale();
+
+  function formatDate(dateString: string) {
+    try {
+      return new Date(dateString).toLocaleDateString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return dateString;
+    }
+  }
+
   const [showForm, setShowForm] = useState(false);
   const [editingDeadline, setEditingDeadline] = useState<CaseDeadline | null>(null);
   const [form, setForm] = useState<DeadlineFormData>(emptyForm);
@@ -99,11 +94,11 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
 
   const handleSave = async () => {
     if (!form.title.trim()) {
-      toast.error("Tytuł jest wymagany");
+      toast.error(t('deadline.titleRequired'));
       return;
     }
     if (!form.due_date) {
-      toast.error("Data terminu jest wymagana");
+      toast.error(t('deadline.dueDateRequired'));
       return;
     }
 
@@ -122,14 +117,14 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Nie udało się zapisać terminu");
+        throw new Error(data.error || t('deadline.saveError'));
       }
 
-      toast.success(editingDeadline ? "Termin zaktualizowany" : "Termin dodany");
+      toast.success(editingDeadline ? t('deadline.deadlineUpdated') : t('deadline.deadlineAdded'));
       handleCancel();
       onRefresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nie udało się zapisać");
+      toast.error(err instanceof Error ? err.message : t('deadline.saveError'));
     } finally {
       setSaving(false);
     }
@@ -145,12 +140,12 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Nie udało się zaktualizować terminu");
+        throw new Error(data.error || t('deadline.updateError'));
       }
-      toast.success("Termin oznaczony jako zrealizowany");
+      toast.success(t('deadline.markedAsMet'));
       onRefresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nie udało się zaktualizować");
+      toast.error(err instanceof Error ? err.message : t('deadline.updateError'));
     } finally {
       setActionId(null);
     }
@@ -164,12 +159,12 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Nie udało się usunąć terminu");
+        throw new Error(data.error || t('deadline.deleteError'));
       }
-      toast.success("Termin usunięty");
+      toast.success(t('deadline.deadlineDeleted'));
       onRefresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nie udało się usunąć");
+      toast.error(err instanceof Error ? err.message : t('deadline.deleteError'));
     } finally {
       setActionId(null);
     }
@@ -181,19 +176,19 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
   return (
     <div className="bg-card border rounded-lg p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">Terminy</span>
+        <span className="text-xs font-medium text-muted-foreground">{t('deadlines')}</span>
         <button
           className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded hover:bg-muted text-muted-foreground"
           onClick={openAdd}
         >
           <Plus className="w-3.5 h-3.5" />
-          Dodaj termin
+          {t('deadline.addDeadline')}
         </button>
       </div>
 
       {/* Deadline list */}
       {deadlines.length === 0 && !showForm && (
-        <p className="text-sm text-muted-foreground py-2">Brak terminów.</p>
+        <p className="text-sm text-muted-foreground py-2">{t('deadline.noDeadlines')}</p>
       )}
 
       {deadlines.map((deadline) => {
@@ -202,7 +197,9 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
           overdue
             ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
             : DEADLINE_STATUS_COLORS[deadline.status] || DEADLINE_STATUS_COLORS.pending;
-        const statusLabel = overdue ? "Przeterminowany" : deadline.status.charAt(0).toUpperCase() + deadline.status.slice(1);
+        const statusLabel = overdue
+          ? t('deadlineStatus.overdue')
+          : t(`deadlineStatus.${deadline.status}` as Parameters<typeof t>[0]);
 
         return (
           <div
@@ -215,7 +212,7 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-medium">{deadline.title}</span>
                 <span className="px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground">
-                  {DEADLINE_TYPE_LABELS[deadline.deadline_type] || deadline.deadline_type}
+                  {t(`deadlineType.${deadline.deadline_type}` as Parameters<typeof t>[0])}
                 </span>
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusColor}`}>
                   {statusLabel}
@@ -223,10 +220,10 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span className={overdue ? "text-red-600 dark:text-red-400 font-medium" : ""}>
-                  Termin: {formatDate(deadline.due_date)}
+                  {t('deadline.dueDateLabel', { date: formatDate(deadline.due_date) })}
                 </span>
                 {deadline.completed_at && (
-                  <span>Ukończono: {formatDate(deadline.completed_at)}</span>
+                  <span>{t('deadline.completedLabel', { date: formatDate(deadline.completed_at) })}</span>
                 )}
               </div>
               {deadline.description && (
@@ -239,7 +236,7 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
                   className="p-1 rounded hover:bg-muted text-green-600 dark:text-green-400"
                   onClick={() => handleMarkMet(deadline.id)}
                   disabled={actionId === deadline.id}
-                  title="Oznacz jako spełniony"
+                  title={t('deadline.markAsMet')}
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                 </button>
@@ -247,7 +244,7 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
               <button
                 className="p-1 rounded hover:bg-muted text-muted-foreground"
                 onClick={() => openEdit(deadline)}
-                title="Edytuj"
+                title={t('deadline.editDeadline')}
               >
                 <Pencil className="w-3.5 h-3.5" />
               </button>
@@ -255,7 +252,7 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
                 className="p-1 rounded hover:bg-muted text-destructive"
                 onClick={() => handleDelete(deadline.id)}
                 disabled={actionId === deadline.id}
-                title="Usuń"
+                title={t('deadline.deadlineDeleted')}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -269,14 +266,14 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
         <div className="border rounded p-3 space-y-3 bg-muted/30">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">
-              {editingDeadline ? "Edytuj termin" : "Dodaj termin"}
+              {editingDeadline ? t('deadline.editDeadline') : t('deadline.addDeadline')}
             </span>
             <div className="flex items-center gap-1">
               <button
                 className="p-1 rounded hover:bg-muted text-green-600 dark:text-green-400"
                 onClick={handleSave}
                 disabled={saving}
-                title="Zapisz"
+                title={t('deadline.addDeadline')}
               >
                 <Check className="w-4 h-4" />
               </button>
@@ -284,7 +281,7 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
                 className="p-1 rounded hover:bg-muted text-muted-foreground"
                 onClick={handleCancel}
                 disabled={saving}
-                title="Anuluj"
+                title={t('deadline.addDeadline')}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -292,31 +289,31 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className={fieldLabel}>Tytuł *</label>
+              <label className={fieldLabel}>{t('deadline.titleLabel')}</label>
               <input
                 type="text"
                 className={inputClass}
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                placeholder="Tytuł terminu..."
+                placeholder={t('deadline.titlePlaceholder')}
               />
             </div>
             <div>
-              <label className={fieldLabel}>Typ *</label>
+              <label className={fieldLabel}>{t('deadline.typeLabel')}</label>
               <select
                 className={inputClass}
                 value={form.deadline_type}
                 onChange={(e) => setForm({ ...form, deadline_type: e.target.value })}
               >
-                {DEADLINE_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {DEADLINE_TYPE_LABELS[t]}
+                {DEADLINE_TYPES.map((dt) => (
+                  <option key={dt} value={dt}>
+                    {t(`deadlineType.${dt}`)}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className={fieldLabel}>Data terminu *</label>
+              <label className={fieldLabel}>{t('deadline.dueDateFieldLabel')}</label>
               <input
                 type="date"
                 className={inputClass}
@@ -325,12 +322,12 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
               />
             </div>
             <div className="md:col-span-2">
-              <label className={fieldLabel}>Opis</label>
+              <label className={fieldLabel}>{t('deadline.descriptionLabel')}</label>
               <textarea
                 className={`${inputClass} min-h-[40px]`}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Dodatkowe informacje..."
+                placeholder={t('deadline.descriptionPlaceholder')}
                 rows={2}
               />
             </div>

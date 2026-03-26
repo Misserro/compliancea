@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { DocumentCard } from "./document-card";
 import { DEPARTMENTS, DOC_TYPES } from "@/lib/constants";
@@ -140,6 +141,7 @@ function DeptSection({
   canEdit,
   canDelete,
 }: DeptSectionProps) {
+  const t = useTranslations('Documents');
   const [open, setOpen] = useState(true);
 
   // Group docs within this dept by normalised doc_type
@@ -190,7 +192,7 @@ function DeptSection({
           <span className="text-sm font-semibold">{dept}</span>
         </div>
         <span className="text-xs text-muted-foreground">
-          {docs.length} document{docs.length !== 1 ? "s" : ""}
+          {t('list.documentCount', { count: docs.length })}
         </span>
       </button>
 
@@ -226,6 +228,7 @@ export function DocumentList({
   canEdit,
   canDelete,
 }: DocumentListProps) {
+  const t = useTranslations('Documents');
   const grouped: Record<string, Document[]> = {};
   const uncategorized: Document[] = [];
 
@@ -241,8 +244,8 @@ export function DocumentList({
   if (documents.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <p>No documents found.</p>
-        <p className="text-sm mt-1">Try adjusting your search or filters.</p>
+        <p>{t('list.noDocuments')}</p>
+        <p className="text-sm mt-1">{t('list.noDocumentsHint')}</p>
       </div>
     );
   }
@@ -270,7 +273,7 @@ export function DocumentList({
       })}
 
       {uncategorized.length > 0 && (
-        <DeptSection dept="Uncategorized" docs={uncategorized} {...sharedProps} />
+        <DeptSection dept={t('list.uncategorized')} docs={uncategorized} {...sharedProps} />
       )}
     </div>
   );

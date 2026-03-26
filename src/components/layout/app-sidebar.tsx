@@ -19,6 +19,8 @@ import {
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { useSession, signOut } from "next-auth/react";
+import { useTranslations } from "next-intl";
+import { LanguageSwitcher } from "./language-switcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +52,8 @@ export function AppSidebar() {
   const [memberships, setMemberships] = useState<OrgMembership[]>([]);
   const [isSwitching, setIsSwitching] = useState(false);
   const { theme, setTheme } = useTheme();
+  const t = useTranslations("Common");
+  const tSidebar = useTranslations("Sidebar");
   const { data: sessionData, update } = useSession();
   const userEmail = sessionData?.user?.email ?? "";
   const userName = sessionData?.user?.name || userEmail;
@@ -176,11 +180,11 @@ export function AppSidebar() {
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === "/dashboard" || pathname.startsWith("/dashboard/")}
-                  tooltip="Dashboard"
+                  tooltip={tSidebar("dashboard")}
                 >
                   <Link href="/dashboard">
                     <LayoutDashboard />
-                    <span>Dashboard</span>
+                    <span>{tSidebar("dashboard")}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -191,18 +195,18 @@ export function AppSidebar() {
         {/* Contract Hub */}
         {canView('contracts') && canAccessFeature('contracts') && (
         <SidebarGroup>
-          <SidebarGroupLabel>Contract Hub</SidebarGroupLabel>
+          <SidebarGroupLabel>{tSidebar("contractHub")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === "/contracts" || pathname.startsWith("/contracts/")}
-                  tooltip="Contracts"
+                  tooltip={tSidebar("contracts")}
                 >
                   <Link href="/contracts">
                     <ClipboardCheck />
-                    <span>Contracts</span>
+                    <span>{tSidebar("contracts")}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -210,11 +214,11 @@ export function AppSidebar() {
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === "/obligations" || pathname.startsWith("/obligations/")}
-                  tooltip="Obligations"
+                  tooltip={tSidebar("obligations")}
                 >
                   <Link href="/obligations">
                     <ListChecks />
-                    <span>Obligations</span>
+                    <span>{tSidebar("obligations")}</span>
                     {overdueCount > 0 && (
                       <Badge
                         variant="destructive"
@@ -234,18 +238,18 @@ export function AppSidebar() {
         {/* Legal Hub */}
         {canView('legal_hub') && canAccessFeature('legal_hub') && (
         <SidebarGroup>
-          <SidebarGroupLabel>Legal Hub</SidebarGroupLabel>
+          <SidebarGroupLabel>{tSidebar("legalHub")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === "/legal-hub" || (pathname.startsWith("/legal-hub/") && !pathname.startsWith("/legal-hub/templates") && !pathname.startsWith("/legal-hub/firm"))}
-                  tooltip="Cases"
+                  tooltip={tSidebar("cases")}
                 >
                   <Link href="/legal-hub">
                     <Scale />
-                    <span>Sprawy</span>
+                    <span>{tSidebar("cases")}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -253,11 +257,11 @@ export function AppSidebar() {
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === "/legal-hub/templates" || pathname.startsWith("/legal-hub/templates/")}
-                  tooltip="Templates"
+                  tooltip={tSidebar("templates")}
                 >
                   <Link href="/legal-hub/templates">
                     <FileText />
-                    <span>Szablony</span>
+                    <span>{tSidebar("templates")}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -266,11 +270,11 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={pathname === "/legal-hub/firm" || pathname.startsWith("/legal-hub/firm/")}
-                    tooltip="Moja kancelaria"
+                    tooltip={tSidebar("myLawFirm")}
                   >
                     <Link href="/legal-hub/firm">
                       <Building2 />
-                      <span>Moja kancelaria</span>
+                      <span>{tSidebar("myLawFirm")}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -283,15 +287,15 @@ export function AppSidebar() {
         {/* Documents Hub */}
         {(() => {
           const docHubItems = [
-            { title: "Documents", href: "/documents", icon: FileText, resource: "documents", feature: "" },
-            { title: "Policies", href: "/policies", icon: Shield, resource: "policies", feature: "policies" },
-            { title: "Analyze & Process", href: "/document-tools", icon: Layers, resource: "documents", feature: "" },
-            { title: "Ask Library", href: "/ask", icon: MessageSquare, resource: "documents", feature: "" },
+            { title: tSidebar("documents"), href: "/documents", icon: FileText, resource: "documents", feature: "" },
+            { title: tSidebar("policies"), href: "/policies", icon: Shield, resource: "policies", feature: "policies" },
+            { title: tSidebar("analyzeProcess"), href: "/document-tools", icon: Layers, resource: "documents", feature: "" },
+            { title: tSidebar("askLibrary"), href: "/ask", icon: MessageSquare, resource: "documents", feature: "" },
           ].filter((item) => canView(item.resource) && (!item.feature || canAccessFeature(item.feature)));
 
           return docHubItems.length > 0 ? (
             <SidebarGroup>
-              <SidebarGroupLabel>Documents Hub</SidebarGroupLabel>
+              <SidebarGroupLabel>{tSidebar("documentsHub")}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {docHubItems.map((item) => {
@@ -318,9 +322,9 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {[
-                { title: "Settings", href: "/settings", icon: Settings },
-                { title: "Organization", href: "/settings/org", icon: Building2 },
-                { title: "Members", href: "/org/members", icon: Users },
+                { title: tSidebar("settings"), href: "/settings", icon: Settings },
+                { title: tSidebar("organization"), href: "/settings/org", icon: Building2 },
+                { title: tSidebar("members"), href: "/org/members", icon: Users },
               ].map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                 return (
@@ -340,11 +344,11 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={pathname.startsWith("/admin")}
-                    tooltip="Admin Panel"
+                    tooltip={tSidebar("admin")}
                   >
                     <Link href="/admin">
                       <Shield />
-                      <span>Admin Panel</span>
+                      <span>{tSidebar("admin")}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -367,7 +371,7 @@ export function AppSidebar() {
               className="mt-1 w-full justify-start gap-2 text-muted-foreground hover:text-foreground px-0"
             >
               <LogOut className="h-4 w-4" />
-              <span className="text-xs">Sign out</span>
+              <span className="text-xs">{t("signOut")}</span>
             </Button>
           </div>
         )}
@@ -381,6 +385,7 @@ export function AppSidebar() {
           <ThemeIcon theme={theme} />
           <span className="text-xs">{themeLabel()}</span>
         </Button>
+        <LanguageSwitcher />
       </SidebarFooter>
     </Sidebar>
   );

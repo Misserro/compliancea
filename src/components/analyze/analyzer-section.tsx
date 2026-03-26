@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -26,16 +27,16 @@ import { StatusMessage } from "@/components/ui/status-message";
 
 type OutputOption = "translation" | "summary" | "key_points" | "todos";
 
-const OUTPUT_OPTIONS: { value: OutputOption; label: string; defaultChecked: boolean }[] = [
-  { value: "translation", label: "Full Translation", defaultChecked: true },
-  { value: "summary", label: "Summary", defaultChecked: true },
-  { value: "key_points", label: "Key Points", defaultChecked: false },
-  { value: "todos", label: "Department To-Do List", defaultChecked: false },
-];
-
 const LANGUAGES = ["English", "Polish", "German", "French", "Spanish"];
 
 export function AnalyzerSection() {
+  const t = useTranslations('Documents');
+  const OUTPUT_OPTIONS: { value: OutputOption; label: string; defaultChecked: boolean }[] = [
+    { value: "translation", label: t('analyzer.fullTranslation'), defaultChecked: true },
+    { value: "summary", label: t('analyzer.summary'), defaultChecked: true },
+    { value: "key_points", label: t('analyzer.keyPoints'), defaultChecked: false },
+    { value: "todos", label: t('analyzer.departmentTodoList'), defaultChecked: false },
+  ];
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedOutputs, setSelectedOutputs] = useState<Set<OutputOption>>(
     new Set(OUTPUT_OPTIONS.filter((o) => o.defaultChecked).map((o) => o.value))
@@ -69,18 +70,18 @@ export function AnalyzerSection() {
   async function handleAnalyze() {
     const file = fileInputRef.current?.files?.[0];
     if (!file) {
-      setStatus({ message: "Please select a PDF or DOCX file.", type: "error" });
+      setStatus({ message: t('analyzer.selectFile'), type: "error" });
       return;
     }
 
     if (selectedOutputs.size === 0) {
-      setStatus({ message: "Select at least one output.", type: "error" });
+      setStatus({ message: t('analyzer.selectOutput'), type: "error" });
       return;
     }
 
     setLoading(true);
     setResult(null);
-    setStatus({ message: "Uploading and analyzing...", type: "info" });
+    setStatus({ message: t('analyzer.uploading'), type: "info" });
 
     try {
       const fd = new FormData();
@@ -94,16 +95,16 @@ export function AnalyzerSection() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: res.statusText }));
-        setStatus({ message: `Analysis failed: ${data.error || "Unknown error"}`, type: "error" });
+        setStatus({ message: t('analyzer.analysisFailed', { error: data.error || "Unknown error" }), type: "error" });
         return;
       }
 
       const data: AnalyzerResult = await res.json();
       setResult(data);
-      setStatus({ message: "Analysis complete.", type: "success" });
+      setStatus({ message: t('analyzer.analysisComplete'), type: "success" });
     } catch (err) {
       setStatus({
-        message: `Network error: ${err instanceof Error ? err.message : String(err)}`,
+        message: t('analyzer.networkError', { error: err instanceof Error ? err.message : String(err) }),
         type: "error",
       });
     } finally {
@@ -142,7 +143,7 @@ export function AnalyzerSection() {
     <div className="space-y-4">
       {/* File input */}
       <div className="space-y-2">
-        <Label htmlFor="analyzer-file">Document (PDF or DOCX)</Label>
+        <Label htmlFor="analyzer-file">{t('analyzer.fileLabel')}</Label>
         <Input
           id="analyzer-file"
           ref={fileInputRef}
@@ -153,7 +154,7 @@ export function AnalyzerSection() {
 
       {/* Output checkboxes */}
       <div className="space-y-2">
-        <Label>Outputs</Label>
+        <Label>{t('analyzer.outputs')}</Label>
         <div className="flex flex-wrap gap-4">
           {OUTPUT_OPTIONS.map((opt) => (
             <div key={opt.value} className="flex items-center gap-2">
@@ -172,7 +173,7 @@ export function AnalyzerSection() {
 
       {/* Language select */}
       <div className="space-y-2">
-        <Label>Target Language</Label>
+        <Label>{t('analyzer.targetLanguage')}</Label>
         <Select value={targetLanguage} onValueChange={setTargetLanguage}>
           <SelectTrigger className="w-48">
             <SelectValue />
@@ -193,10 +194,10 @@ export function AnalyzerSection() {
           onClick={handleAnalyze}
           disabled={loading || selectedOutputs.size === 0}
         >
-          {loading ? "Analyzing..." : "Analyze"}
+          {loading ? t('analyzer.analyzing') : t('analyzer.analyzeButton')}
         </Button>
         <Button variant="outline" onClick={handleClear} disabled={loading}>
-          Clear
+          {t('analyzer.clear')}
         </Button>
       </div>
 
@@ -214,12 +215,12 @@ export function AnalyzerSection() {
               <div className="flex items-center justify-between">
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm" className="font-medium">
-                    {translationOpen ? "Hide" : "Show"} Translation
+                    {translationOpen ? t('analyzer.hideTranslation') : t('analyzer.showTranslation')}
                   </Button>
                 </CollapsibleTrigger>
                 {result.translated_text && (
                   <Button variant="outline" size="sm" onClick={exportTranslation}>
-                    Export as DOCX
+                    {t('analyzer.exportDocx')}
                   </Button>
                 )}
               </div>
@@ -230,7 +231,7 @@ export function AnalyzerSection() {
                   </pre>
                 ) : (
                   <p className="text-sm text-muted-foreground mt-2">
-                    No translated text in response.
+                    {t('analyzer.noTranslation')}
                   </p>
                 )}
               </CollapsibleContent>
@@ -240,12 +241,12 @@ export function AnalyzerSection() {
           {/* Summary */}
           {selectedOutputs.has("summary") && (
             <div>
-              <h4 className="text-sm font-medium mb-2">Summary</h4>
+              <h4 className="text-sm font-medium mb-2">{t('analyzer.summaryHeading')}</h4>
               {result.summary ? (
                 <p className="text-sm leading-relaxed">{result.summary}</p>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  No summary in response.
+                  {t('analyzer.noSummary')}
                 </p>
               )}
             </div>
@@ -254,7 +255,7 @@ export function AnalyzerSection() {
           {/* Key Points */}
           {selectedOutputs.has("key_points") && (
             <div>
-              <h4 className="text-sm font-medium mb-2">Key Points</h4>
+              <h4 className="text-sm font-medium mb-2">{t('analyzer.keyPointsHeading')}</h4>
               {result.key_points && result.key_points.length > 0 ? (
                 <div className="space-y-3">
                   {result.key_points.map((kp: KeyPoint, i: number) => (
@@ -273,7 +274,7 @@ export function AnalyzerSection() {
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  No key points in response.
+                  {t('analyzer.noKeyPoints')}
                 </p>
               )}
             </div>
@@ -283,10 +284,10 @@ export function AnalyzerSection() {
           {selectedOutputs.has("todos") && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-medium">Department To-Do Lists</h4>
+                <h4 className="text-sm font-medium">{t('analyzer.todoHeading')}</h4>
                 {result.todos_by_department && (
                   <Button variant="outline" size="sm" onClick={exportTodosCsv}>
-                    Export as CSV
+                    {t('analyzer.exportCsv')}
                   </Button>
                 )}
               </div>
@@ -308,7 +309,7 @@ export function AnalyzerSection() {
                                 <p>{item.task}</p>
                                 {item.source_point && (
                                   <p className="text-xs text-muted-foreground">
-                                    Source: {item.source_point}
+                                    {t('analyzer.source', { point: item.source_point })}
                                   </p>
                                 )}
                               </div>
@@ -316,7 +317,7 @@ export function AnalyzerSection() {
                           </div>
                         ) : (
                           <p className="ml-4 text-sm text-muted-foreground">
-                            No tasks.
+                            {t('analyzer.noTasks')}
                           </p>
                         )}
                       </div>
@@ -325,7 +326,7 @@ export function AnalyzerSection() {
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  No to-dos in response.
+                  {t('analyzer.noTodos')}
                 </p>
               )}
             </div>

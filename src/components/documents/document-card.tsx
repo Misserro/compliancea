@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronDown, ChevronRight, Pencil, Play, Briefcase, Trash2, Download, Tags } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,13 +50,14 @@ export function DocumentCard({
   canEdit = true,
   canDelete = true,
 }: DocumentCardProps) {
+  const t = useTranslations('Documents');
   const [isOpen, setIsOpen] = useState(expanded);
   const [tagsOpen, setTagsOpen] = useState(false);
   const isContract = doc.doc_type === "contract" || doc.doc_type === "agreement";
   const parsedTags: string[] = (() => {
     try {
-      const t = JSON.parse(doc.tags || '[]');
-      return Array.isArray(t) ? t : [];
+      const parsed = JSON.parse(doc.tags || '[]');
+      return Array.isArray(parsed) ? parsed : [];
     } catch { return []; }
   })();
 
@@ -86,15 +88,15 @@ export function DocumentCard({
                 <span className="font-medium text-sm truncate">{doc.name}</span>
                 <span className="text-xs text-muted-foreground shrink-0">
                   {doc.processed
-                    ? `${doc.word_count?.toLocaleString() || 0} words`
-                    : "Not processed"}
+                    ? t('card.words', { count: doc.word_count?.toLocaleString() || 0 })
+                    : t('card.notProcessed')}
                 </span>
                 {parsedTags.length > 0 && (
                   <button
                     onClick={(e) => { e.stopPropagation(); setTagsOpen(v => !v); }}
                     className="text-xs text-muted-foreground hover:text-foreground underline decoration-dashed underline-offset-2 shrink-0"
                   >
-                    Tags ({parsedTags.length})
+                    {t('card.tags', { count: parsedTags.length })}
                   </button>
                 )}
               </div>
@@ -119,7 +121,7 @@ export function DocumentCard({
                 <div className="mt-3 pt-3 border-t space-y-2">
                   {/* Category selector */}
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-16">Category:</span>
+                    <span className="text-xs text-muted-foreground w-16">{t('card.category')}</span>
                     <Select
                       value={doc.category || "none"}
                       onValueChange={(val) =>
@@ -130,7 +132,7 @@ export function DocumentCard({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">Unassigned</SelectItem>
+                        <SelectItem value="none">{t('card.unassigned')}</SelectItem>
                         {DEPARTMENTS.map((dept) => (
                           <SelectItem key={dept} value={dept}>
                             {dept}
@@ -143,14 +145,14 @@ export function DocumentCard({
                   {/* Client */}
                   {doc.client && (
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground w-16">Client:</span>
+                      <span className="text-xs text-muted-foreground w-16">{t('card.client')}</span>
                       <span className="text-xs">{doc.client}</span>
                     </div>
                   )}
 
                   {/* Added date */}
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-16">Added:</span>
+                    <span className="text-xs text-muted-foreground w-16">{t('card.added')}</span>
                     <span className="text-xs">
                       {new Date(doc.added_at).toLocaleDateString()}
                     </span>
@@ -167,7 +169,7 @@ export function DocumentCard({
                   size="icon"
                   className="h-7 w-7"
                   onClick={() => onEditMetadata(doc)}
-                  title="Edit metadata"
+                  title={t('card.editMetadata')}
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
@@ -180,7 +182,7 @@ export function DocumentCard({
                     size="icon"
                     className="h-7 w-7"
                     onClick={() => window.open(`/api/documents/${doc.id}/download`, "_blank")}
-                    title="Download"
+                    title={t('card.download')}
                   >
                     <Download className="h-3.5 w-3.5" />
                   </Button>
@@ -191,7 +193,7 @@ export function DocumentCard({
                       className="h-7 w-7"
                       onClick={() => onRetag(doc.id)}
                       disabled={retagging}
-                      title="Retag document"
+                      title={t('card.retagDocument')}
                     >
                       <Tags className="h-3.5 w-3.5" />
                     </Button>
@@ -204,7 +206,7 @@ export function DocumentCard({
                   className="h-7 w-7"
                   onClick={() => onProcess(doc.id)}
                   disabled={processing}
-                  title="Process document"
+                  title={t('card.processDocument')}
                 >
                   <Play className="h-3.5 w-3.5" />
                 </Button>
@@ -216,7 +218,7 @@ export function DocumentCard({
                   size="icon"
                   className="h-7 w-7"
                   onClick={() => onManageContract(doc.id)}
-                  title="Manage contract"
+                  title={t('card.manageContract')}
                 >
                   <Briefcase className="h-3.5 w-3.5" />
                 </Button>
@@ -228,11 +230,11 @@ export function DocumentCard({
                   size="icon"
                   className="h-7 w-7 text-destructive hover:text-destructive"
                   onClick={() => {
-                    if (confirm(`Delete "${doc.name}"?`)) {
+                    if (confirm(t('card.deleteConfirm', { name: doc.name }))) {
                       onDelete(doc.id);
                     }
                   }}
-                  title="Delete"
+                  title={t('card.deleteTitle')}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>

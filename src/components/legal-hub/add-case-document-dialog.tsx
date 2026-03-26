@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import { CASE_DOCUMENT_CATEGORIES } from "@/lib/constants";
 
 interface LibraryDocument {
@@ -43,6 +44,7 @@ export function AddCaseDocumentDialog({
   onOpenChange,
   onSaved,
 }: AddCaseDocumentDialogProps) {
+  const tCat = useTranslations("DocCategories");
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"upload" | "link">("upload");
   const [documentCategory, setDocumentCategory] = useState("other");
@@ -293,9 +295,9 @@ export function AddCaseDocumentDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {CASE_DOCUMENT_CATEGORIES.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>
-                    {c.label}
+                {CASE_DOCUMENT_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {tCat(cat)}
                   </SelectItem>
                 ))}
               </SelectContent>

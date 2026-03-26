@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +36,7 @@ export function CreateOrgDialog({
   onOpenChange,
   onCreated,
 }: CreateOrgDialogProps) {
+  const t = useTranslations("Admin.createOrgDialog");
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
@@ -85,15 +87,15 @@ export function CreateOrgDialog({
     const trimmedEmail = ownerEmail.trim();
 
     if (!trimmedName) {
-      setError("Organization name is required");
+      setError(t("orgNameRequired"));
       return;
     }
     if (!trimmedSlug) {
-      setError("Slug is required");
+      setError(t("slugRequired"));
       return;
     }
     if (!SLUG_PATTERN.test(trimmedSlug)) {
-      setError("Slug must contain only lowercase letters, numbers, and hyphens");
+      setError(t("slugInvalid"));
       return;
     }
 
@@ -116,7 +118,7 @@ export function CreateOrgDialog({
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Failed to create organization");
+        setError(data.error || t("failedToCreate"));
         return;
       }
 
@@ -126,13 +128,13 @@ export function CreateOrgDialog({
 
       if (data.inviteUrl) {
         setInviteUrl(data.inviteUrl);
-        toast.success("Organization created with invite link");
+        toast.success(t("orgCreatedWithInvite"));
       } else if (data.warning) {
         // Stay in dialog to show warning — user clicks Done to close
         setSuccess(true);
-        toast.success("Organization created");
+        toast.success(t("orgCreated"));
       } else {
-        toast.success("Organization created");
+        toast.success(t("orgCreated"));
         onCreated();
       }
     } catch (err) {
@@ -145,9 +147,9 @@ export function CreateOrgDialog({
   async function handleCopyInvite() {
     try {
       await navigator.clipboard.writeText(inviteUrl);
-      toast.success("Invite link copied!");
+      toast.success(t("inviteLinkCopied"));
     } catch {
-      toast.error("Failed to copy link");
+      toast.error(t("failedToCopyLink"));
     }
   }
 
@@ -162,9 +164,9 @@ export function CreateOrgDialog({
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Organization created</DialogTitle>
+            <DialogTitle>{t("orgCreatedTitle")}</DialogTitle>
             <DialogDescription>
-              Share this invite link with the first owner to set up the organization.
+              {t("orgCreatedInviteDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-3">
@@ -180,7 +182,7 @@ export function CreateOrgDialog({
               onClick={handleCopyInvite}
             >
               <Copy className="size-4" />
-              Copy
+              {t("copy")}
             </Button>
           </div>
           {warning && (
@@ -189,7 +191,7 @@ export function CreateOrgDialog({
             </div>
           )}
           <DialogFooter>
-            <Button onClick={handleDoneWithInvite}>Done</Button>
+            <Button onClick={handleDoneWithInvite}>{t("done")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -202,9 +204,9 @@ export function CreateOrgDialog({
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Organization created</DialogTitle>
+            <DialogTitle>{t("orgCreatedTitle")}</DialogTitle>
             <DialogDescription>
-              The organization has been created successfully.
+              {t("orgCreatedSuccessDesc")}
             </DialogDescription>
           </DialogHeader>
           {warning && (
@@ -213,7 +215,7 @@ export function CreateOrgDialog({
             </div>
           )}
           <DialogFooter>
-            <Button onClick={handleDoneWithInvite}>Done</Button>
+            <Button onClick={handleDoneWithInvite}>{t("done")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -224,17 +226,17 @@ export function CreateOrgDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create organization</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>
-            Create a new organization. Optionally invite a first owner.
+            {t("subtitle")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="org-name">Organization Name</Label>
+            <Label htmlFor="org-name">{t("orgNameLabel")}</Label>
             <Input
               id="org-name"
-              placeholder="Acme Corp"
+              placeholder={t("orgNamePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={submitting}
@@ -242,30 +244,30 @@ export function CreateOrgDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="org-slug">Slug</Label>
+            <Label htmlFor="org-slug">{t("slugLabel")}</Label>
             <Input
               id="org-slug"
-              placeholder="acme-corp"
+              placeholder={t("slugPlaceholder")}
               value={slug}
               onChange={(e) => handleSlugChange(e.target.value)}
               disabled={submitting}
             />
             <p className="text-xs text-muted-foreground">
-              Lowercase letters, numbers, and hyphens only.
+              {t("slugHint")}
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="owner-email">Invite first owner (optional)</Label>
+            <Label htmlFor="owner-email">{t("ownerEmailLabel")}</Label>
             <Input
               id="owner-email"
               type="email"
-              placeholder="owner@example.com"
+              placeholder={t("ownerEmailPlaceholder")}
               value={ownerEmail}
               onChange={(e) => setOwnerEmail(e.target.value)}
               disabled={submitting}
             />
             <p className="text-xs text-muted-foreground">
-              An invite link will be generated for this email.
+              {t("ownerEmailHint")}
             </p>
           </div>
           {error && (
@@ -280,10 +282,10 @@ export function CreateOrgDialog({
               onClick={() => handleOpenChange(false)}
               disabled={submitting}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit" disabled={submitting}>
-              {submitting ? "Creating..." : "Create"}
+              {submitting ? t("creating") : t("create")}
             </Button>
           </DialogFooter>
         </form>

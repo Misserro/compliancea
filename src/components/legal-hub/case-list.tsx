@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { LegalCase } from "@/lib/types";
 import { CaseCard } from "./case-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +20,7 @@ export function CaseList({
   selectedStatuses,
   selectedCaseType,
 }: CaseListProps) {
+  const t = useTranslations('LegalHub');
   const [cases, setCases] = useState<LegalCase[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,7 +30,7 @@ export function CaseList({
     setLoading(true);
     fetch("/api/legal-hub/cases", { signal: controller.signal })
       .then((res) => {
-        if (!res.ok) throw new Error("Nie udało się załadować spraw");
+        if (!res.ok) throw new Error(t('dashboard.fetchError'));
         return res.json();
       })
       .then((data) => {
@@ -36,14 +38,14 @@ export function CaseList({
       })
       .catch((err) => {
         if (err.name === "AbortError") return;
-        toast.error(err instanceof Error ? err.message : "Błąd podczas ładowania spraw");
+        toast.error(err instanceof Error ? err.message : t('dashboard.loadError'));
       })
       .finally(() => {
         setLoading(false);
       });
 
     return () => controller.abort();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, t]);
 
   const q = searchQuery.trim().toLowerCase();
   const filteredCases = cases
@@ -69,8 +71,8 @@ export function CaseList({
   if (cases.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <p>Brak spraw.</p>
-        <p className="text-sm mt-1">Użyj &quot;Nowa sprawa&quot;, aby rozpocząć.</p>
+        <p>{t('dashboard.noCases')}</p>
+        <p className="text-sm mt-1">{t('dashboard.noCasesHint')}</p>
       </div>
     );
   }
@@ -78,7 +80,7 @@ export function CaseList({
   if (filteredCases.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <p>Żadna sprawa nie pasuje do filtrów.</p>
+        <p>{t('dashboard.noMatchingCases')}</p>
       </div>
     );
   }

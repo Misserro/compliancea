@@ -2,6 +2,7 @@
 
 import * as HoverCard from "@radix-ui/react-hover-card";
 import { ExternalLink } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Separator } from "@/components/ui/separator";
 
 export interface CitationRecord {
@@ -15,6 +16,8 @@ export interface CitationRecord {
 }
 
 function CitationEntry({ citation }: { citation: CitationRecord }) {
+  const t = useTranslations('LegalHub');
+
   return (
     <div className="space-y-2">
       {/* Header: document name + page badge */}
@@ -54,7 +57,7 @@ function CitationEntry({ citation }: { citation: CitationRecord }) {
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
         >
-          Open document
+          {t('citation.openDocument')}
           <ExternalLink className="h-2.5 w-2.5" />
         </a>
       )}

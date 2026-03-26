@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { LEGAL_CASE_TYPES, LEGAL_CASE_TYPE_LABELS } from "@/lib/constants";
+import { useTranslations } from "next-intl";
+import { LEGAL_CASE_TYPES } from "@/lib/constants";
 import type { OrgMember } from "@/lib/types";
 
 interface NewCaseDialogProps {
@@ -18,6 +19,9 @@ export function NewCaseDialog({
   onSuccess,
 }: NewCaseDialogProps) {
   const { data: sessionData } = useSession();
+  const t = useTranslations('LegalHub');
+  const tCommon = useTranslations('Common');
+  const tType = useTranslations('CaseTypes');
   const isAdmin = sessionData?.user?.orgRole !== "member";
   const currentUserId = sessionData?.user?.id;
 
@@ -31,7 +35,6 @@ export function NewCaseDialog({
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch org members for admin assignee picker
   useEffect(() => {
     if (open && isAdmin) {
       fetch("/api/org/members")
@@ -39,17 +42,14 @@ export function NewCaseDialog({
         .then((data) => {
           if (data.members) {
             setMembers(data.members);
-            // Default to current user if not already set
             if (!assignedTo && currentUserId) {
               setAssignedTo(String(currentUserId));
             }
           }
         })
-        .catch(() => {
-          // Silently fail — admin can still create without picker
-        });
+        .catch(() => {});
     }
-  }, [open, isAdmin, currentUserId]); // assignedTo intentionally excluded — default-selection runs once on open
+  }, [open, isAdmin, currentUserId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const reset = () => {
     setTitle("");
@@ -74,11 +74,11 @@ export function NewCaseDialog({
     setError("");
 
     if (!title.trim()) {
-      setError("Tytuł jest wymagany");
+      setError(t('newCaseDialog.titleRequired'));
       return;
     }
     if (!caseType) {
-      setError("Typ sprawy jest wymagany");
+      setError(t('newCaseDialog.caseTypeRequired'));
       return;
     }
 
@@ -105,7 +105,7 @@ export function NewCaseDialog({
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Nie udało się utworzyć sprawy");
+        setError(data.error || t('newCaseDialog.createError'));
         setIsSubmitting(false);
         return;
       }
@@ -113,7 +113,7 @@ export function NewCaseDialog({
       reset();
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Nie udało się utworzyć sprawy");
+      setError(err instanceof Error ? err.message : t('newCaseDialog.createError'));
       setIsSubmitting(false);
     }
   };
@@ -123,130 +123,59 @@ export function NewCaseDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-background border rounded-lg shadow-lg w-full max-w-md p-6">
-        {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold">Nowa sprawa</h2>
+          <h2 className="text-lg font-semibold">{t('newCaseDialog.title')}</h2>
           {!isSubmitting && (
-            <button
-              onClick={handleClose}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Close"
-            >
+            <button onClick={handleClose} className="text-muted-foreground hover:text-foreground transition-colors" aria-label="Close">
               <X className="w-5 h-5" />
             </button>
           )}
         </div>
 
-        {/* Form */}
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium mb-1.5 block">
-              Tytuł <span className="text-destructive">*</span>
-            </label>
-            <input
-              type="text"
-              className="w-full px-2 py-1.5 border rounded text-sm bg-background"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Tytuł sprawy"
-            />
+            <label className="text-sm font-medium mb-1.5 block">{t('newCaseDialog.titleLabel')} <span className="text-destructive">*</span></label>
+            <input type="text" className="w-full px-2 py-1.5 border rounded text-sm bg-background" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('newCaseDialog.titlePlaceholder')} />
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1.5 block">
-              Typ sprawy <span className="text-destructive">*</span>
-            </label>
-            <select
-              className="w-full px-2 py-1.5 border rounded text-sm bg-background"
-              value={caseType}
-              onChange={(e) => setCaseType(e.target.value)}
-            >
-              <option value="">Wybierz typ sprawy...</option>
-              {LEGAL_CASE_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {LEGAL_CASE_TYPE_LABELS[t] || t}
-                </option>
-              ))}
+            <label className="text-sm font-medium mb-1.5 block">{t('newCaseDialog.caseTypeLabel')} <span className="text-destructive">*</span></label>
+            <select className="w-full px-2 py-1.5 border rounded text-sm bg-background" value={caseType} onChange={(e) => setCaseType(e.target.value)}>
+              <option value="">{t('newCaseDialog.caseTypePlaceholder')}</option>
+              {LEGAL_CASE_TYPES.map((ct) => (<option key={ct} value={ct}>{tType(ct)}</option>))}
             </select>
           </div>
 
           {isAdmin && members.length > 0 && (
             <div>
-              <label className="text-sm font-medium mb-1.5 block">
-                Przypisany do
-              </label>
-              <select
-                className="w-full px-2 py-1.5 border rounded text-sm bg-background"
-                value={assignedTo}
-                onChange={(e) => setAssignedTo(e.target.value)}
-              >
-                {members.map((m) => (
-                  <option key={m.user_id} value={String(m.user_id)}>
-                    {m.name || m.email}
-                  </option>
-                ))}
+              <label className="text-sm font-medium mb-1.5 block">{t('newCaseDialog.assignedToLabel')}</label>
+              <select className="w-full px-2 py-1.5 border rounded text-sm bg-background" value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)}>
+                {members.map((m) => (<option key={m.user_id} value={String(m.user_id)}>{m.name || m.email}</option>))}
               </select>
             </div>
           )}
 
           <div>
-            <label className="text-sm font-medium mb-1.5 block">
-              Numer referencyjny{" "}
-              <span className="text-muted-foreground font-normal">(opcjonalnie)</span>
-            </label>
-            <input
-              type="text"
-              className="w-full px-2 py-1.5 border rounded text-sm bg-background"
-              value={referenceNumber}
-              onChange={(e) => setReferenceNumber(e.target.value)}
-              placeholder="np. I C 123/26"
-            />
+            <label className="text-sm font-medium mb-1.5 block">{t('newCaseDialog.referenceNumberLabel')} <span className="text-muted-foreground font-normal">{t('newCaseDialog.referenceNumberOptional')}</span></label>
+            <input type="text" className="w-full px-2 py-1.5 border rounded text-sm bg-background" value={referenceNumber} onChange={(e) => setReferenceNumber(e.target.value)} placeholder={t('newCaseDialog.referenceNumberPlaceholder')} />
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1.5 block">
-              Sąd{" "}
-              <span className="text-muted-foreground font-normal">(opcjonalnie)</span>
-            </label>
-            <input
-              type="text"
-              className="w-full px-2 py-1.5 border rounded text-sm bg-background"
-              value={court}
-              onChange={(e) => setCourt(e.target.value)}
-              placeholder="np. Sąd Rejonowy w Warszawie"
-            />
+            <label className="text-sm font-medium mb-1.5 block">{t('newCaseDialog.courtLabel')} <span className="text-muted-foreground font-normal">{t('newCaseDialog.courtOptional')}</span></label>
+            <input type="text" className="w-full px-2 py-1.5 border rounded text-sm bg-background" value={court} onChange={(e) => setCourt(e.target.value)} placeholder={t('newCaseDialog.courtPlaceholder')} />
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1.5 block">
-              Opis{" "}
-              <span className="text-muted-foreground font-normal">(opcjonalnie)</span>
-            </label>
-            <textarea
-              className="w-full px-2 py-1.5 border rounded text-sm bg-background resize-none"
-              rows={3}
-              value={summary}
-              onChange={(e) => setSummary(e.target.value)}
-              placeholder="Krótki opis sprawy"
-            />
+            <label className="text-sm font-medium mb-1.5 block">{t('newCaseDialog.descriptionLabel')} <span className="text-muted-foreground font-normal">{t('newCaseDialog.descriptionOptional')}</span></label>
+            <textarea className="w-full px-2 py-1.5 border rounded text-sm bg-background resize-none" rows={3} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder={t('newCaseDialog.descriptionPlaceholder')} />
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <div className="flex gap-2 justify-end pt-1">
-            <button
-              onClick={handleClose}
-              disabled={isSubmitting}
-              className="px-3 py-1.5 text-sm border rounded hover:bg-muted transition-colors"
-            >
-              Anuluj
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? "Tworzenie..." : "Utwórz sprawę"}
+            <button onClick={handleClose} disabled={isSubmitting} className="px-3 py-1.5 text-sm border rounded hover:bg-muted transition-colors">{tCommon('cancel')}</button>
+            <button onClick={handleSubmit} disabled={isSubmitting} className="px-4 py-2 bg-primary text-primary-foreground rounded text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              {isSubmitting ? t('newCaseDialog.creating') : t('newCaseDialog.createCase')}
             </button>
           </div>
         </div>

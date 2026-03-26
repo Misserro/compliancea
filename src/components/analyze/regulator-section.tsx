@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -27,6 +28,7 @@ interface RegulatorSectionProps {
 const LANGUAGES = ["English", "Polish", "German", "French", "Spanish"];
 
 export function RegulatorSection({ documents }: RegulatorSectionProps) {
+  const t = useTranslations('Documents');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [outputs, setOutputs] = useState<Set<string>>(
     new Set(["generate_template"])
@@ -53,18 +55,18 @@ export function RegulatorSection({ documents }: RegulatorSectionProps) {
   async function handleAnalyze() {
     const file = fileInputRef.current?.files?.[0];
     if (!file) {
-      setStatus({ message: "Please select a file.", type: "error" });
+      setStatus({ message: t('regulator.selectFile'), type: "error" });
       return;
     }
 
     if (outputs.size === 0) {
-      setStatus({ message: "Select at least one output.", type: "error" });
+      setStatus({ message: t('regulator.selectOutput'), type: "error" });
       return;
     }
 
     setLoading(true);
     setResult(null);
-    setStatus({ message: "Analyzing regulator query...", type: "info" });
+    setStatus({ message: t('regulator.analyzingQuery'), type: "info" });
 
     try {
       const fd = new FormData();
@@ -86,7 +88,7 @@ export function RegulatorSection({ documents }: RegulatorSectionProps) {
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: res.statusText }));
         setStatus({
-          message: `Analysis failed: ${data.error || "Unknown error"}`,
+          message: t('regulator.analysisFailed', { error: data.error || "Unknown error" }),
           type: "error",
         });
         return;
@@ -94,10 +96,10 @@ export function RegulatorSection({ documents }: RegulatorSectionProps) {
 
       const data: DeskResult = await res.json();
       setResult(data);
-      setStatus({ message: "Analysis complete.", type: "success" });
+      setStatus({ message: t('regulator.analysisComplete'), type: "success" });
     } catch (err) {
       setStatus({
-        message: `Network error: ${err instanceof Error ? err.message : String(err)}`,
+        message: t('regulator.networkError', { error: err instanceof Error ? err.message : String(err) }),
         type: "error",
       });
     } finally {
@@ -132,7 +134,7 @@ export function RegulatorSection({ documents }: RegulatorSectionProps) {
     <div className="space-y-4">
       {/* File input */}
       <div className="space-y-2">
-        <Label htmlFor="regulator-file">Regulator query document (PDF or DOCX)</Label>
+        <Label htmlFor="regulator-file">{t('regulator.fileLabel')}</Label>
         <Input
           id="regulator-file"
           ref={fileInputRef}
@@ -143,7 +145,7 @@ export function RegulatorSection({ documents }: RegulatorSectionProps) {
 
       {/* Output checkboxes */}
       <div className="space-y-2">
-        <Label>Outputs</Label>
+        <Label>{t('regulator.outputs')}</Label>
         <div className="flex flex-wrap gap-4">
           <div className="flex items-center gap-2">
             <Checkbox
@@ -152,7 +154,7 @@ export function RegulatorSection({ documents }: RegulatorSectionProps) {
               onCheckedChange={() => toggleOutput("cross_reference")}
             />
             <Label htmlFor="desk-cross-ref" className="text-sm font-normal cursor-pointer">
-              Cross-Reference
+              {t('regulator.crossReference')}
             </Label>
           </div>
           <div className="flex items-center gap-2">
@@ -162,7 +164,7 @@ export function RegulatorSection({ documents }: RegulatorSectionProps) {
               onCheckedChange={() => toggleOutput("generate_template")}
             />
             <Label htmlFor="desk-template" className="text-sm font-normal cursor-pointer">
-              Generate Response Template
+              {t('regulator.generateTemplate')}
             </Label>
           </div>
         </div>
@@ -176,14 +178,14 @@ export function RegulatorSection({ documents }: RegulatorSectionProps) {
           onCheckedChange={setPreFill}
         />
         <Label htmlFor="pre-fill" className="text-sm cursor-pointer">
-          Pre-fill with library data
+          {t('regulator.preFill')}
         </Label>
       </div>
 
       {/* Document selection for cross-reference */}
       {(outputs.has("cross_reference") || preFill) && (
         <div className="space-y-2">
-          <Label>Select library documents for cross-reference</Label>
+          <Label>{t('regulator.selectDocs')}</Label>
           <DocumentSelectList
             documents={documents}
             selectedIds={selectedIds}
@@ -195,7 +197,7 @@ export function RegulatorSection({ documents }: RegulatorSectionProps) {
 
       {/* Language select */}
       <div className="space-y-2">
-        <Label>Target Language</Label>
+        <Label>{t('regulator.targetLanguage')}</Label>
         <Select value={targetLanguage} onValueChange={setTargetLanguage}>
           <SelectTrigger className="w-48">
             <SelectValue />
@@ -212,7 +214,7 @@ export function RegulatorSection({ documents }: RegulatorSectionProps) {
 
       {/* Analyze button */}
       <Button onClick={handleAnalyze} disabled={loading || outputs.size === 0}>
-        {loading ? "Analyzing..." : "Analyze"}
+        {loading ? t('regulator.analyzing') : t('regulator.analyzeButton')}
       </Button>
 
       {/* Status */}
@@ -226,15 +228,15 @@ export function RegulatorSection({ documents }: RegulatorSectionProps) {
           {/* Cross-reference table */}
           {result.cross_reference && result.cross_reference.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium mb-2">Cross-Reference Results</h4>
+              <h4 className="text-sm font-medium mb-2">{t('regulator.crossRefResults')}</h4>
               <div className="rounded-md border overflow-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="text-left p-3 font-medium">Question</th>
-                      <th className="text-left p-3 font-medium">Answer</th>
-                      <th className="text-left p-3 font-medium">Found In</th>
-                      <th className="text-left p-3 font-medium">Confidence</th>
+                      <th className="text-left p-3 font-medium">{t('regulator.thQuestion')}</th>
+                      <th className="text-left p-3 font-medium">{t('regulator.thAnswer')}</th>
+                      <th className="text-left p-3 font-medium">{t('regulator.thFoundIn')}</th>
+                      <th className="text-left p-3 font-medium">{t('regulator.thConfidence')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -245,7 +247,7 @@ export function RegulatorSection({ documents }: RegulatorSectionProps) {
                           <td className="p-3">
                             {ref.answer || (
                               <span className="text-muted-foreground">
-                                Not found
+                                {t('regulator.notFound')}
                               </span>
                             )}
                           </td>
@@ -270,9 +272,9 @@ export function RegulatorSection({ documents }: RegulatorSectionProps) {
           {result.response_template && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-medium">Response Template</h4>
+                <h4 className="text-sm font-medium">{t('regulator.responseTemplate')}</h4>
                 <Button variant="outline" size="sm" onClick={exportTemplate}>
-                  Export as DOCX
+                  {t('regulator.exportDocx')}
                 </Button>
               </div>
               <pre className="text-sm whitespace-pre-wrap bg-muted/50 rounded-md p-4 max-h-96 overflow-auto">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DEPARTMENTS } from "@/lib/constants";
@@ -24,6 +25,7 @@ export function DocumentSelectList({
   onSelectionChange,
   maxHeight = "300px",
 }: DocumentSelectListProps) {
+  const t = useTranslations('Documents');
   const grouped = useMemo(() => {
     const map = new Map<string, Document[]>();
 
@@ -31,13 +33,13 @@ export function DocumentSelectList({
     for (const dept of DEPARTMENTS) {
       map.set(dept, []);
     }
-    map.set("Uncategorized", []);
+    map.set(t('docSelect.uncategorized'), []);
 
     for (const doc of documents) {
-      const cat = doc.category || "Uncategorized";
+      const cat = doc.category || t('docSelect.uncategorized');
       const key = (DEPARTMENTS as readonly string[]).includes(cat)
         ? cat
-        : "Uncategorized";
+        : t('docSelect.uncategorized');
       const list = map.get(key);
       if (list) {
         list.push(doc);
@@ -53,7 +55,7 @@ export function DocumentSelectList({
       }
     }
     return result;
-  }, [documents]);
+  }, [documents, t]);
 
   function handleCategoryToggle(docs: Document[], checked: boolean) {
     const next = new Set(selectedIds);
@@ -87,7 +89,7 @@ export function DocumentSelectList({
   if (documents.length === 0) {
     return (
       <p className="text-sm text-muted-foreground py-2">
-        No documents available.
+        {t('docSelect.noDocuments')}
       </p>
     );
   }

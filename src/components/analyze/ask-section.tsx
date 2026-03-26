@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,7 @@ interface AskResult {
 }
 
 export function AskSection({ documents }: AskSectionProps) {
+  const t = useTranslations('Documents');
   const [searchEntireLibrary, setSearchEntireLibrary] = useState(false);
   const [includeHistorical, setIncludeHistorical] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -45,7 +47,7 @@ export function AskSection({ documents }: AskSectionProps) {
 
     setLoading(true);
     setResult(null);
-    setStatus({ message: "Searching and generating answer...", type: "info" });
+    setStatus({ message: t('ask.searchingStatus'), type: "info" });
 
     try {
       const body: { question: string; documentIds?: number[]; includeHistorical?: boolean } = {
@@ -65,16 +67,16 @@ export function AskSection({ documents }: AskSectionProps) {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: res.statusText }));
-        setStatus({ message: `Request failed: ${data.error || "Unknown error"}`, type: "error" });
+        setStatus({ message: t('ask.requestFailed', { error: data.error || "Unknown error" }), type: "error" });
         return;
       }
 
       const data: AskResult = await res.json();
       setResult(data);
-      setStatus({ message: "Answer generated.", type: "success" });
+      setStatus({ message: t('ask.answerGenerated'), type: "success" });
     } catch (err) {
       setStatus({
-        message: `Network error: ${err instanceof Error ? err.message : String(err)}`,
+        message: t('ask.networkError', { error: err instanceof Error ? err.message : String(err) }),
         type: "error",
       });
     } finally {
@@ -99,7 +101,7 @@ export function AskSection({ documents }: AskSectionProps) {
             onCheckedChange={(checked) => setSearchEntireLibrary(!!checked)}
           />
           <Label htmlFor="search-entire" className="text-sm font-normal cursor-pointer">
-            Search entire library
+            {t('ask.searchEntire')}
           </Label>
         </div>
         <div className="flex items-center gap-2">
@@ -109,7 +111,7 @@ export function AskSection({ documents }: AskSectionProps) {
             onCheckedChange={(checked) => setIncludeHistorical(!!checked)}
           />
           <Label htmlFor="include-historical" className="text-sm font-normal cursor-pointer">
-            Include historical versions
+            {t('ask.includeHistorical')}
           </Label>
         </div>
       </div>
@@ -118,10 +120,10 @@ export function AskSection({ documents }: AskSectionProps) {
       {!searchEntireLibrary && (
         <div className="space-y-2">
           <Label>
-            Select documents to search
+            {t('ask.selectDocs')}
             {!includeHistorical && activeDocuments.length < documents.length && (
               <span className="ml-2 text-xs text-muted-foreground font-normal">
-                (active only — {activeDocuments.length} of {documents.length})
+                {t('ask.activeOnly', { active: activeDocuments.length, total: documents.length })}
               </span>
             )}
           </Label>
@@ -136,10 +138,10 @@ export function AskSection({ documents }: AskSectionProps) {
 
       {/* Question input */}
       <div className="space-y-2">
-        <Label htmlFor="ask-question">Your question</Label>
+        <Label htmlFor="ask-question">{t('ask.questionLabel')}</Label>
         <Textarea
           id="ask-question"
-          placeholder="Ask a question about your documents..."
+          placeholder={t('ask.questionPlaceholder')}
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           rows={3}
@@ -148,7 +150,7 @@ export function AskSection({ documents }: AskSectionProps) {
 
       {/* Ask button */}
       <Button onClick={handleAsk} disabled={!canAsk || loading}>
-        {loading ? "Searching..." : "Ask"}
+        {loading ? t('ask.searching') : t('ask.askButton')}
       </Button>
 
       {/* Status */}
@@ -161,7 +163,7 @@ export function AskSection({ documents }: AskSectionProps) {
 
           {/* Answer */}
           <div>
-            <h4 className="text-sm font-medium mb-2">Answer</h4>
+            <h4 className="text-sm font-medium mb-2">{t('ask.answerHeading')}</h4>
             <div className="text-sm leading-relaxed whitespace-pre-wrap bg-muted/50 rounded-md p-4">
               {result.answer}
             </div>
@@ -170,7 +172,7 @@ export function AskSection({ documents }: AskSectionProps) {
           {/* Sources */}
           {result.sources && result.sources.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium mb-2">Sources</h4>
+              <h4 className="text-sm font-medium mb-2">{t('ask.sourcesHeading')}</h4>
               <div className="space-y-2">
                 {result.sources.map((source, i) => (
                   <div
