@@ -102,7 +102,7 @@ export function CaseGenerateTab({
 
   const handleGenerate = async () => {
     if (!selectedTemplateId) {
-      setError("Please select a template");
+      setError("Wybierz szablon");
       return;
     }
 
@@ -124,7 +124,7 @@ export function CaseGenerateTab({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to generate document");
+        throw new Error(data.error || "Nie udało się wygenerować dokumentu");
       }
 
       const data = await res.json();
@@ -138,7 +138,7 @@ export function CaseGenerateTab({
       await fetchGeneratedDocs();
     } catch (err) {
       console.error("Error generating document:", err);
-      setError(err instanceof Error ? err.message : "Generation failed");
+      setError(err instanceof Error ? err.message : "Generowanie nie powiodło się");
     } finally {
       setGenerating(false);
     }
@@ -175,7 +175,7 @@ export function CaseGenerateTab({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to save");
+        throw new Error(data.error || "Nie udało się zapisać");
       }
 
       const data = await res.json();
@@ -183,7 +183,7 @@ export function CaseGenerateTab({
       await fetchGeneratedDocs();
     } catch (err) {
       console.error("Error saving document:", err);
-      setError(err instanceof Error ? err.message : "Save failed");
+      setError(err instanceof Error ? err.message : "Zapisywanie nie powiodło się");
     } finally {
       setSaving(false);
     }
@@ -202,21 +202,21 @@ export function CaseGenerateTab({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to export");
+        throw new Error(data.error || "Nie udało się wyeksportować");
       }
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${activeDoc.document_name || "document"}.docx`;
+      a.download = `${activeDoc.document_name || "dokument"}.docx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Error exporting document:", err);
-      setError(err instanceof Error ? err.message : "Export failed");
+      setError(err instanceof Error ? err.message : "Eksport nie powiódł się");
     } finally {
       setExporting(false);
     }
@@ -225,7 +225,7 @@ export function CaseGenerateTab({
   const handleDeleteDoc = async (doc: CaseGeneratedDoc) => {
     if (
       !window.confirm(
-        `Delete generated document "${doc.document_name}"?`
+        `Usunąć wygenerowany dokument "${doc.document_name}"?`
       )
     ) {
       return;
@@ -238,7 +238,7 @@ export function CaseGenerateTab({
       );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to delete");
+        throw new Error(data.error || "Nie udało się usunąć");
       }
 
       if (activeDoc?.id === doc.id) {
@@ -247,7 +247,7 @@ export function CaseGenerateTab({
       await fetchGeneratedDocs();
     } catch (err) {
       console.error("Error deleting document:", err);
-      alert(err instanceof Error ? err.message : "Failed to delete");
+      alert(err instanceof Error ? err.message : "Nie udało się usunąć");
     }
   };
 
@@ -269,12 +269,12 @@ export function CaseGenerateTab({
               <Skeleton className="h-10 w-full" />
             ) : templates.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No templates available. Create one at{" "}
+                Brak dostępnych szablonów. Utwórz jeden w{" "}
                 <a
                   href="/legal-hub/templates"
                   className="underline text-primary"
                 >
-                  Templates
+                  Szablonach
                 </a>
                 .
               </p>

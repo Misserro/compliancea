@@ -54,26 +54,24 @@ export function FirmStatsPanel({
         {/* Per-status cards */}
         {statsByStatus.map(({ status, count }) => (
           <div key={status} className="rounded-lg border p-3">
-            <p className="text-xs text-muted-foreground mb-1">
-              {LEGAL_CASE_STATUS_DISPLAY[status] || status}
-            </p>
-            <div className="flex items-center gap-2">
-              <p className="text-2xl font-bold">{count}</p>
+            <div className="flex items-center gap-1.5 mb-1">
               <span
-                className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                  LEGAL_CASE_STATUS_COLORS[status] || ""
+                className={`inline-block w-2 h-2 rounded-full ${
+                  LEGAL_CASE_STATUS_COLORS[status]?.split(" ")[0] || "bg-muted"
                 }`}
-              >
+              />
+              <p className="text-xs text-muted-foreground truncate">
                 {LEGAL_CASE_STATUS_DISPLAY[status] || status}
-              </span>
+              </p>
             </div>
+            <p className="text-2xl font-bold">{count}</p>
           </div>
         ))}
 
         {/* Finalized last 30 days */}
         <div className="rounded-lg border p-3 border-green-200 dark:border-green-800">
           <p className="text-xs text-muted-foreground mb-1">
-            Zamkniete (30 dni)
+            Zamknięte (30 dni)
           </p>
           <p className="text-2xl font-bold text-green-700 dark:text-green-400">
             {finalizedLast30Days}

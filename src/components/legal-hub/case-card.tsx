@@ -16,7 +16,7 @@ interface CaseCardProps {
 function formatDate(dateString: string | null | undefined) {
   if (!dateString) return null;
   try {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    return new Date(dateString).toLocaleDateString("pl-PL", {
       year: "numeric",
       month: "short",
       day: "numeric",

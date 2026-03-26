@@ -203,7 +203,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
               className={inputClass}
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="Case title..."
+              placeholder="Tytuł sprawy..."
             />
           </div>
           <div>
@@ -237,7 +237,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
               className={inputClass}
               value={form.internal_number}
               onChange={(e) => setForm({ ...form, internal_number: e.target.value })}
-              placeholder="Internal reference..."
+              placeholder="Numer wewnętrzny..."
             />
           </div>
           <div>
@@ -247,7 +247,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
               className={inputClass}
               value={form.procedure_type}
               onChange={(e) => setForm({ ...form, procedure_type: e.target.value })}
-              placeholder="e.g. upominawcze..."
+              placeholder="np. upominawcze..."
             />
           </div>
           <div>
@@ -267,7 +267,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
               className={inputClass}
               value={form.court_division}
               onChange={(e) => setForm({ ...form, court_division: e.target.value })}
-              placeholder="Division..."
+              placeholder="Wydział..."
             />
           </div>
           <div>

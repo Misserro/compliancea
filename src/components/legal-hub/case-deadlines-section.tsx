@@ -239,7 +239,7 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
                   className="p-1 rounded hover:bg-muted text-green-600 dark:text-green-400"
                   onClick={() => handleMarkMet(deadline.id)}
                   disabled={actionId === deadline.id}
-                  title="Mark as met"
+                  title="Oznacz jako spełniony"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                 </button>
@@ -247,7 +247,7 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
               <button
                 className="p-1 rounded hover:bg-muted text-muted-foreground"
                 onClick={() => openEdit(deadline)}
-                title="Edit"
+                title="Edytuj"
               >
                 <Pencil className="w-3.5 h-3.5" />
               </button>
@@ -255,7 +255,7 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
                 className="p-1 rounded hover:bg-muted text-destructive"
                 onClick={() => handleDelete(deadline.id)}
                 disabled={actionId === deadline.id}
-                title="Delete"
+                title="Usuń"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -276,7 +276,7 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
                 className="p-1 rounded hover:bg-muted text-green-600 dark:text-green-400"
                 onClick={handleSave}
                 disabled={saving}
-                title="Save"
+                title="Zapisz"
               >
                 <Check className="w-4 h-4" />
               </button>
@@ -284,7 +284,7 @@ export function CaseDeadlinesSection({ deadlines, caseId, onRefresh }: CaseDeadl
                 className="p-1 rounded hover:bg-muted text-muted-foreground"
                 onClick={handleCancel}
                 disabled={saving}
-                title="Cancel"
+                title="Anuluj"
               >
                 <X className="w-4 h-4" />
               </button>

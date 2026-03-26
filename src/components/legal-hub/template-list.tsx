@@ -35,7 +35,7 @@ export function TemplateList({
         setTemplates(data.templates || []);
       } catch (err) {
         console.error("Error fetching templates:", err);
-        setError(err instanceof Error ? err.message : "Failed to fetch");
+        setError(err instanceof Error ? err.message : "Nie udało się pobrać");
       } finally {
         setLoading(false);
       }
@@ -139,7 +139,7 @@ export function TemplateList({
                     variant="ghost"
                     size="sm"
                     onClick={() => onEdit(template)}
-                    title="Edit"
+                    title="Edytuj"
                   >
                     <Pencil className="w-4 h-4" />
                   </Button>
@@ -148,7 +148,7 @@ export function TemplateList({
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDelete(template)}
-                      title="Delete"
+                      title="Usuń"
                       className="text-destructive hover:text-destructive"
                     >
                       <Trash2 className="w-4 h-4" />

@@ -112,7 +112,7 @@ export function MemberRoster({ members, onProfileUpdated }: MemberRosterProps) {
   return (
     <div className="space-y-3">
       <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-        Zespol kancelarii
+        Zespół kancelarii
       </h4>
 
       <div className="overflow-x-auto rounded-lg border">

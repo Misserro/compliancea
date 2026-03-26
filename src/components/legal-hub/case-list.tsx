@@ -28,7 +28,7 @@ export function CaseList({
     setLoading(true);
     fetch("/api/legal-hub/cases", { signal: controller.signal })
       .then((res) => {
-        if (!res.ok) throw new Error("Failed to load cases");
+        if (!res.ok) throw new Error("Nie udało się załadować spraw");
         return res.json();
       })
       .then((data) => {
@@ -36,7 +36,7 @@ export function CaseList({
       })
       .catch((err) => {
         if (err.name === "AbortError") return;
-        toast.error(err instanceof Error ? err.message : "Error loading cases");
+        toast.error(err instanceof Error ? err.message : "Błąd podczas ładowania spraw");
       })
       .finally(() => {
         setLoading(false);
@@ -69,8 +69,8 @@ export function CaseList({
   if (cases.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <p>No cases found.</p>
-        <p className="text-sm mt-1">Use &quot;New Case&quot; to get started.</p>
+        <p>Brak spraw.</p>
+        <p className="text-sm mt-1">Użyj &quot;Nowa sprawa&quot;, aby rozpocząć.</p>
       </div>
     );
   }
@@ -78,7 +78,7 @@ export function CaseList({
   if (filteredCases.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <p>No cases match your filters.</p>
+        <p>Żadna sprawa nie pasuje do filtrów.</p>
       </div>
     );
   }

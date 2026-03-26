@@ -15,47 +15,47 @@ interface TemplateFormProps {
 }
 
 const VARIABLE_REFERENCE = [
-  { token: "{{today}}", description: "Current date (pl-PL format)" },
-  { token: "{{case.reference_number}}", description: "Case reference number" },
-  { token: "{{case.title}}", description: "Case title" },
-  { token: "{{case.court}}", description: "Court name" },
-  { token: "{{case.court_division}}", description: "Court division" },
-  { token: "{{case.judge}}", description: "Judge name" },
-  { token: "{{case.status}}", description: "Case status" },
-  { token: "{{case.summary}}", description: "Case summary" },
-  { token: "{{case.claim_value}}", description: "Claim value" },
-  { token: "{{case.claim_currency}}", description: "Claim currency" },
+  { token: "{{today}}", description: "Bieżąca data (format pl-PL)" },
+  { token: "{{case.reference_number}}", description: "Numer referencyjny sprawy" },
+  { token: "{{case.title}}", description: "Tytuł sprawy" },
+  { token: "{{case.court}}", description: "Nazwa sądu" },
+  { token: "{{case.court_division}}", description: "Wydział sądu" },
+  { token: "{{case.judge}}", description: "Imię i nazwisko sędziego" },
+  { token: "{{case.status}}", description: "Status sprawy" },
+  { token: "{{case.summary}}", description: "Opis sprawy" },
+  { token: "{{case.claim_value}}", description: "Wartość roszczenia" },
+  { token: "{{case.claim_currency}}", description: "Waluta roszczenia" },
   {
     token: "{{case.claim_description}}",
-    description: "Claim description",
+    description: "Opis roszczenia",
   },
   {
     token: "{{parties.plaintiff.name}}",
-    description: "Plaintiff name",
+    description: "Imię i nazwisko powoda",
   },
   {
     token: "{{parties.plaintiff.address}}",
-    description: "Plaintiff address",
+    description: "Adres powoda",
   },
   {
     token: "{{parties.defendant.name}}",
-    description: "Defendant name",
+    description: "Imię i nazwisko pozwanego",
   },
   {
     token: "{{parties.defendant.address}}",
-    description: "Defendant address",
+    description: "Adres pozwanego",
   },
   {
     token: "{{parties.representative.representative_name}}",
-    description: "Representative name",
+    description: "Imię i nazwisko pełnomocnika",
   },
   {
     token: "{{deadlines.next.title}}",
-    description: "Next deadline title",
+    description: "Tytuł kolejnego terminu",
   },
   {
     token: "{{deadlines.next.due_date}}",
-    description: "Next deadline date",
+    description: "Data kolejnego terminu",
   },
   { token: "{{parties.plaintiff.notes}}", description: "Dodatkowe dane powoda (np. NIP/REGON)" },
   { token: "{{parties.defendant.notes}}", description: "Dodatkowe dane pozwanego (np. NIP/REGON)" },
@@ -129,13 +129,13 @@ export function TemplateForm({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to save template");
+        throw new Error(data.error || "Nie udało się zapisać szablonu");
       }
 
       onSaved();
     } catch (err) {
       console.error("Error saving template:", err);
-      setError(err instanceof Error ? err.message : "Failed to save");
+      setError(err instanceof Error ? err.message : "Nie udało się zapisać");
     } finally {
       setSaving(false);
     }
@@ -195,7 +195,7 @@ export function TemplateForm({
             </label>
             <RichTextEditor
               ref={editorRef}
-              content={template?.template_body || initialContent || "<p>Start writing your template here...</p>"}
+              content={template?.template_body || initialContent || "<p>Zacznij pisać szablon tutaj...</p>"}
               onChange={setTemplateBody}
             />
             <p className="text-xs text-muted-foreground mt-1">

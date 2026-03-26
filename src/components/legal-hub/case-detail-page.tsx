@@ -73,7 +73,7 @@ export function CaseDetailPage({ caseId }: CaseDetailPageProps) {
     return (
       <div className="text-center py-12">
         <p className="text-destructive text-sm">
-          {error || "Case not found"}
+          {error || "Nie znaleziono sprawy"}
         </p>
       </div>
     );

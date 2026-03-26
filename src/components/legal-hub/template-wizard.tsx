@@ -277,19 +277,19 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
             className="text-muted-foreground"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Back to list
+            Wróć do listy
           </Button>
           <div>
-            <h2 className="text-lg font-semibold">Choose a Blueprint</h2>
+            <h2 className="text-lg font-semibold">Wybierz plan</h2>
             <p className="text-sm text-muted-foreground">
-              Select a structure to guide you through filling in sections
+              Wybierz strukturę, która poprowadzi Cię przez wypełnianie sekcji
             </p>
           </div>
         </div>
 
         <div>
           <h3 className="text-sm font-medium text-muted-foreground mb-3">
-            Predefined
+            Predefiniowane
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {PREDEFINED_BLUEPRINTS.map((bp) => (
@@ -301,8 +301,8 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
                 <div className="font-medium text-sm">{bp.name}</div>
                 <div className="text-xs text-muted-foreground mt-1">
                   {bp.sections.length === 0
-                    ? "Start blank — add your own content"
-                    : `${bp.sections.length} section${bp.sections.length !== 1 ? "s" : ""}`}
+                    ? "Zacznij od pustego — dodaj własną treść"
+                    : `${bp.sections.length} sekcji`}
                 </div>
               </button>
             ))}
@@ -322,7 +322,7 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
         {!loadingCustom && customBlueprints.length > 0 && (
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-3">
-              Custom
+              Własne
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {customBlueprints.map((bp) => {
@@ -340,7 +340,7 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
                   >
                     <div className="font-medium text-sm">{bp.name}</div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      {sectionCount} section{sectionCount !== 1 ? "s" : ""}
+                      {sectionCount} sekcji
                     </div>
                   </button>
                 );
@@ -369,7 +369,7 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
             className="text-muted-foreground"
           >
             <X className="w-4 h-4 mr-1" />
-            Cancel
+            Anuluj
           </Button>
           <div>
             <div className="text-xs text-muted-foreground">
@@ -480,7 +480,7 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
             disabled={polishState === "loading"}
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Previous
+            Wstecz
           </Button>
           <div />
         </div>
@@ -510,11 +510,11 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
           className="text-muted-foreground"
         >
           <X className="w-4 h-4 mr-1" />
-          Cancel
+          Anuluj
         </Button>
         <div>
           <div className="text-xs text-muted-foreground">
-            Section {idx + 1} of {sections.length}
+            Sekcja {idx + 1} z {sections.length}
           </div>
           <h2 className="text-lg font-semibold">{section.title}</h2>
         </div>
@@ -539,19 +539,18 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
       {/* Content area + variable chips */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-3">
-          <label className="text-sm font-medium block">Content</label>
+          <label className="text-sm font-medium block">Treść</label>
           <textarea
             ref={textareaRef}
             key={idx}
             value={section.content}
             onChange={(e) => updateContent(idx, e.target.value)}
-            placeholder={`Write the content for "${section.title}"...`}
+            placeholder={`Wpisz treść dla "${section.title}"...`}
             className="w-full min-h-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
             rows={10}
           />
           <p className="text-xs text-muted-foreground">
-            Each line becomes a paragraph. Click a variable chip to insert it at
-            the cursor.
+            Każda linia staje się akapitem. Kliknij zmienną, aby wstawić ją w miejscu kursora.
           </p>
 
           {/* AI Assist */}
@@ -626,9 +625,9 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
 
         {/* Variable chips */}
         <div className="space-y-3">
-          <h3 className="text-sm font-medium">Variables</h3>
+          <h3 className="text-sm font-medium">Zmienne</h3>
           <p className="text-xs text-muted-foreground">
-            Click to insert at cursor position
+            Kliknij, aby wstawić w miejscu kursora
           </p>
           <div className="flex flex-wrap gap-1.5 max-h-[300px] overflow-y-auto">
             {hintTokens.map((token) => (
@@ -649,17 +648,17 @@ export function TemplateWizard({ onComplete, onCancel }: TemplateWizardProps) {
       <div className="flex items-center justify-between pt-2 border-t">
         <Button variant="outline" size="sm" onClick={handlePrev}>
           <ArrowLeft className="w-4 h-4 mr-1" />
-          {isFirst ? "Back to blueprints" : "Previous"}
+          {isFirst ? "Wróć do planów" : "Wstecz"}
         </Button>
 
         {isLast ? (
           <Button size="sm" onClick={handleFinish}>
             <Check className="w-4 h-4 mr-1" />
-            Finish
+            Zakończ
           </Button>
         ) : (
           <Button size="sm" onClick={handleNext}>
-            Next
+            Dalej
             <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         )}

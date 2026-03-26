@@ -256,7 +256,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
             )}
             onClick={() => setCategoryFilter("")}
           >
-            All ({documents.length})
+            Wszystkie ({documents.length})
           </button>
           {CASE_DOCUMENT_CATEGORIES.filter((cat) =>
             activeCategoryValues.has(cat.value)
@@ -316,7 +316,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
               CASE_DOCUMENT_CATEGORY_COLORS[doc.document_category] ||
               CASE_DOCUMENT_CATEGORY_COLORS.other;
             const displayName =
-              doc.linked_document_name || doc.file_name || "Untitled";
+              doc.linked_document_name || doc.file_name || "Bez nazwy";
             const isLinked = !!doc.document_id;
 
             return (
@@ -341,7 +341,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
                               onClick={(e) => { e.stopPropagation(); retryIndexing(doc.id); }}
                               disabled={retrying[doc.id]}
                               className="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 disabled:opacity-50 cursor-pointer"
-                              title="Retry indexing"
+                              title="Ponów indeksowanie"
                             >
                               <RefreshCw className={`h-2.5 w-2.5 ${retrying[doc.id] ? "animate-spin" : ""}`} />
                               Ponów
@@ -377,7 +377,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-1.5 rounded hover:bg-muted transition-colors"
-                    title="Download document"
+                    title="Pobierz dokument"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {isLinked ? (
@@ -394,7 +394,7 @@ export function CaseDocumentsTab({ caseId }: CaseDocumentsTabProps) {
                       e.stopPropagation();
                       setDeletingDocId(doc.id);
                     }}
-                    title="Remove document from case"
+                    title="Usuń dokument ze sprawy"
                   >
                     <Trash2 className="w-3.5 h-3.5 text-destructive" />
                   </button>

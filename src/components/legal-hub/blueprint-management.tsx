@@ -90,14 +90,14 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
       const res = await fetch("/api/legal-hub/wizard/blueprints");
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to fetch blueprints");
+        throw new Error(data.error || "Nie udało się pobrać planów");
       }
       const data = await res.json();
       setBlueprints(data.blueprints || []);
     } catch (err) {
       console.error("Error fetching blueprints:", err);
       toast.error(
-        err instanceof Error ? err.message : "Failed to fetch blueprints"
+        err instanceof Error ? err.message : "Nie udało się pobrać planów"
       );
     } finally {
       setLoading(false);
@@ -134,15 +134,15 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
       );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to delete");
+        throw new Error(data.error || "Nie udało się usunąć");
       }
-      toast.success("Blueprint deleted");
+      toast.success("Plan usunięty");
       setDeleteTarget(null);
       await fetchBlueprints();
     } catch (err) {
       console.error("Error deleting blueprint:", err);
       toast.error(
-        err instanceof Error ? err.message : "Failed to delete blueprint"
+        err instanceof Error ? err.message : "Nie udało się usunąć planu"
       );
       setDeleteTarget(null);
     } finally {
@@ -153,7 +153,7 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
   const handleSave = async () => {
     const trimmedName = formName.trim();
     if (!trimmedName) {
-      toast.error("Name is required");
+      toast.error("Nazwa jest wymagana");
       return;
     }
 
@@ -161,7 +161,7 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
     try {
       const sectionsJson = JSON.stringify(
         formSections.map((s) => ({
-          title: s.title.trim() || "Untitled",
+          title: s.title.trim() || "Bez tytułu",
           sectionKey: s.sectionKey,
         }))
       );
@@ -180,16 +180,16 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to save blueprint");
+        throw new Error(data.error || "Nie udało się zapisać planu");
       }
 
-      toast.success(isNew ? "Blueprint created" : "Blueprint updated");
+      toast.success(isNew ? "Plan utworzony" : "Plan zaktualizowany");
       setEditingBlueprint(undefined);
       await fetchBlueprints();
     } catch (err) {
       console.error("Error saving blueprint:", err);
       toast.error(
-        err instanceof Error ? err.message : "Failed to save blueprint"
+        err instanceof Error ? err.message : "Nie udało się zapisać planu"
       );
     } finally {
       setSaving(false);
@@ -238,37 +238,37 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
           className="text-muted-foreground"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
-          Back to blueprints
+          Wróć do planów
         </Button>
 
         <h2 className="text-lg font-semibold">
-          {editingBlueprint === "new" ? "New Blueprint" : "Edit Blueprint"}
+          {editingBlueprint === "new" ? "Nowy plan" : "Edytuj plan"}
         </h2>
 
         <div className="space-y-4 max-w-2xl">
           <div>
             <label className="text-sm font-medium mb-1 block">
-              Name <span className="text-destructive">*</span>
+              Nazwa <span className="text-destructive">*</span>
             </label>
             <Input
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
-              placeholder="Blueprint name"
+              placeholder="Nazwa planu"
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium">Sections</label>
+              <label className="text-sm font-medium">Sekcje</label>
               <Button variant="outline" size="sm" onClick={addSection}>
                 <Plus className="w-4 h-4 mr-1" />
-                Add Section
+                Dodaj sekcję
               </Button>
             </div>
 
             {formSections.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center border rounded-lg">
-                No sections yet. Add sections or save as a blank blueprint.
+                Brak sekcji. Dodaj sekcje lub zapisz jako pusty plan.
               </p>
             ) : (
               <div className="space-y-2">
@@ -282,7 +282,7 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
                       onChange={(e) =>
                         updateSectionTitle(index, e.target.value)
                       }
-                      placeholder="Section title"
+                      placeholder="Tytuł sekcji"
                       className="flex-1"
                     />
                     <select
@@ -336,7 +336,7 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
               </div>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              Section key affects which variable hints are shown in the wizard.
+              Klucz sekcji określa, które zmienne są podpowiadane w kreatorze.
             </p>
           </div>
 
@@ -352,8 +352,8 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
                 <Save className="w-4 h-4 mr-2" />
               )}
               {editingBlueprint === "new"
-                ? "Create Blueprint"
-                : "Save Changes"}
+                ? "Utwórz plan"
+                : "Zapisz zmiany"}
             </Button>
             <Button
               variant="outline"
@@ -361,7 +361,7 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
               onClick={handleCancelEdit}
               disabled={saving}
             >
-              Cancel
+              Anuluj
             </Button>
           </div>
         </div>
@@ -380,18 +380,18 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
           className="text-muted-foreground"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
-          Back to templates
+          Wróć do szablonów
         </Button>
         <Button onClick={handleNew} size="sm">
           <Plus className="w-4 h-4 mr-2" />
-          New Blueprint
+          Nowy plan
         </Button>
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold">Custom Blueprints</h2>
+        <h2 className="text-lg font-semibold">Własne plany</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Create reusable section sets for the template wizard
+          Twórz zestawy sekcji do użycia w kreatorze szablonów
         </p>
       </div>
 
@@ -403,18 +403,17 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
         </div>
       ) : blueprints.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground text-sm">
-          No custom blueprints yet. Create your first blueprint to use in the
-          template wizard.
+          Brak własnych planów. Utwórz pierwszy plan, aby użyć go w kreatorze szablonów.
         </div>
       ) : (
         <div className="border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted/50 border-b">
-                <th className="text-left font-medium px-4 py-3">Name</th>
-                <th className="text-left font-medium px-4 py-3">Sections</th>
-                <th className="text-left font-medium px-4 py-3">Created</th>
-                <th className="text-right font-medium px-4 py-3">Actions</th>
+                <th className="text-left font-medium px-4 py-3">Nazwa</th>
+                <th className="text-left font-medium px-4 py-3">Sekcje</th>
+                <th className="text-left font-medium px-4 py-3">Utworzono</th>
+                <th className="text-right font-medium px-4 py-3">Akcje</th>
               </tr>
             </thead>
             <tbody>
@@ -435,7 +434,7 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEdit(bp)}
-                          title="Edit"
+                          title="Edytuj"
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
@@ -443,7 +442,7 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
                           variant="ghost"
                           size="sm"
                           onClick={() => setDeleteTarget(bp)}
-                          title="Delete"
+                          title="Usuń"
                           className="text-destructive hover:text-destructive"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -465,20 +464,20 @@ export function BlueprintManagement({ onBack }: BlueprintManagementProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete blueprint</AlertDialogTitle>
+            <AlertDialogTitle>Usuń plan</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{deleteTarget?.name}&quot;?
-              This blueprint will no longer be available in the template wizard.
+              Czy na pewno chcesz usunąć &quot;{deleteTarget?.name}&quot;?
+              Ten plan nie będzie już dostępny w kreatorze szablonów.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>Anuluj</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={deleting}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              {deleting ? "Deleting..." : "Delete"}
+              {deleting ? "Usuwanie..." : "Usuń"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -154,17 +154,17 @@ export const LEGAL_CASE_TYPES = [
 ] as const;
 
 export const LEGAL_CASE_STATUS_DISPLAY: Record<string, string> = {
-  new: "New",
-  intake: "Intake",
-  analysis: "Analysis",
-  draft_prepared: "Draft Prepared",
-  filed: "Filed",
-  awaiting_response: "Awaiting Response",
-  hearing_scheduled: "Hearing Scheduled",
-  judgment_received: "Judgment Received",
-  appeal: "Appeal",
-  active: "Active",
-  closed: "Closed",
+  new: "Nowa",
+  intake: "Przyjęta",
+  analysis: "Analiza",
+  draft_prepared: "Projekt gotowy",
+  filed: "Złożona",
+  awaiting_response: "Oczekiwanie",
+  hearing_scheduled: "Rozprawa",
+  judgment_received: "Wyrok",
+  appeal: "Odwołanie",
+  active: "Aktywna",
+  closed: "Zamknięta",
 };
 
 export const LEGAL_CASE_STATUS_COLORS: Record<string, string> = {
@@ -182,12 +182,12 @@ export const LEGAL_CASE_STATUS_COLORS: Record<string, string> = {
 };
 
 export const LEGAL_CASE_TYPE_LABELS: Record<string, string> = {
-  civil: "Civil",
-  criminal: "Criminal",
-  administrative: "Administrative",
-  labor: "Labor",
-  family: "Family",
-  commercial: "Commercial",
+  civil: "Cywilna",
+  criminal: "Karna",
+  administrative: "Administracyjna",
+  labor: "Pracownicza",
+  family: "Rodzinna",
+  commercial: "Gospodarcza",
 };
 
 export const CASE_DOCUMENT_CATEGORIES = [

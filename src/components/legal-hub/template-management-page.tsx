@@ -62,9 +62,9 @@ export function TemplateManagementPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Document Templates</h1>
+          <h1 className="text-2xl font-bold">Szablony dokumentów</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage templates for document generation
+            Zarządzaj szablonami do generowania dokumentów
           </p>
         </div>
         {view === "list" && (
@@ -75,15 +75,15 @@ export function TemplateManagementPage() {
               onClick={() => setView("blueprints")}
             >
               <Settings2 className="w-4 h-4 mr-2" />
-              Manage Blueprints
+              Zarządzaj planami
             </Button>
             <Button variant="outline" size="sm" onClick={handleWizard}>
               <Wand2 className="w-4 h-4 mr-2" />
-              Guided Wizard
+              Kreator
             </Button>
             <Button size="sm" onClick={handleNew}>
               <Plus className="w-4 h-4 mr-2" />
-              Manual
+              Ręcznie
             </Button>
           </div>
         )}
@@ -106,7 +106,7 @@ export function TemplateManagementPage() {
             className="text-muted-foreground"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Back to list
+            Wróć do listy
           </Button>
           <TemplateForm
             template={editingTemplate}
