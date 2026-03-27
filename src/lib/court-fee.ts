@@ -16,5 +16,5 @@ export function calculateCourtFee(claimValue: number | null): number | null {
   if (claimValue <= 15000) return 750;
   if (claimValue <= 20000) return 1000;
 
-  return Math.min(claimValue * 0.05, 100000);
+  return Math.ceil(Math.min(claimValue * 0.05, 100000));
 }
