@@ -23,7 +23,7 @@ export function LanguageSwitcher() {
       variant="ghost"
       size="sm"
       onClick={handleSwitch}
-      className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+      className="w-full justify-start gap-2 text-sidebar-foreground/70 hover:text-sidebar-foreground"
       title={`Switch to ${alternateLabel}`}
     >
       <Globe className="h-4 w-4" />

@@ -1,0 +1,23 @@
+{
+  "task_id": "task-1",
+  "task_name": "Design token refresh (globals.css)",
+  "team_name": "task-1-team",
+  "goal": "Update globals.css with indigo primary, dark navy sidebar in :root, border-radius 0.75rem, and matching .dark indigo tokens",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-27T12:04:31.000Z",
+  "ended_at": "2026-03-27T12:09:20.000Z",
+  "elapsed_seconds": 289,
+  "stages": {
+    "planning":       { "started_at": "2026-03-27T12:04:31.000Z", "ended_at": "2026-03-27T12:06:27.000Z", "elapsed_seconds": 116 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": "2026-03-27T12:06:27.000Z", "ended_at": "2026-03-27T12:09:20.000Z", "elapsed_seconds": 173 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-1", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-27T12:04:31.000Z", "ended_at": "2026-03-27T12:09:20.000Z" },
+    { "name": "reviewer-1", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-27T12:04:31.000Z", "ended_at": "2026-03-27T12:09:20.000Z" },
+    { "name": "tester-1",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-27T12:04:31.000Z", "ended_at": "2026-03-27T12:09:20.000Z" }
+  ]
+}

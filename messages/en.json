@@ -865,7 +865,9 @@
     "upcomingDeadlines": "Upcoming Court Deadlines",
     "noUpcomingCaseDeadlines": "No upcoming court deadlines.",
     "recentCases": "Recent Cases",
-    "noRecentCases": "No cases yet."
+    "noRecentCases": "No cases yet.",
+    "errorTitle": "Could not load dashboard",
+    "errorSub": "Refresh the page to try again."
   },
   "Documents": {
     "title": "Documents",

@@ -865,7 +865,9 @@
     "upcomingDeadlines": "Nadchodz\u0105ce terminy s\u0105dowe",
     "noUpcomingCaseDeadlines": "Brak nadchodz\u0105cych termin\u00f3w s\u0105dowych.",
     "recentCases": "Ostatnie sprawy",
-    "noRecentCases": "Brak spraw."
+    "noRecentCases": "Brak spraw.",
+    "errorTitle": "Nie mo\u017cna za\u0142adowa\u0107 pulpitu",
+    "errorSub": "Od\u015bwie\u017c stron\u0119, aby spr\u00f3bowa\u0107 ponownie."
   },
   "Documents": {
     "title": "Dokumenty",

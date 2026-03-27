@@ -1,0 +1,19 @@
+{
+  "task_id": "task-3",
+  "task_name": "Dashboard UX — error state, empty states, row affordance",
+  "team_name": "task-3-team",
+  "goal": "Add dashboard error state with AlertTriangle, icon-enhanced empty states for all 5 panels, ChevronRight row affordance on hover; add i18n keys in en.json and pl.json",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-27T12:09:20.000Z",
+  "ended_at": "2026-03-27T12:15:26.000Z",
+  "elapsed_seconds": 366,
+  "stages": {
+    "planning":       { "started_at": "2026-03-27T12:09:20.000Z", "ended_at": "2026-03-27T12:14:31.000Z", "elapsed_seconds": 311 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": "2026-03-27T12:14:31.000Z", "ended_at": "2026-03-27T12:15:26.000Z", "elapsed_seconds": 55 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": []
+}

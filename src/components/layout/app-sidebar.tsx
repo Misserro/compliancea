@@ -359,16 +359,16 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="border-t px-4 py-3 space-y-1">
         {userEmail && (
-          <div className="px-2 py-2 border-b mb-1">
+          <div className="px-2 py-2 border-b border-sidebar-border mb-1">
             <p className="text-sm font-medium truncate">{userName}</p>
-            <p className="text-xs text-muted-foreground truncate">
+            <p className="text-xs text-sidebar-foreground/60 truncate">
               {orgName}
             </p>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => signOut({ redirectTo: "/login" })}
-              className="mt-1 w-full justify-start gap-2 text-muted-foreground hover:text-foreground px-0"
+              className="mt-1 w-full justify-start gap-2 text-sidebar-foreground/70 hover:text-sidebar-foreground px-0"
             >
               <LogOut className="h-4 w-4" />
               <span className="text-xs">{t("signOut")}</span>
@@ -379,7 +379,7 @@ export function AppSidebar() {
           variant="ghost"
           size="sm"
           onClick={cycleTheme}
-          className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+          className="w-full justify-start gap-2 text-sidebar-foreground/70 hover:text-sidebar-foreground"
           title="Toggle theme"
         >
           <ThemeIcon theme={theme} />
