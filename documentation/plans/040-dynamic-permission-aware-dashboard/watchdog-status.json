@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-03-27T12:38:31+01:00",
+  "status": "healthy",
+  "stalled_tasks": 0,
+  "total_active_tasks": 0,
+  "rate_limit_suspected": false,
+  "check_interval_seconds": 300,
+  "stall_threshold_seconds": 600
+}

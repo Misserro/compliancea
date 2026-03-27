@@ -1,0 +1,23 @@
+{
+  "task_id": "task-1",
+  "task_name": "Permission-gated dashboard API + legal hub DB function",
+  "team_name": "task-1-team",
+  "goal": "Add getLegalHubDashboardData to lib/db.js, export from db-imports.ts, update /api/dashboard/route.ts with permission checks and legal hub data",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-27T11:30:17Z",
+  "ended_at": "2026-03-27T11:34:56Z",
+  "elapsed_seconds": 279,
+  "stages": {
+    "planning":       { "started_at": "2026-03-27T11:30:17Z", "ended_at": "2026-03-27T11:34:56Z", "elapsed_seconds": 279 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-1", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-27T11:30:17Z", "ended_at": "2026-03-27T11:34:56Z" },
+    { "name": "reviewer-1", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-27T11:30:17Z", "ended_at": "2026-03-27T11:34:56Z" },
+    { "name": "tester-1",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-27T11:30:17Z", "ended_at": "2026-03-27T11:34:56Z" }
+  ]
+}

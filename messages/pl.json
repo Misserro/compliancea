@@ -859,7 +859,13 @@
     "contractsExpiringSoon": "Umowy wkr\u00f3tce wygasaj\u0105ce",
     "next60Days": "Nast\u0119pne 60 dni",
     "noContractsExpiring": "Brak wkr\u00f3tce wygasaj\u0105cych um\u00f3w.",
-    "daysShort": "{count}d"
+    "daysShort": "{count}d",
+    "openCases": "Otwarte sprawy",
+    "openCasesSub": "{count} aktywnych status\u00f3w",
+    "upcomingDeadlines": "Nadchodz\u0105ce terminy s\u0105dowe",
+    "noUpcomingCaseDeadlines": "Brak nadchodz\u0105cych termin\u00f3w s\u0105dowych.",
+    "recentCases": "Ostatnie sprawy",
+    "noRecentCases": "Brak spraw."
   },
   "Documents": {
     "title": "Dokumenty",

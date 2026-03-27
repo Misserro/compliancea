@@ -207,3 +207,6 @@ export function deleteWizardBlueprint(...args: any[]): any;
 // Law Firm Dashboard (Plan 038 Task 3)
 export function getFirmStats(...args: any[]): any;
 export function updateMemberProfile(...args: any[]): any;
+
+// Dynamic Permission Dashboard (Plan 040 Task 1)
+export function getLegalHubDashboardData(...args: any[]): any;

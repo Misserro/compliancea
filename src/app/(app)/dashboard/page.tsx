@@ -2,27 +2,34 @@
 
 import { useState, useEffect, type ElementType } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, AlertTriangle, Briefcase } from "lucide-react";
+import { FileText, AlertTriangle, Briefcase, Scale } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslations } from "next-intl";
+import { useSession } from "next-auth/react";
+import { PERMISSION_LEVELS, type PermissionLevel } from "@/lib/permissions";
 
 interface DashboardData {
-  docs: { total: number; processed: number; byType: Record<string, number> };
-  obligations: {
+  docs?: { total: number; processed: number; byType: Record<string, number> };
+  obligations?: {
     total: number; active: number; overdue: number;
     upcoming: Array<{ id: number; title: string; due_date: string; document_name: string }>;
   };
-  contracts: {
+  contracts?: {
     total: number; active: number;
     expiringSoon: Array<{ id: number; name: string; expiry_date: string; daysLeft: number }>;
+  };
+  legalHub?: {
+    statsByStatus: Array<{ status: string; count: number }>;
+    upcomingDeadlines: Array<{ id: number; case_id: number; case_title: string; title: string; deadline_type: string; due_date: string }>;
+    recentCases: Array<{ id: number; title: string; status: string; case_type: string; created_at: string; assigned_to_name: string | null }>;
   };
 }
 
 function KpiCard({
-  icon: Icon, label, value, sub, href, accent,
+  icon: Icon, label, value, sub, subNode, href, accent,
 }: {
   icon: ElementType; label: string; value: number | string;
-  sub?: string; href: string; accent?: "red" | "green";
+  sub?: string; subNode?: React.ReactNode; href: string; accent?: "red" | "green";
 }) {
   const router = useRouter();
   return (
@@ -37,7 +44,7 @@ function KpiCard({
       <p className={`text-3xl font-bold ${accent === "red" ? "text-destructive" : accent === "green" ? "text-green-600" : ""}`}>
         {value}
       </p>
-      {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+      {subNode ?? (sub && <p className="text-xs text-muted-foreground">{sub}</p>)}
     </button>
   );
 }
@@ -47,6 +54,14 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const t = useTranslations("Dashboard");
+  const { data: sessionData } = useSession();
+
+  const permissions = sessionData?.user?.permissions;
+  function canView(resource: string): boolean {
+    if (!permissions) return true;
+    const level = PERMISSION_LEVELS[(permissions[resource] ?? 'full') as PermissionLevel] ?? 3;
+    return level >= 1;
+  }
 
   useEffect(() => {
     fetch("/api/dashboard")
@@ -56,6 +71,19 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Compute which sections are visible
+  const showDocs = canView('documents');
+  const showContracts = canView('contracts');
+  const showLegalHub = canView('legal_hub');
+  const visibleCardCount = (showDocs ? 1 : 0) + (showContracts ? 2 : 0) + (showLegalHub ? 1 : 0);
+
+  // Legal hub KPI computations
+  const openCount = (data?.legalHub?.statsByStatus ?? []).reduce((sum, s) => sum + Number(s.count), 0);
+  const statusBadge = (data?.legalHub?.statsByStatus ?? [])
+    .filter(s => s.count > 0)
+    .map(s => `${s.status} ${s.count}`)
+    .join(' \u00b7 ');
+
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8">
       <div>
@@ -64,102 +92,203 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        {loading ? (
-          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)
-        ) : data ? (
-          <>
-            <KpiCard
-              icon={FileText} label={t("documents")} href="/documents"
-              value={data.docs.total}
-              sub={t("processedSub", { count: data.docs.processed })}
-            />
-            <KpiCard
-              icon={AlertTriangle} label={t("overdue")} href="/obligations"
-              value={data.obligations.overdue}
-              sub={t("activeObligationsSub", { count: data.obligations.active })}
-              accent={data.obligations.overdue > 0 ? "red" : undefined}
-            />
-            <KpiCard
-              icon={Briefcase} label={t("contracts")} href="/contracts"
-              value={data.contracts.total}
-              sub={t("expiringSoonSub", { count: data.contracts.expiringSoon.length })}
-            />
-          </>
-        ) : null}
-      </div>
-
-      {/* Two-column detail panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upcoming obligations */}
-        <div className="rounded-xl border bg-card shadow-sm">
-          <div className="px-5 py-4 border-b">
-            <h3 className="text-sm font-semibold">{t("upcomingObligations")}</h3>
-            <p className="text-xs text-muted-foreground">{t("next30Days")}</p>
-          </div>
-          <div className="divide-y">
-            {loading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="px-5 py-3"><Skeleton className="h-4 w-3/4" /></div>
-              ))
-            ) : !data || data.obligations.upcoming.length === 0 ? (
-              <p className="px-5 py-8 text-xs text-muted-foreground text-center">{t("noUpcomingDeadlines")}</p>
-            ) : (
-              data.obligations.upcoming.map(o => {
-                const days = Math.ceil((new Date(o.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-                return (
-                  <button
-                    key={o.id}
-                    onClick={() => router.push("/obligations")}
-                    className="w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors text-left"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium truncate">{o.title}</p>
-                      <p className="text-[11px] text-muted-foreground truncate">{o.document_name}</p>
-                    </div>
-                    <span className={`text-xs font-semibold shrink-0 ml-3 ${days <= 7 ? "text-destructive" : "text-muted-foreground"}`}>
-                      {t("daysShort", { count: days })}
-                    </span>
-                  </button>
-                );
-              })
-            )}
-          </div>
+      {visibleCardCount > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {loading ? (
+            Array.from({ length: visibleCardCount }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)
+          ) : data ? (
+            <>
+              {showDocs && data.docs && (
+                <KpiCard
+                  icon={FileText} label={t("documents")} href="/documents"
+                  value={data.docs.total}
+                  sub={t("processedSub", { count: data.docs.processed })}
+                />
+              )}
+              {showContracts && data.obligations && (
+                <KpiCard
+                  icon={AlertTriangle} label={t("overdue")} href="/obligations"
+                  value={data.obligations.overdue}
+                  sub={t("activeObligationsSub", { count: data.obligations.active })}
+                  accent={data.obligations.overdue > 0 ? "red" : undefined}
+                />
+              )}
+              {showContracts && data.contracts && (
+                <KpiCard
+                  icon={Briefcase} label={t("contracts")} href="/contracts"
+                  value={data.contracts.total}
+                  sub={t("expiringSoonSub", { count: data.contracts.expiringSoon.length })}
+                />
+              )}
+              {showLegalHub && data.legalHub && (
+                <KpiCard
+                  icon={Scale} label={t("openCases")} href="/legal-hub"
+                  value={openCount}
+                  subNode={
+                    statusBadge ? (
+                      <p className="text-xs text-muted-foreground truncate">{statusBadge}</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">{t("openCasesSub", { count: 0 })}</p>
+                    )
+                  }
+                />
+              )}
+            </>
+          ) : null}
         </div>
+      )}
 
-        {/* Contracts expiring soon */}
-        <div className="rounded-xl border bg-card shadow-sm">
-          <div className="px-5 py-4 border-b">
-            <h3 className="text-sm font-semibold">{t("contractsExpiringSoon")}</h3>
-            <p className="text-xs text-muted-foreground">{t("next60Days")}</p>
-          </div>
-          <div className="divide-y">
-            {loading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="px-5 py-3"><Skeleton className="h-4 w-3/4" /></div>
-              ))
-            ) : !data || data.contracts.expiringSoon.length === 0 ? (
-              <p className="px-5 py-8 text-xs text-muted-foreground text-center">{t("noContractsExpiring")}</p>
-            ) : (
-              data.contracts.expiringSoon.map(c => (
-                <button
-                  key={c.id}
-                  onClick={() => router.push("/contracts")}
-                  className="w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors text-left"
-                >
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium truncate">{c.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{new Date(c.expiry_date).toLocaleDateString()}</p>
-                  </div>
-                  <span className={`text-xs font-semibold shrink-0 ml-3 ${c.daysLeft <= 14 ? "text-destructive" : "text-amber-600"}`}>
-                    {t("daysShort", { count: c.daysLeft })}
-                  </span>
-                </button>
-              ))
-            )}
-          </div>
+      {/* Detail panels */}
+      {(showContracts || showLegalHub) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Upcoming obligations */}
+          {showContracts && (
+            <div className="rounded-xl border bg-card shadow-sm">
+              <div className="px-5 py-4 border-b">
+                <h3 className="text-sm font-semibold">{t("upcomingObligations")}</h3>
+                <p className="text-xs text-muted-foreground">{t("next30Days")}</p>
+              </div>
+              <div className="divide-y">
+                {loading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="px-5 py-3"><Skeleton className="h-4 w-3/4" /></div>
+                  ))
+                ) : !data?.obligations || data.obligations.upcoming.length === 0 ? (
+                  <p className="px-5 py-8 text-xs text-muted-foreground text-center">{t("noUpcomingDeadlines")}</p>
+                ) : (
+                  data.obligations.upcoming.map(o => {
+                    const days = Math.ceil((new Date(o.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                    return (
+                      <button
+                        key={o.id}
+                        onClick={() => router.push("/obligations")}
+                        className="w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors text-left"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium truncate">{o.title}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">{o.document_name}</p>
+                        </div>
+                        <span className={`text-xs font-semibold shrink-0 ml-3 ${days <= 7 ? "text-destructive" : "text-muted-foreground"}`}>
+                          {t("daysShort", { count: days })}
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Contracts expiring soon */}
+          {showContracts && (
+            <div className="rounded-xl border bg-card shadow-sm">
+              <div className="px-5 py-4 border-b">
+                <h3 className="text-sm font-semibold">{t("contractsExpiringSoon")}</h3>
+                <p className="text-xs text-muted-foreground">{t("next60Days")}</p>
+              </div>
+              <div className="divide-y">
+                {loading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="px-5 py-3"><Skeleton className="h-4 w-3/4" /></div>
+                  ))
+                ) : !data?.contracts || data.contracts.expiringSoon.length === 0 ? (
+                  <p className="px-5 py-8 text-xs text-muted-foreground text-center">{t("noContractsExpiring")}</p>
+                ) : (
+                  data.contracts.expiringSoon.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => router.push("/contracts")}
+                      className="w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors text-left"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium truncate">{c.name}</p>
+                        <p className="text-[11px] text-muted-foreground">{new Date(c.expiry_date).toLocaleDateString()}</p>
+                      </div>
+                      <span className={`text-xs font-semibold shrink-0 ml-3 ${c.daysLeft <= 14 ? "text-destructive" : "text-amber-600"}`}>
+                        {t("daysShort", { count: c.daysLeft })}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Upcoming Court Deadlines */}
+          {showLegalHub && (
+            <div className="rounded-xl border bg-card shadow-sm">
+              <div className="px-5 py-4 border-b">
+                <h3 className="text-sm font-semibold">{t("upcomingDeadlines")}</h3>
+                <p className="text-xs text-muted-foreground">{t("next30Days")}</p>
+              </div>
+              <div className="divide-y">
+                {loading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="px-5 py-3"><Skeleton className="h-4 w-3/4" /></div>
+                  ))
+                ) : !data?.legalHub || data.legalHub.upcomingDeadlines.length === 0 ? (
+                  <p className="px-5 py-8 text-xs text-muted-foreground text-center">{t("noUpcomingCaseDeadlines")}</p>
+                ) : (
+                  data.legalHub.upcomingDeadlines.map(d => {
+                    const days = Math.ceil((new Date(d.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                    return (
+                      <button
+                        key={d.id}
+                        onClick={() => router.push("/legal-hub")}
+                        className="w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors text-left"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium truncate">{d.title}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">{d.case_title}</p>
+                        </div>
+                        <span className={`text-xs font-semibold shrink-0 ml-3 ${days <= 7 ? "text-destructive" : "text-muted-foreground"}`}>
+                          {t("daysShort", { count: days })}
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Recent Cases */}
+          {showLegalHub && (
+            <div className="rounded-xl border bg-card shadow-sm">
+              <div className="px-5 py-4 border-b">
+                <h3 className="text-sm font-semibold">{t("recentCases")}</h3>
+              </div>
+              <div className="divide-y">
+                {loading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="px-5 py-3"><Skeleton className="h-4 w-3/4" /></div>
+                  ))
+                ) : !data?.legalHub || data.legalHub.recentCases.length === 0 ? (
+                  <p className="px-5 py-8 text-xs text-muted-foreground text-center">{t("noRecentCases")}</p>
+                ) : (
+                  data.legalHub.recentCases.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => router.push(`/legal-hub/${c.id}`)}
+                      className="w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors text-left"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium truncate">{c.title}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {c.case_type}{c.assigned_to_name ? ` \u00b7 ${c.assigned_to_name}` : ''}
+                        </p>
+                      </div>
+                      <span className="text-xs font-medium text-muted-foreground shrink-0 ml-3 capitalize">
+                        {c.status}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
     </div>
   );

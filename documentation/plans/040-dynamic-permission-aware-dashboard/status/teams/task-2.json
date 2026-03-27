@@ -1,0 +1,23 @@
+{
+  "task_id": "task-2",
+  "task_name": "Permission-gated dashboard UI + legal hub sections",
+  "team_name": "task-2-team",
+  "goal": "Update dashboard/page.tsx to conditionally render KPI cards and panels by permission. Add Open Cases KPI, Upcoming Court Deadlines panel, Recent Cases panel. Add i18n keys to en.json and pl.json.",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-27T11:34:56Z",
+  "ended_at": "2026-03-27T11:41:31Z",
+  "elapsed_seconds": 395,
+  "stages": {
+    "planning":       { "started_at": "2026-03-27T11:34:56Z", "ended_at": "2026-03-27T11:41:31Z", "elapsed_seconds": 395 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-2", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-27T11:34:56Z", "ended_at": "2026-03-27T11:41:31Z" },
+    { "name": "reviewer-2", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-27T11:34:56Z", "ended_at": "2026-03-27T11:41:31Z" },
+    { "name": "tester-2",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-27T11:34:56Z", "ended_at": "2026-03-27T11:41:31Z" }
+  ]
+}

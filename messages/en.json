@@ -859,7 +859,13 @@
     "contractsExpiringSoon": "Contracts Expiring Soon",
     "next60Days": "Next 60 days",
     "noContractsExpiring": "No contracts expiring soon.",
-    "daysShort": "{count}d"
+    "daysShort": "{count}d",
+    "openCases": "Open Cases",
+    "openCasesSub": "{count} active statuses",
+    "upcomingDeadlines": "Upcoming Court Deadlines",
+    "noUpcomingCaseDeadlines": "No upcoming court deadlines.",
+    "recentCases": "Recent Cases",
+    "noRecentCases": "No cases yet."
   },
   "Documents": {
     "title": "Documents",

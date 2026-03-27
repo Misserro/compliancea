@@ -196,4 +196,6 @@ export {
   // Law Firm Dashboard (Plan 038 Task 3)
   getFirmStats,
   updateMemberProfile,
+  // Dynamic Permission Dashboard (Plan 040 Task 1)
+  getLegalHubDashboardData,
 } from "../../lib/db.js";
