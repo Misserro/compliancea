@@ -134,6 +134,7 @@
     "backToList": "Back to list",
     "caseNotFound": "Case not found",
     "createdOn": "Created {date}",
+    "chatParseError": "I wasn't able to process the response. Please try again.",
 
     "tab": {
       "overview": "Overview",

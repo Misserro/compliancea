@@ -16,6 +16,7 @@ export interface StructuredAnswer {
   usedDocuments: { id: number; name: string }[];
   confidence: "high" | "medium" | "low";
   needsDisambiguation: boolean;
+  parseError?: boolean;
 }
 
 interface Segment {

@@ -150,14 +150,24 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
 
       // Detect structured answer format (from grounded RAG pipeline)
       if (isStructuredAnswer(data)) {
-        setMessages([
-          ...newMessages,
-          {
-            role: "assistant",
-            content: data.answerText,
-            structuredAnswer: data,
-          },
-        ]);
+        if (data.parseError) {
+          setMessages([
+            ...newMessages,
+            {
+              role: "assistant",
+              content: t("chatParseError"),
+            },
+          ]);
+        } else {
+          setMessages([
+            ...newMessages,
+            {
+              role: "assistant",
+              content: data.answerText,
+              structuredAnswer: data,
+            },
+          ]);
+        }
       } else if (isActionProposal(data)) {
         setMessages([
           ...newMessages,

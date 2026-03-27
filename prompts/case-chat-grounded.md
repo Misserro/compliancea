@@ -53,7 +53,9 @@ Jeśli przekazane dane nie zawierają informacji potrzebnych do odpowiedzi, napi
 Nie zgaduj, nie hallucynuj, nie uzupełniaj braków wiedzą zewnętrzną.
 
 **Format odpowiedzi — TYLKO JSON, bez markdown, bez preambuły:**
-Zwróć wyłącznie obiekt JSON. Kluczem w obiekcie citations musi być dokładna liczba (jako string) z nagłówka [CHUNK:N|...]. Na przykład dla [CHUNK:42|DOC:3|PAGE:4] kluczem jest "42".
+Zwróć wyłącznie obiekt JSON.
+Jeśli napiszesz cokolwiek przed '{' lub po '}', odpowiedź zostanie odrzucona.
+Kluczem w obiekcie citations musi być dokładna liczba (jako string) z nagłówka [CHUNK:N|...]. Na przykład dla [CHUNK:42|DOC:3|PAGE:4] kluczem jest "42".
 
 Przykładowy format (klucze to rzeczywiste numery chunków z nagłówków [CHUNK:N|...]):
 {

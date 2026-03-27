@@ -134,6 +134,7 @@
     "backToList": "Wr\u00f3\u0107 do listy",
     "caseNotFound": "Nie znaleziono sprawy",
     "createdOn": "Utworzono {date}",
+    "chatParseError": "Nie udało się przetworzyć odpowiedzi. Spróbuj ponownie.",
 
     "tab": {
       "overview": "Przegl\u0105d",

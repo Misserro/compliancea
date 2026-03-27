@@ -23,6 +23,7 @@ export interface StructuredAnswer {
   usedDocuments: Array<{ id: number; name: string }>;
   confidence: "high" | "medium" | "low";
   needsDisambiguation: boolean;
+  parseError?: boolean;
 }
 
 export function buildEvidencePrompt(chunks: RetrievalResult[]): string;

@@ -97,10 +97,37 @@ describe("parseCitationResponse", () => {
     expect(result.answerText).not.toContain("[cit:");
   });
 
-  it("returns degraded response on invalid JSON", () => {
+  it("returns degraded response on invalid JSON — answerText is empty string, parseError is true", () => {
     const result = parseCitationResponse("not valid json {{{", sampleChunks);
     expect(result.confidence).toBe("low");
-    expect(result.answerText).toBe("not valid json {{{");
+    // New contract: degraded fallback must NOT expose raw Claude output
+    expect(result.answerText).toBe("");
+    expect(result.parseError).toBe(true);
+    expect(result.citations).toEqual([]);
+    expect(result.annotations).toEqual([]);
+  });
+
+  it("Criterion 1: Claude response with preamble text before JSON parses successfully", () => {
+    const preamble = "Here is my answer:\n\n";
+    const json = JSON.stringify({
+      answerText: "The deadline is March 30th.[cit:100]",
+      citations: {
+        "100": { sentenceHit: "The deadline is March 30th.", documentId: 1, documentName: "Contract.pdf", page: 3 },
+      },
+    });
+    const result = parseCitationResponse(preamble + json, sampleChunks);
+    // Must parse successfully — not degraded
+    expect(result.parseError).toBeUndefined();
+    expect(result.answerText).toBe("The deadline is March 30th.");
+    expect(result.citations.length).toBe(1);
+    expect(result.citations[0].chunkId).toBe(100);
+  });
+
+  it("Criterion 4: plain text with no JSON returns parseError: true and answerText: ''", () => {
+    const result = parseCitationResponse("invalid text no json here", sampleChunks);
+    expect(result.answerText).toBe("");
+    expect(result.parseError).toBe(true);
+    expect(result.confidence).toBe("low");
     expect(result.citations).toEqual([]);
     expect(result.annotations).toEqual([]);
   });

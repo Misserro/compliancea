@@ -1,0 +1,74 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-03-27T13:01:36Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution started for 042-chat-citation-parse-fix"
+    },
+    {
+      "timestamp": "2026-03-27T13:03:32Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "Team task-1-team spawned: executor-1, reviewer-1, tester-1"
+    },
+    {
+      "timestamp": "2026-03-27T13:03:32Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-27T13:05:20Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 completed: Robust JSON extraction + prompt hardening (~108s, 0 retries)"
+    },
+    {
+      "timestamp": "2026-03-27T13:06:17Z",
+      "type": "team_shutdown",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "Team task-1-team shut down"
+    },
+    {
+      "timestamp": "2026-03-27T13:06:17Z",
+      "type": "team_spawned",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "Team task-2-team spawned: executor-2, reviewer-2, tester-2"
+    },
+    {
+      "timestamp": "2026-03-27T13:06:17Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "executor-2",
+      "message": "task-2 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-27T13:08:38Z",
+      "type": "task_completed",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 completed: i18n parse error display in chat panel (~141s, 0 retries)"
+    },
+    {
+      "timestamp": "2026-03-27T13:08:38Z",
+      "type": "team_shutdown",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "Team task-2-team shut down"
+    },
+    {
+      "timestamp": "2026-03-27T13:08:38Z",
+      "type": "execution_completed",
+      "task_id": null,
+      "agent": "pm",
+      "message": "All 2 tasks completed. Total wall-clock time ~7 minutes."
+    }
+  ]
+}
