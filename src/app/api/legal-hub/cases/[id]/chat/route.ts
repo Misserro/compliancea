@@ -329,8 +329,16 @@ export async function POST(
 
     return NextResponse.json(structured);
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error("[chat/route] Error:", err);
+    return NextResponse.json({
+      answerText: "",
+      annotations: [],
+      citations: [],
+      usedDocuments: [],
+      confidence: "low",
+      needsDisambiguation: false,
+      parseError: true,
+    });
   }
 }
 
