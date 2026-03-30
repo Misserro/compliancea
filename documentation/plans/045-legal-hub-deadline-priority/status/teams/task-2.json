@@ -1,0 +1,23 @@
+{
+  "task_id": "task-2",
+  "task_name": "In-App Deadline Alert Banner",
+  "team_name": "task-2-team",
+  "goal": "Show an in-app banner alerting users to upcoming or overdue case deadlines",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-30T11:03:00.000Z",
+  "ended_at": "2026-03-30T11:16:12.000Z",
+  "elapsed_seconds": 792,
+  "stages": {
+    "planning":       { "started_at": "2026-03-30T11:03:00.000Z", "ended_at": "2026-03-30T11:04:19.000Z", "elapsed_seconds": 79 },
+    "implementation": { "started_at": "2026-03-30T11:04:19.000Z", "ended_at": "2026-03-30T11:11:19.000Z", "elapsed_seconds": 420 },
+    "review":         { "started_at": "2026-03-30T11:11:19.000Z", "ended_at": "2026-03-30T11:16:12.000Z", "elapsed_seconds": 293 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-2", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-30T11:03:00.000Z", "ended_at": "2026-03-30T11:16:12.000Z" },
+    { "name": "reviewer-2", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-30T11:03:00.000Z", "ended_at": "2026-03-30T11:16:12.000Z" },
+    { "name": "tester-2",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-30T11:03:00.000Z", "ended_at": "2026-03-30T11:16:12.000Z" }
+  ]
+}

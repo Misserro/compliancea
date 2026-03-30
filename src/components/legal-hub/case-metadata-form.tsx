@@ -5,6 +5,7 @@ import { Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import type { LegalCase, OrgMember } from "@/lib/types";
+import { CASE_PRIORITIES } from "@/lib/types";
 import { useTranslations, useLocale } from "next-intl";
 import { LEGAL_CASE_TYPES } from "@/lib/constants";
 import { calculateCourtFee } from "@/lib/court-fee";
@@ -86,6 +87,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
   const [form, setForm] = useState({
     title: legalCase.title || "",
     case_type: legalCase.case_type || "",
+    priority: legalCase.priority || "normal",
     reference_number: legalCase.reference_number || "",
     internal_number: legalCase.internal_number || "",
     procedure_type: legalCase.procedure_type || "",
@@ -104,6 +106,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
     setForm({
       title: legalCase.title || "",
       case_type: legalCase.case_type || "",
+      priority: legalCase.priority || "normal",
       reference_number: legalCase.reference_number || "",
       internal_number: legalCase.internal_number || "",
       procedure_type: legalCase.procedure_type || "",
@@ -125,6 +128,7 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
       const payload: Record<string, unknown> = {
         title: form.title.trim() || null,
         case_type: form.case_type,
+        priority: form.priority,
         reference_number: form.reference_number.trim() || null,
         internal_number: form.internal_number.trim() || null,
         procedure_type: form.procedure_type.trim() || null,
@@ -218,6 +222,20 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
               {LEGAL_CASE_TYPES.map((caseType) => (
                 <option key={caseType} value={caseType}>
                   {tType(caseType)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={fieldLabel}>{t('priority.label')}</label>
+            <select
+              className={inputClass}
+              value={form.priority}
+              onChange={(e) => setForm({ ...form, priority: e.target.value as typeof form.priority })}
+            >
+              {CASE_PRIORITIES.map((p) => (
+                <option key={p} value={p}>
+                  {t(`priority.${p}` as Parameters<typeof t>[0])}
                 </option>
               ))}
             </select>
@@ -392,6 +410,10 @@ export function CaseMetadataForm({ legalCase, caseId, onSaved }: CaseMetadataFor
         <div>
           <div className="text-muted-foreground text-xs font-medium mb-1">Typ sprawy</div>
           <div>{tType(legalCase.case_type)}</div>
+        </div>
+        <div>
+          <div className="text-muted-foreground text-xs font-medium mb-1">{t('priority.label')}</div>
+          <div>{t(`priority.${legalCase.priority || 'normal'}` as Parameters<typeof t>[0])}</div>
         </div>
         <div>
           <div className="text-muted-foreground text-xs font-medium mb-1">Numer referencyjny</div>

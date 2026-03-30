@@ -1,83 +1,53 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import type { LegalCase } from "@/lib/types";
 import { CaseCard } from "./case-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CaseListProps {
-  refreshTrigger?: number;
-  searchQuery: string;
-  selectedStatuses: string[];
-  selectedCaseType: string;
-  sortBy: "deadline" | "title" | "created";
+  cases: LegalCase[];
+  total: number;
+  page: number;
+  pageSize: number;
+  loading: boolean;
+  onPageChange: (page: number) => void;
+}
+
+/**
+ * Compute visible page numbers: up to 5 pages centered around current page.
+ */
+function getPageNumbers(current: number, totalPages: number): number[] {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  let start = Math.max(1, current - 2);
+  let end = Math.min(totalPages, start + 4);
+
+  // Adjust start if we're near the end
+  if (end - start < 4) {
+    start = Math.max(1, end - 4);
+  }
+
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 }
 
 export function CaseList({
-  refreshTrigger,
-  searchQuery,
-  selectedStatuses,
-  selectedCaseType,
-  sortBy,
+  cases,
+  total,
+  page,
+  pageSize,
+  loading,
+  onPageChange,
 }: CaseListProps) {
   const t = useTranslations('LegalHub');
-  const [cases, setCases] = useState<LegalCase[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    setLoading(true);
-    fetch("/api/legal-hub/cases", { signal: controller.signal })
-      .then((res) => {
-        if (!res.ok) throw new Error(t('dashboard.fetchError'));
-        return res.json();
-      })
-      .then((data) => {
-        setCases(data.cases || []);
-      })
-      .catch((err) => {
-        if (err.name === "AbortError") return;
-        toast.error(err instanceof Error ? err.message : t('dashboard.loadError'));
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-
-    return () => controller.abort();
-  }, [refreshTrigger, t]);
-
-  const q = searchQuery.trim().toLowerCase();
-  const filteredCases = cases
-    .filter((c) => selectedStatuses.length === 0 || selectedStatuses.includes(c.status))
-    .filter((c) => {
-      if (!selectedCaseType) return true;
-      return c.case_type === selectedCaseType;
-    })
-    .filter((c) => {
-      if (!q) return true;
-      return c.title.toLowerCase().includes(q);
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "deadline": {
-          const aD = a.next_deadline;
-          const bD = b.next_deadline;
-          if (!aD && !bD) return 0;
-          if (!aD) return 1;
-          if (!bD) return -1;
-          return aD < bD ? -1 : aD > bD ? 1 : 0;
-        }
-        case "title":
-          return a.title.localeCompare(b.title);
-        case "created":
-          return b.created_at < a.created_at ? -1 : b.created_at > a.created_at ? 1 : 0;
-        default:
-          return 0;
-      }
-    });
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = Math.min(page * pageSize, total);
 
   if (loading) {
     return (
@@ -88,28 +58,65 @@ export function CaseList({
     );
   }
 
-  if (cases.length === 0) {
+  if (total === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <p>{t('dashboard.noCases')}</p>
-        <p className="text-sm mt-1">{t('dashboard.noCasesHint')}</p>
+        <p>{t('pagination.noResults')}</p>
       </div>
     );
   }
 
-  if (filteredCases.length === 0) {
-    return (
-      <div className="text-center py-12 text-muted-foreground">
-        <p>{t('dashboard.noMatchingCases')}</p>
-      </div>
-    );
-  }
+  const pageNumbers = getPageNumbers(page, totalPages);
 
   return (
     <div className="space-y-3">
-      {filteredCases.map((legalCase) => (
+      {cases.map((legalCase) => (
         <CaseCard key={legalCase.id} legalCase={legalCase} />
       ))}
+
+      {/* Pagination controls */}
+      <div className="flex items-center justify-between pt-4">
+        <span className="text-sm text-muted-foreground">
+          {t('pagination.showing', { from, to, total })}
+        </span>
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => onPageChange(page - 1)}
+            aria-label={t('pagination.previous')}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span className="sr-only sm:not-sr-only">{t('pagination.previous')}</span>
+          </Button>
+
+          {pageNumbers.map((p) => (
+            <Button
+              key={p}
+              variant={p === page ? "default" : "outline"}
+              size="sm"
+              onClick={() => onPageChange(p)}
+              aria-label={t('pagination.page', { page: p })}
+              aria-current={p === page ? "page" : undefined}
+            >
+              {p}
+            </Button>
+          ))}
+
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages}
+            onClick={() => onPageChange(page + 1)}
+            aria-label={t('pagination.next')}
+          >
+            <span className="sr-only sm:not-sr-only">{t('pagination.next')}</span>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

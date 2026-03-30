@@ -190,19 +190,19 @@ describe("getLegalCases — org isolation (Criterion: Cases show only org data)"
       tags: [], extensionData: {}, orgId: 2,
     });
 
-    const cases1 = dbModule.getLegalCases({ orgId: 1 });
-    expect(cases1).toHaveLength(1);
-    expect(cases1[0].title).toBe("Case Org 1");
+    const result1 = dbModule.getLegalCases({ orgId: 1 });
+    expect(result1.cases).toHaveLength(1);
+    expect(result1.cases[0].title).toBe("Case Org 1");
 
-    const cases2 = dbModule.getLegalCases({ orgId: 2 });
-    expect(cases2).toHaveLength(1);
-    expect(cases2[0].title).toBe("Case Org 2");
+    const result2 = dbModule.getLegalCases({ orgId: 2 });
+    expect(result2.cases).toHaveLength(1);
+    expect(result2.cases[0].title).toBe("Case Org 2");
   });
 
   it("getLegalCases without orgId returns all cases (backward-compat, not filtered)", () => {
     // This tests that the function at least doesn't break without orgId
-    const cases = dbModule.getLegalCases({});
-    expect(Array.isArray(cases)).toBe(true);
+    const result = dbModule.getLegalCases({});
+    expect(Array.isArray(result.cases)).toBe(true);
   });
 });
 

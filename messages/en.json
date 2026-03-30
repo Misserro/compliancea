@@ -365,6 +365,14 @@
       "defendant": "Defendant"
     },
 
+    "priority": {
+      "label": "Priority",
+      "urgent": "Urgent",
+      "high": "High",
+      "normal": "Normal",
+      "low": "Low"
+    },
+
     "parties": {
       "title": "Parties",
       "addParty": "Add party",
@@ -568,7 +576,31 @@
       "sortBy": "Sort:",
       "sortDeadline": "Next deadline",
       "sortTitle": "Title A\u2013Z",
-      "sortCreated": "Newest"
+      "sortCreated": "Newest",
+      "sortPriority": "Priority",
+      "filterByPriority": "Priority:",
+      "allPriorities": "All priorities"
+    },
+
+    "pagination": {
+      "showing": "Showing {from}\u2013{to} of {total} cases",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page}",
+      "noResults": "No cases match the current filters."
+    },
+
+    "deadlineAlert": {
+      "title": "Deadline alerts",
+      "overdue": "{count} overdue",
+      "upcoming": "{count} due within 7 days",
+      "dismiss": "Dismiss",
+      "showDetails": "Show details",
+      "hideDetails": "Hide details",
+      "dueDate": "Due: {date}",
+      "overdueDays": "{count} days overdue",
+      "dueInDays": "Due in {count} days",
+      "dueToday": "Due today"
     },
 
     "addDocDialog": {

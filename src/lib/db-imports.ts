@@ -110,6 +110,7 @@ export {
   deleteCaseParty,
   getCasePartyById,
   getCaseDeadlines,
+  getUpcomingDeadlinesForUser,
   addCaseDeadline,
   updateCaseDeadline,
   deleteCaseDeadline,

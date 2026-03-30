@@ -1,0 +1,137 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-03-30T10:53:07.000Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution started — 045-legal-hub-deadline-priority"
+    },
+    {
+      "timestamp": "2026-03-30T10:56:36.000Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "team-lead",
+      "message": "Team spawned for task-1: Priority Field on Cases"
+    },
+    {
+      "timestamp": "2026-03-30T10:56:36.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-30T11:01:56.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "reviewer-1",
+      "message": "task-1 entered review stage (planning ~5m)"
+    },
+    {
+      "timestamp": "2026-03-30T11:03:00.000Z",
+      "type": "pipeline_spawn",
+      "task_id": "task-2",
+      "agent": "team-lead",
+      "message": "task-2 spawned in pipeline mode: In-App Deadline Alert Banner (planning only, awaiting task-1 completion)"
+    },
+    {
+      "timestamp": "2026-03-30T11:03:00.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "executor-2",
+      "message": "task-2 entered planning stage (pipeline mode)"
+    },
+    {
+      "timestamp": "2026-03-30T11:04:19.000Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "team-lead",
+      "message": "task-1 completed: Priority Field on Cases (~8m total)"
+    },
+    {
+      "timestamp": "2026-03-30T11:04:19.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-1",
+      "agent": "team-lead",
+      "message": "task-1 team shut down"
+    },
+    {
+      "timestamp": "2026-03-30T11:04:19.000Z",
+      "type": "implementation_approved",
+      "task_id": "task-2",
+      "agent": "team-lead",
+      "message": "task-2 plan approved — pipeline hold released, proceeding to implementation"
+    },
+    {
+      "timestamp": "2026-03-30T11:04:19.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "executor-2",
+      "message": "task-2 entered implementation stage (pipeline_mode cleared)"
+    },
+    {
+      "timestamp": "2026-03-30T11:11:19.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "reviewer-2",
+      "message": "task-2 entered review stage (implementation ~7m)"
+    },
+    {
+      "timestamp": "2026-03-30T11:16:12.000Z",
+      "type": "task_completed",
+      "task_id": "task-2",
+      "agent": "team-lead",
+      "message": "task-2 completed: In-App Deadline Alert Banner (~13m total)"
+    },
+    {
+      "timestamp": "2026-03-30T11:16:12.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-2",
+      "agent": "team-lead",
+      "message": "task-2 team shut down"
+    },
+    {
+      "timestamp": "2026-03-30T11:16:12.000Z",
+      "type": "team_spawned",
+      "task_id": "task-3",
+      "agent": "team-lead",
+      "message": "Team spawned for task-3: Case List Server-Side Pagination"
+    },
+    {
+      "timestamp": "2026-03-30T11:16:12.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "executor-3",
+      "message": "task-3 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-30T11:22:36.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "reviewer-3",
+      "message": "task-3 entered review stage (planning ~6m)"
+    },
+    {
+      "timestamp": "2026-03-30T11:23:17.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "executor-3",
+      "message": "task-3 looped back to implementation stage — review cycle 1 (review ~1m)"
+    },
+    {
+      "timestamp": "2026-03-30T11:24:28.000Z",
+      "type": "task_completed",
+      "task_id": "task-3",
+      "agent": "team-lead",
+      "message": "task-3 completed: Case List Server-Side Pagination (~8m total, 1 retry)"
+    },
+    {
+      "timestamp": "2026-03-30T11:24:28.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-3",
+      "agent": "team-lead",
+      "message": "task-3 team shut down"
+    }
+  ]
+}

@@ -38,11 +38,17 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || undefined;
     const status = searchParams.get("status") || undefined;
     const caseType = searchParams.get("caseType") || undefined;
+    const priority = searchParams.get("priority") || undefined;
+    const sortBy = searchParams.get("sortBy") || undefined;
+
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "25", 10) || 25));
+    const offset = (page - 1) * pageSize;
 
     const userId = Number(session.user.id);
     const orgRole = session.user.orgRole as string;
-    const cases = getLegalCases({ search, status, caseType, orgId, userId, orgRole });
-    return NextResponse.json({ cases });
+    const { cases, total } = getLegalCases({ search, status, caseType, priority, orgId, userId, orgRole, sortBy, limit: pageSize, offset });
+    return NextResponse.json({ cases, total, page, pageSize });
   } catch (err: unknown) {
     console.error("Error fetching legal cases:", err);
     const message = err instanceof Error ? err.message : "Unknown error";
@@ -135,6 +141,7 @@ export async function POST(request: NextRequest) {
       extensionData: body.extension_data || {},
       orgId,
       assignedTo,
+      priority: body.priority || "normal",
     });
 
     logAction("legal_case", newId, "created", { title, case_type: caseType }, { userId: Number(session.user.id), orgId });

@@ -7,6 +7,13 @@ import type { LegalCase } from "@/lib/types";
 import {
   LEGAL_CASE_STATUS_COLORS,
 } from "@/lib/constants";
+import type { CasePriority } from "@/lib/types";
+
+const PRIORITY_BADGE_COLORS: Record<string, string> = {
+  urgent: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+  high: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
+  low: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
+};
 
 interface CaseCardProps {
   legalCase: LegalCase;
@@ -64,6 +71,13 @@ export function CaseCard({ legalCase }: CaseCardProps) {
               <span className="px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground whitespace-nowrap">
                 {typeLabel}
               </span>
+              {legalCase.priority && legalCase.priority !== "normal" && PRIORITY_BADGE_COLORS[legalCase.priority] && (
+                <span
+                  className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${PRIORITY_BADGE_COLORS[legalCase.priority]}`}
+                >
+                  {t(`priority.${legalCase.priority}` as Parameters<typeof t>[0])}
+                </span>
+              )}
             </div>
 
             {/* Court + created date + assignee */}

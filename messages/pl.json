@@ -365,6 +365,14 @@
       "defendant": "Pozwany"
     },
 
+    "priority": {
+      "label": "Priorytet",
+      "urgent": "Pilne",
+      "high": "Wysoki",
+      "normal": "Normalny",
+      "low": "Niski"
+    },
+
     "parties": {
       "title": "Strony",
       "addParty": "Dodaj stron\u0119",
@@ -568,7 +576,31 @@
       "sortBy": "Sortuj:",
       "sortDeadline": "Najbli\u017cszy termin",
       "sortTitle": "Tytu\u0142 A\u2013Z",
-      "sortCreated": "Najnowsze"
+      "sortCreated": "Najnowsze",
+      "sortPriority": "Priorytet",
+      "filterByPriority": "Priorytet:",
+      "allPriorities": "Wszystkie priorytety"
+    },
+
+    "pagination": {
+      "showing": "Wy\u015bwietlanie {from}\u2013{to} z {total} spraw",
+      "previous": "Poprzednia",
+      "next": "Nast\u0119pna",
+      "page": "Strona {page}",
+      "noResults": "\u017badna sprawa nie pasuje do bie\u017c\u0105cych filtr\u00f3w."
+    },
+
+    "deadlineAlert": {
+      "title": "Alerty termin\u00f3w",
+      "overdue": "{count} po terminie",
+      "upcoming": "{count} w ci\u0105gu 7 dni",
+      "dismiss": "Ukryj",
+      "showDetails": "Poka\u017c szczeg\u00f3\u0142y",
+      "hideDetails": "Ukryj szczeg\u00f3\u0142y",
+      "dueDate": "Termin: {date}",
+      "overdueDays": "{count} dni po terminie",
+      "dueInDays": "Za {count} dni",
+      "dueToday": "Termin dzisiaj"
     },
 
     "addDocDialog": {

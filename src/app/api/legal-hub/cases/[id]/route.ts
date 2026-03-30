@@ -130,7 +130,7 @@ export async function PATCH(
       "title", "case_type", "reference_number", "internal_number",
       "procedure_type", "court", "court_division", "judge", "status",
       "summary", "claim_description", "claim_value", "claim_currency",
-      "tags", "extension_data", "assigned_to",
+      "tags", "extension_data", "assigned_to", "priority",
     ];
 
     const fields: Record<string, unknown> = {};

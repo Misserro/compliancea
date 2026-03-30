@@ -294,6 +294,9 @@ export interface NdaAnalysisResult {
 
 // ── Legal Hub types ─────────────────────────────────────────────────────────
 
+export const CASE_PRIORITIES = ["urgent", "high", "normal", "low"] as const;
+export type CasePriority = (typeof CASE_PRIORITIES)[number];
+
 export interface LegalCase {
   id: number;
   reference_number: string | null;
@@ -312,6 +315,7 @@ export interface LegalCase {
   claim_currency: string;
   tags: string;
   extension_data: string;
+  priority: CasePriority;
   assigned_to: number | null;
   assigned_to_name: string | null;
   created_at: string;
@@ -355,6 +359,16 @@ export interface CaseDeadline {
   status: string;
   completed_at: string | null;
   created_at: string;
+}
+
+export interface DeadlineAlert {
+  id: number;
+  caseId: number;
+  caseTitle: string;
+  title: string;
+  deadline_type: string;
+  due_date: string;
+  daysUntil: number;
 }
 
 export interface CaseTemplate {
