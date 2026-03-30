@@ -142,7 +142,8 @@
       "overview": "Overview",
       "documents": "Documents",
       "generate": "Generate",
-      "chat": "Chat"
+      "chat": "Chat",
+      "activity": "Activity"
     },
 
     "blueprint": {
@@ -200,6 +201,22 @@
       "examplePrompt2": "Who is the defendant in this case?",
       "examplePrompt3": "When is the next hearing?",
       "examplePrompt4": "Find information in case documents"
+    },
+
+    "activity": {
+      "noActivity": "No activity recorded for this case.",
+      "loadError": "Failed to load activity log.",
+      "action": {
+        "create": "Case created",
+        "update": "Case updated",
+        "status_changed": "Status changed",
+        "document_added": "Document added",
+        "document_generated": "Document generated",
+        "document_exported": "Document exported",
+        "party_added": "Party added",
+        "deadline_added": "Deadline added",
+        "ai_mutation_applied": "AI changes applied"
+      }
     },
 
     "deadlineType": {
@@ -547,7 +564,11 @@
       "noCasesHint": "Use \"New case\" to get started.",
       "noMatchingCases": "No cases match the filters.",
       "fetchError": "Failed to load cases",
-      "loadError": "Error loading cases"
+      "loadError": "Error loading cases",
+      "sortBy": "Sort:",
+      "sortDeadline": "Next deadline",
+      "sortTitle": "Title A\u2013Z",
+      "sortCreated": "Newest"
     },
 
     "addDocDialog": {

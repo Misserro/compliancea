@@ -1,0 +1,81 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-03-30T10:07:43.000Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution started — 3 sequential tasks: Activity tab, Bug fixes, Case list sorting"
+    },
+    {
+      "timestamp": "2026-03-30T10:09:42.000Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "Team spawned for task-1: Case Activity Log Tab — executor-1 (opus), reviewer-1 (sonnet), tester-1 (sonnet)"
+    },
+    {
+      "timestamp": "2026-03-30T10:09:42.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-30T10:13:29.000Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 (Case Activity Log Tab) completed — elapsed ~4m"
+    },
+    {
+      "timestamp": "2026-03-30T10:13:29.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1-team shut down — all members ended"
+    },
+    {
+      "timestamp": "2026-03-30T10:13:29.000Z",
+      "type": "team_spawned",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "Team spawned for task-2: Bug Fixes — executor-2 (opus), reviewer-2 (sonnet), tester-2 (sonnet)"
+    },
+    {
+      "timestamp": "2026-03-30T10:13:29.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "executor-2",
+      "message": "task-2 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-30T10:16:06.000Z",
+      "type": "task_completed",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 (Bug Fixes) completed — elapsed ~3m"
+    },
+    {
+      "timestamp": "2026-03-30T10:16:06.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2-team shut down — all members ended"
+    },
+    {
+      "timestamp": "2026-03-30T10:16:06.000Z",
+      "type": "team_spawned",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "Team spawned for task-3: Case List Sorting — executor-3 (opus), reviewer-3 (sonnet), tester-3 (sonnet)"
+    },
+    {
+      "timestamp": "2026-03-30T10:16:06.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "executor-3",
+      "message": "task-3 entered planning stage"
+    }
+  ]
+}

@@ -142,7 +142,8 @@
       "overview": "Przegl\u0105d",
       "documents": "Dokumenty",
       "generate": "Generuj",
-      "chat": "Czat"
+      "chat": "Czat",
+      "activity": "Historia"
     },
 
     "blueprint": {
@@ -200,6 +201,22 @@
       "examplePrompt2": "Kto jest pozwanym w tej sprawie?",
       "examplePrompt3": "Kiedy jest najbli\u017csza rozprawa?",
       "examplePrompt4": "Znajd\u017a informacje w dokumentach sprawy"
+    },
+
+    "activity": {
+      "noActivity": "Brak zarejestrowanej aktywno\u015bci dla tej sprawy.",
+      "loadError": "Nie uda\u0142o si\u0119 za\u0142adowa\u0107 historii aktywno\u015bci.",
+      "action": {
+        "create": "Sprawa utworzona",
+        "update": "Sprawa zaktualizowana",
+        "status_changed": "Zmiana statusu",
+        "document_added": "Dodano dokument",
+        "document_generated": "Wygenerowano dokument",
+        "document_exported": "Wyeksportowano dokument",
+        "party_added": "Dodano stron\u0119",
+        "deadline_added": "Dodano termin",
+        "ai_mutation_applied": "Zastosowano zmiany AI"
+      }
     },
 
     "deadlineType": {
@@ -547,7 +564,11 @@
       "noCasesHint": "U\u017cyj \"Nowa sprawa\", aby rozpocz\u0105\u0107.",
       "noMatchingCases": "\u017badna sprawa nie pasuje do filtr\u00f3w.",
       "fetchError": "Nie uda\u0142o si\u0119 za\u0142adowa\u0107 spraw",
-      "loadError": "B\u0142\u0105d podczas \u0142adowania spraw"
+      "loadError": "B\u0142\u0105d podczas \u0142adowania spraw",
+      "sortBy": "Sortuj:",
+      "sortDeadline": "Najbli\u017cszy termin",
+      "sortTitle": "Tytu\u0142 A\u2013Z",
+      "sortCreated": "Najnowsze"
     },
 
     "addDocDialog": {

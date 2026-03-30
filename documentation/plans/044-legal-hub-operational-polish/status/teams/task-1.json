@@ -1,0 +1,23 @@
+{
+  "task_id": "task-1",
+  "task_name": "Case Activity Log Tab",
+  "team_name": "task-1-team",
+  "goal": "Add a fifth Activity tab to CaseDetailPage that renders a reverse-chronological timeline of all logged actions for the case",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-30T10:09:42.000Z",
+  "ended_at": "2026-03-30T10:13:29.000Z",
+  "elapsed_seconds": 227,
+  "stages": {
+    "planning":       { "started_at": "2026-03-30T10:09:42.000Z", "ended_at": "2026-03-30T10:13:29.000Z", "elapsed_seconds": 227 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-1", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-30T10:09:42.000Z", "ended_at": "2026-03-30T10:13:29.000Z" },
+    { "name": "reviewer-1", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-30T10:09:42.000Z", "ended_at": "2026-03-30T10:13:29.000Z" },
+    { "name": "tester-1",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-30T10:09:42.000Z", "ended_at": "2026-03-30T10:13:29.000Z" }
+  ]
+}

@@ -12,6 +12,7 @@ interface CaseListProps {
   searchQuery: string;
   selectedStatuses: string[];
   selectedCaseType: string;
+  sortBy: "deadline" | "title" | "created";
 }
 
 export function CaseList({
@@ -19,6 +20,7 @@ export function CaseList({
   searchQuery,
   selectedStatuses,
   selectedCaseType,
+  sortBy,
 }: CaseListProps) {
   const t = useTranslations('LegalHub');
   const [cases, setCases] = useState<LegalCase[]>([]);
@@ -57,6 +59,24 @@ export function CaseList({
     .filter((c) => {
       if (!q) return true;
       return c.title.toLowerCase().includes(q);
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "deadline": {
+          const aD = a.next_deadline;
+          const bD = b.next_deadline;
+          if (!aD && !bD) return 0;
+          if (!aD) return 1;
+          if (!bD) return -1;
+          return aD < bD ? -1 : aD > bD ? 1 : 0;
+        }
+        case "title":
+          return a.title.localeCompare(b.title);
+        case "created":
+          return b.created_at < a.created_at ? -1 : b.created_at > a.created_at ? 1 : 0;
+        default:
+          return 0;
+      }
     });
 
   if (loading) {

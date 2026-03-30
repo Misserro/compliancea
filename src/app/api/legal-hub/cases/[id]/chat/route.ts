@@ -16,6 +16,7 @@ import {
   isHighRiskQuery,
 } from "@/lib/citation-assembler-imports";
 import { hasPermission } from "@/lib/permissions";
+import { LEGAL_CASE_STATUSES } from "@/lib/constants";
 
 export const runtime = "nodejs";
 
@@ -119,14 +120,7 @@ const CASE_CHAT_TOOLS: Anthropic.Tool[] = [
       properties: {
         status: {
           type: "string",
-          enum: [
-            "active",
-            "signed",
-            "unsigned",
-            "terminated",
-            "closed",
-            "other",
-          ],
+          enum: [...LEGAL_CASE_STATUSES],
         },
         note: { type: "string", description: "Optional note for status history" },
       },

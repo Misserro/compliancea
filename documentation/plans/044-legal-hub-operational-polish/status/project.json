@@ -1,0 +1,14 @@
+{
+  "name": "044-legal-hub-operational-polish",
+  "description": "Three improvements surfacing already-built backend capabilities and fixing two known bugs in the Legal Hub. Activity log tab, bug fixes, and case list sorting.",
+  "plan_file": "documentation/plans/044-legal-hub-operational-polish/README.md",
+  "status": "executing",
+  "started_at": "2026-03-30T10:07:43.000Z",
+  "ended_at": null,
+  "elapsed_seconds": 503,
+  "concurrency_limit": 1,
+  "total_tasks": 3,
+  "completed_tasks": 2,
+  "active_tasks": 1,
+  "pending_tasks": 0
+}

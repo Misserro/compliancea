@@ -59,7 +59,19 @@ export function CaseGenerateTab({
         const res = await fetch("/api/legal-hub/templates?isActive=1");
         if (!res.ok) throw new Error("Failed to fetch templates");
         const data = await res.json();
-        setTemplates(data.templates || []);
+        const allTemplates: CaseTemplate[] = data.templates || [];
+        const caseType = legalCase.case_type;
+        const filtered = allTemplates.filter((tmpl) => {
+          if (!tmpl.applicable_case_types) return true;
+          try {
+            const parsed = JSON.parse(tmpl.applicable_case_types);
+            if (!Array.isArray(parsed) || parsed.length === 0) return true;
+            return parsed.includes(caseType);
+          } catch {
+            return true;
+          }
+        });
+        setTemplates(filtered);
       } catch (err) {
         console.error("Error fetching templates:", err);
       } finally {

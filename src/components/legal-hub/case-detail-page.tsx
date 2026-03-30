@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FileText, Wand2, MessageSquare, LayoutDashboard } from "lucide-react";
+import { FileText, Wand2, MessageSquare, LayoutDashboard, History } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { LegalCase, CaseParty, CaseDeadline } from "@/lib/types";
 import { CaseHeader } from "./case-header";
@@ -9,13 +9,14 @@ import { CaseOverviewTab } from "./case-overview-tab";
 import { CaseDocumentsTab } from "./case-documents-tab";
 import { CaseGenerateTab } from "./case-generate-tab";
 import { CaseChatPanel } from "./case-chat-panel";
+import { CaseActivityTab } from "./case-activity-tab";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface CaseDetailPageProps {
   caseId: number;
 }
 
-type TabKey = "overview" | "documents" | "generate" | "chat";
+type TabKey = "overview" | "documents" | "generate" | "chat" | "activity";
 
 export function CaseDetailPage({ caseId }: CaseDetailPageProps) {
   const t = useTranslations('LegalHub');
@@ -25,6 +26,7 @@ export function CaseDetailPage({ caseId }: CaseDetailPageProps) {
     { key: "documents", labelKey: "tab.documents", icon: <FileText className="w-4 h-4" /> },
     { key: "generate", labelKey: "tab.generate", icon: <Wand2 className="w-4 h-4" /> },
     { key: "chat", labelKey: "tab.chat", icon: <MessageSquare className="w-4 h-4" /> },
+    { key: "activity", labelKey: "tab.activity", icon: <History className="w-4 h-4" /> },
   ];
 
   const [legalCase, setLegalCase] = useState<LegalCase | null>(null);
@@ -132,6 +134,10 @@ export function CaseDetailPage({ caseId }: CaseDetailPageProps) {
 
       {activeTab === "chat" && (
         <CaseChatPanel caseId={caseId} />
+      )}
+
+      {activeTab === "activity" && (
+        <CaseActivityTab caseId={caseId} />
       )}
     </div>
   );
