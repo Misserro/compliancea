@@ -78,7 +78,9 @@
     "myLawFirm": "My law firm",
     "contractHub": "Contract Hub",
     "legalHub": "Legal Hub",
-    "documentsHub": "Documents Hub"
+    "documentsHub": "Documents Hub",
+    "aiTools": "AI Tools",
+    "workspace": "Workspace"
   },
   "Auth": {
     "signIn": "Sign in",
@@ -904,6 +906,7 @@
     },
 
     "actionBar": {
+      "actions": "Actions",
       "scanning": "Scanning...",
       "scanServer": "Scan Server Folder",
       "scanningGDrive": "Scanning...",
@@ -1108,6 +1111,20 @@
       "networkError": "Network error: {error}",
       "answerHeading": "Answer",
       "sourcesHeading": "Sources"
+    },
+
+    "aiTools": {
+      "title": "AI Tools",
+      "subtitle": "Analyze documents and ask questions across your library.",
+      "tab": {
+        "analyze": "Analyze & Process",
+        "ask": "Ask Library"
+      }
+    },
+
+    "typeFilter": {
+      "all": "All",
+      "policies": "Policies"
     },
 
     "docSelect": {

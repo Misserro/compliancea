@@ -1,0 +1,14 @@
+{
+  "name": "043-nav-ux-optimization",
+  "description": "Reduce sidebar item count, improve information hierarchy, and de-clutter the Documents page action surface. No new features — pure UX/readability improvements.",
+  "plan_file": "documentation/plans/043-nav-ux-optimization/README.md",
+  "status": "executing",
+  "started_at": "2026-03-30T07:51:54.000Z",
+  "ended_at": null,
+  "elapsed_seconds": 373,
+  "concurrency_limit": 2,
+  "total_tasks": 5,
+  "completed_tasks": 3,
+  "active_tasks": 1,
+  "pending_tasks": 1
+}

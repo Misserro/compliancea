@@ -4,6 +4,12 @@ import { useState } from "react";
 import { FolderSearch, HardDrive, Play, Tags, ChevronDown, ChevronUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ActionBarProps {
   onScanServer: () => Promise<void>;
@@ -23,64 +29,53 @@ export function ActionBar({
   onToggleExpand,
 }: ActionBarProps) {
   const t = useTranslations('Documents');
-  const [scanning, setScanning] = useState(false);
-  const [scanningGDrive, setScanningGDrive] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [retagging, setRetagging] = useState(false);
+  const [loading, setLoading] = useState<string | null>(null);
+
+  async function run(key: string, fn: () => Promise<void>) {
+    setLoading(key);
+    try { await fn(); } finally { setLoading(null); }
+  }
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={scanning}
-        onClick={async () => {
-          setScanning(true);
-          try { await onScanServer(); } finally { setScanning(false); }
-        }}
-      >
-        <FolderSearch className="mr-2 h-4 w-4" />
-        {scanning ? t('actionBar.scanning') : t('actionBar.scanServer')}
-      </Button>
-
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={scanningGDrive}
-        onClick={async () => {
-          setScanningGDrive(true);
-          try { await onScanGDrive(); } finally { setScanningGDrive(false); }
-        }}
-      >
-        <HardDrive className="mr-2 h-4 w-4" />
-        {scanningGDrive ? t('actionBar.scanningGDrive') : t('actionBar.scanGDrive')}
-      </Button>
-
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={processing}
-        onClick={async () => {
-          setProcessing(true);
-          try { await onProcessAll(); } finally { setProcessing(false); }
-        }}
-      >
-        <Play className="mr-2 h-4 w-4" />
-        {processing ? t('actionBar.processing') : t('actionBar.processAll')}
-      </Button>
-
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={retagging}
-        onClick={async () => {
-          setRetagging(true);
-          try { await onRetagAll(); } finally { setRetagging(false); }
-        }}
-      >
-        <Tags className="mr-2 h-4 w-4" />
-        {retagging ? t('actionBar.retagging') : t('actionBar.retagAll')}
-      </Button>
+    <div className="flex items-center gap-2">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" disabled={loading !== null}>
+            {t('actionBar.actions')}
+            <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem
+            onClick={() => run("scan", onScanServer)}
+            disabled={loading !== null}
+          >
+            <FolderSearch className="mr-2 h-4 w-4" />
+            {loading === "scan" ? t('actionBar.scanning') : t('actionBar.scanServer')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => run("gdrive", onScanGDrive)}
+            disabled={loading !== null}
+          >
+            <HardDrive className="mr-2 h-4 w-4" />
+            {loading === "gdrive" ? t('actionBar.scanningGDrive') : t('actionBar.scanGDrive')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => run("process", onProcessAll)}
+            disabled={loading !== null}
+          >
+            <Play className="mr-2 h-4 w-4" />
+            {loading === "process" ? t('actionBar.processing') : t('actionBar.processAll')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => run("retag", onRetagAll)}
+            disabled={loading !== null}
+          >
+            <Tags className="mr-2 h-4 w-4" />
+            {loading === "retag" ? t('actionBar.retagging') : t('actionBar.retagAll')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <Button variant="ghost" size="sm" onClick={onToggleExpand}>
         {allExpanded ? (

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { FileText, ClipboardCheck, Settings, MessageSquare, Layers, Shield, LayoutDashboard, Sun, Moon, Monitor, Users, LogOut, ListChecks, Scale, Building2, Check, ChevronDown } from "lucide-react";
+import { FileText, ClipboardCheck, Settings, Layers, Shield, LayoutDashboard, Sun, Moon, Monitor, Users, LogOut, ListChecks, Scale, Building2, Check, ChevronDown } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +22,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "./language-switcher";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -266,18 +267,21 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               {sessionData?.user?.orgRole !== "member" && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === "/legal-hub/firm" || pathname.startsWith("/legal-hub/firm/")}
-                    tooltip={tSidebar("myLawFirm")}
-                  >
-                    <Link href="/legal-hub/firm">
-                      <Building2 />
-                      <span>{tSidebar("myLawFirm")}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <>
+                  <Separator className="my-1" />
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === "/legal-hub/firm" || pathname.startsWith("/legal-hub/firm/")}
+                      tooltip={tSidebar("myLawFirm")}
+                    >
+                      <Link href="/legal-hub/firm">
+                        <Building2 />
+                        <span>{tSidebar("myLawFirm")}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
               )}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -288,9 +292,7 @@ export function AppSidebar() {
         {(() => {
           const docHubItems = [
             { title: tSidebar("documents"), href: "/documents", icon: FileText, resource: "documents", feature: "" },
-            { title: tSidebar("policies"), href: "/policies", icon: Shield, resource: "policies", feature: "policies" },
-            { title: tSidebar("analyzeProcess"), href: "/document-tools", icon: Layers, resource: "documents", feature: "" },
-            { title: tSidebar("askLibrary"), href: "/ask", icon: MessageSquare, resource: "documents", feature: "" },
+            { title: tSidebar("aiTools"), href: "/document-tools", icon: Layers, resource: "documents", feature: "" },
           ].filter((item) => canView(item.resource) && (!item.feature || canAccessFeature(item.feature)));
 
           return docHubItems.length > 0 ? (
@@ -319,6 +321,7 @@ export function AppSidebar() {
 
         {/* Bottom standalones */}
         <SidebarGroup>
+          <SidebarGroupLabel>{tSidebar("workspace")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {[

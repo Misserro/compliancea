@@ -78,7 +78,9 @@
     "myLawFirm": "Moja kancelaria",
     "contractHub": "Centrum um\u00f3w",
     "legalHub": "Centrum prawne",
-    "documentsHub": "Centrum dokument\u00f3w"
+    "documentsHub": "Centrum dokument\u00f3w",
+    "aiTools": "Narz\u0119dzia AI",
+    "workspace": "Obszar roboczy"
   },
   "Auth": {
     "signIn": "Zaloguj si\u0119",
@@ -904,6 +906,7 @@
     },
 
     "actionBar": {
+      "actions": "Akcje",
       "scanning": "Skanowanie...",
       "scanServer": "Skanuj folder serwera",
       "scanningGDrive": "Skanowanie...",
@@ -1108,6 +1111,20 @@
       "networkError": "B\u0142\u0105d sieci: {error}",
       "answerHeading": "Odpowied\u017a",
       "sourcesHeading": "\u0179r\u00f3d\u0142a"
+    },
+
+    "aiTools": {
+      "title": "Narz\u0119dzia AI",
+      "subtitle": "Analizuj dokumenty i zadawaj pytania dotycz\u0105ce biblioteki.",
+      "tab": {
+        "analyze": "Analizuj i przetwarzaj",
+        "ask": "Zapytaj bibliotek\u0119"
+      }
+    },
+
+    "typeFilter": {
+      "all": "Wszystkie",
+      "policies": "Polityki"
     },
 
     "docSelect": {

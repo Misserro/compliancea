@@ -1,0 +1,23 @@
+{
+  "task_id": "task-2",
+  "task_name": "Sidebar + Pages: Merge AI Tools into tabbed page",
+  "team_name": "task-2-team",
+  "goal": "Sidebar Documents Hub shows 3 items: Documents, AI Tools (no more Ask Library). Navigating to /document-tools shows a tabbed page. Default tab is Analyze & Process. Ask Library tab renders AskSection. /ask redirects to /document-tools. Labels correct in both locales.",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-30T07:54:21.000Z",
+  "ended_at": "2026-03-30T07:58:07.000Z",
+  "elapsed_seconds": 226,
+  "stages": {
+    "planning":       { "started_at": "2026-03-30T07:54:21.000Z", "ended_at": "2026-03-30T07:58:07.000Z", "elapsed_seconds": 226 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-2", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-30T07:54:21.000Z", "ended_at": "2026-03-30T07:58:07.000Z" },
+    { "name": "reviewer-2", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-30T07:54:21.000Z", "ended_at": "2026-03-30T07:58:07.000Z" },
+    { "name": "tester-2",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-30T07:54:21.000Z", "ended_at": "2026-03-30T07:58:07.000Z" }
+  ]
+}

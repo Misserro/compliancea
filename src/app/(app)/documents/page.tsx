@@ -49,6 +49,7 @@ export default function DocumentsPage() {
   // Search & filter state
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "policies">("all");
 
   // Metadata dialog state
   const [metadataDoc, setMetadataDoc] = useState<Document | null>(null);
@@ -80,6 +81,10 @@ export default function DocumentsPage() {
   const filteredDocuments = useMemo(() => {
     let result = documents;
 
+    if (typeFilter === "policies") {
+      result = result.filter((d) => d.doc_type && ["policy", "procedure"].includes(d.doc_type));
+    }
+
     if (statusFilter !== "all") {
       result = result.filter((d) => d.status === statusFilter);
     }
@@ -90,7 +95,7 @@ export default function DocumentsPage() {
     }
 
     return result;
-  }, [documents, search, statusFilter]);
+  }, [documents, search, statusFilter, typeFilter]);
 
   async function handleScanServer() {
     try {
@@ -271,7 +276,7 @@ export default function DocumentsPage() {
     else toast.info(message);
   }
 
-  const hasActiveFilters = search.trim() !== "" || statusFilter !== "all";
+  const hasActiveFilters = search.trim() !== "" || statusFilter !== "all" || typeFilter !== "all";
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
@@ -280,6 +285,26 @@ export default function DocumentsPage() {
         <p className="text-sm text-muted-foreground mt-1">
           {t('subtitle')}
         </p>
+      </div>
+
+      {/* Type filter chips */}
+      <div className="flex gap-2">
+        <Button
+          variant={typeFilter === "all" ? "secondary" : "ghost"}
+          size="sm"
+          className="h-7 px-3 text-xs"
+          onClick={() => setTypeFilter("all")}
+        >
+          {t('typeFilter.all')}
+        </Button>
+        <Button
+          variant={typeFilter === "policies" ? "secondary" : "ghost"}
+          size="sm"
+          className="h-7 px-3 text-xs"
+          onClick={() => setTypeFilter("policies")}
+        >
+          {t('typeFilter.policies')}
+        </Button>
       </div>
 
       {canEdit && (
@@ -346,7 +371,7 @@ export default function DocumentsPage() {
               variant="ghost"
               size="sm"
               className="h-7 px-2 text-xs"
-              onClick={() => { setSearch(""); setStatusFilter("all"); }}
+              onClick={() => { setSearch(""); setStatusFilter("all"); setTypeFilter("all"); }}
             >
               <X className="h-3 w-3 mr-1" />
               {t('clearFilters')}
