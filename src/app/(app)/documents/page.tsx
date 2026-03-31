@@ -216,6 +216,28 @@ export default function DocumentsPage() {
     }
   }
 
+  async function handleReprocess(id: number) {
+    setProcessingIds((prev) => new Set(prev).add(id));
+    try {
+      const res = await fetch(`/api/documents/${id}/process?force=true`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message || t('reprocessSuccess'));
+        await loadDocuments();
+      } else {
+        toast.error(data.error);
+      }
+    } catch (err) {
+      toast.error(`${t('processError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
+    } finally {
+      setProcessingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
   async function handleRetag(id: number) {
     setRetaggingIds((prev) => new Set(prev).add(id));
     try {
@@ -394,6 +416,7 @@ export default function DocumentsPage() {
           retaggingIds={retaggingIds}
           onCategoryChange={handleCategoryChange}
           onProcess={handleProcess}
+          onReprocess={handleReprocess}
           onRetag={handleRetag}
           onDelete={handleDelete}
           onEditMetadata={(doc) => {

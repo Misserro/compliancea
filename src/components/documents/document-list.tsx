@@ -14,6 +14,7 @@ interface DocumentListProps {
   retaggingIds: Set<number>;
   onCategoryChange: (id: number, category: string | null) => void;
   onProcess: (id: number) => void;
+  onReprocess: (id: number) => void;
   onRetag: (id: number) => void;
   onDelete: (id: number) => void;
   onEditMetadata: (doc: Document) => void;
@@ -43,6 +44,7 @@ interface DocTypeSectionProps {
   retaggingIds: Set<number>;
   onCategoryChange: (id: number, category: string | null) => void;
   onProcess: (id: number) => void;
+  onReprocess: (id: number) => void;
   onRetag: (id: number) => void;
   onDelete: (id: number) => void;
   onEditMetadata: (doc: Document) => void;
@@ -59,6 +61,7 @@ function DocTypeSection({
   retaggingIds,
   onCategoryChange,
   onProcess,
+  onReprocess,
   onRetag,
   onDelete,
   onEditMetadata,
@@ -94,6 +97,7 @@ function DocTypeSection({
               retagging={retaggingIds?.has(doc.id) ?? false}
               onCategoryChange={onCategoryChange}
               onProcess={onProcess}
+              onReprocess={onReprocess}
               onRetag={onRetag}
               onDelete={onDelete}
               onEditMetadata={onEditMetadata}
@@ -118,6 +122,7 @@ interface DeptSectionProps {
   retaggingIds: Set<number>;
   onCategoryChange: (id: number, category: string | null) => void;
   onProcess: (id: number) => void;
+  onReprocess: (id: number) => void;
   onRetag: (id: number) => void;
   onDelete: (id: number) => void;
   onEditMetadata: (doc: Document) => void;
@@ -134,6 +139,7 @@ function DeptSection({
   retaggingIds,
   onCategoryChange,
   onProcess,
+  onReprocess,
   onRetag,
   onDelete,
   onEditMetadata,
@@ -168,6 +174,7 @@ function DeptSection({
     retaggingIds,
     onCategoryChange,
     onProcess,
+    onReprocess,
     onRetag,
     onDelete,
     onEditMetadata,
@@ -221,6 +228,7 @@ export function DocumentList({
   retaggingIds,
   onCategoryChange,
   onProcess,
+  onReprocess,
   onRetag,
   onDelete,
   onEditMetadata,
@@ -256,6 +264,7 @@ export function DocumentList({
     retaggingIds,
     onCategoryChange,
     onProcess,
+    onReprocess,
     onRetag,
     onDelete,
     onEditMetadata,

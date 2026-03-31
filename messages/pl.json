@@ -944,6 +944,7 @@
     "categoryError": "Nie uda\u0142o si\u0119 zaktualizowa\u0107 kategorii",
     "processError": "Przetwarzanie nie powiod\u0142o si\u0119",
     "documentProcessed": "Dokument przetworzony",
+    "reprocessSuccess": "Dokument zosta\u0142 przeindeksowany",
     "documentDeleted": "Dokument usuni\u0119ty",
     "deleteError": "Usuwanie nie powiod\u0142o si\u0119",
     "metadataSaved": "Metadane zapisane",
@@ -992,6 +993,7 @@
       "download": "Pobierz",
       "retagDocument": "Otaguj ponownie",
       "processDocument": "Przetw\u00f3rz dokument",
+      "reprocessDocument": "Przeindeksuj dokument",
       "manageContract": "Zarz\u0105dzaj umow\u0105",
       "deleteTitle": "Usu\u0144",
       "deleteConfirm": "Usun\u0105\u0107 \"{name}\"?"

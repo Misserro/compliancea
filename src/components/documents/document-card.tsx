@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { ChevronDown, ChevronRight, Pencil, Play, Briefcase, Trash2, Download, Tags } from "lucide-react";
+import { ChevronDown, ChevronRight, Pencil, Play, Briefcase, Trash2, Download, Tags, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +26,7 @@ interface DocumentCardProps {
   expanded: boolean;
   onCategoryChange: (id: number, category: string | null) => void;
   onProcess: (id: number) => void;
+  onReprocess: (id: number) => void;
   onRetag: (id: number) => void;
   onDelete: (id: number) => void;
   onEditMetadata: (doc: Document) => void;
@@ -41,6 +42,7 @@ export function DocumentCard({
   expanded,
   onCategoryChange,
   onProcess,
+  onReprocess,
   onRetag,
   onDelete,
   onEditMetadata,
@@ -196,6 +198,18 @@ export function DocumentCard({
                       title={t('card.retagDocument')}
                     >
                       <Tags className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  {canEdit && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => onReprocess(doc.id)}
+                      disabled={processing}
+                      title={t('card.reprocessDocument')}
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
                     </Button>
                   )}
                 </>

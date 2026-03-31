@@ -944,6 +944,7 @@
     "categoryError": "Failed to update category",
     "processError": "Process failed",
     "documentProcessed": "Document processed",
+    "reprocessSuccess": "Document reprocessed successfully",
     "documentDeleted": "Document deleted",
     "deleteError": "Delete failed",
     "metadataSaved": "Metadata saved",
@@ -992,6 +993,7 @@
       "download": "Download",
       "retagDocument": "Retag document",
       "processDocument": "Process document",
+      "reprocessDocument": "Reprocess document",
       "manageContract": "Manage contract",
       "deleteTitle": "Delete",
       "deleteConfirm": "Delete \"{name}\"?"

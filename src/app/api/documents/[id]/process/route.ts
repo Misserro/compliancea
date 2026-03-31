@@ -50,6 +50,9 @@ export async function POST(
   const { id } = await params;
   const documentId = parseInt(id, 10);
 
+  const url = new URL(_request.url);
+  const force = url.searchParams.get("force") === "true";
+
   try {
     const document = getDocumentById(documentId, orgId);
     if (!document) {
@@ -82,7 +85,7 @@ export async function POST(
     }
 
     // Skip reprocessing if content is unchanged and document is already processed
-    if (document.processed === 1 && document.content_hash === contentHash) {
+    if (!force && document.processed === 1 && document.content_hash === contentHash) {
       return NextResponse.json({
         message: "Document already processed with identical content — skipping",
         document: getDocumentById(documentId, orgId),
@@ -378,9 +381,23 @@ export async function POST(
     if (fileType === "pdf") {
       // Page-aware chunking for PDFs
       const fileBuffer = await fs.readFile(document.path);
-      const pdfData = await pdfParse(fileBuffer);
-      const pageTexts = pdfData.text.split("\f").filter((t: string) => t.trim().length > 0);
-      const pages = pageTexts.map((t: string, i: number) => ({ pageNumber: i + 1, text: t }));
+      const pageTexts: { pageNumber: number; text: string }[] = [];
+
+      function renderPage(pageData: any): Promise<string> {
+        return pageData.getTextContent({ normalizeWhitespace: false })
+          .then((tc: any) => {
+            const text = tc.items.map((item: any) => item.str).join(' ');
+            pageTexts.push({ pageNumber: pageData.pageNumber, text });
+            return text;
+          });
+      }
+
+      await pdfParse(fileBuffer, { pagerender: renderPage });
+
+      // Sort by pageNumber (defensive — callbacks are ordered but sort ensures correctness)
+      const pages = pageTexts
+        .sort((a, b) => a.pageNumber - b.pageNumber)
+        .filter((p) => p.text.trim().length > 0);
 
       const pageChunks = chunkTextByPages(pages);
 

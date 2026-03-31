@@ -1,0 +1,23 @@
+{
+  "task_id": "task-2",
+  "task_name": "Add force-reprocess button for processed documents",
+  "team_name": "task-2-team",
+  "goal": "Allow users to trigger reprocessing of already-processed documents via a Reprocess button and ?force=true param",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-03-31T10:17:53.000Z",
+  "ended_at": "2026-03-31T10:20:16.000Z",
+  "elapsed_seconds": 143,
+  "stages": {
+    "planning":       { "started_at": "2026-03-31T10:17:53.000Z", "ended_at": "2026-03-31T10:20:16.000Z", "elapsed_seconds": 143 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-2", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-31T10:17:53.000Z", "ended_at": "2026-03-31T10:20:16.000Z" },
+    { "name": "reviewer-2", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-31T10:17:53.000Z", "ended_at": "2026-03-31T10:20:16.000Z" },
+    { "name": "tester-2",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-31T10:17:53.000Z", "ended_at": "2026-03-31T10:20:16.000Z" }
+  ]
+}

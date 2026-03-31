@@ -1,0 +1,81 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-03-31T10:15:41.000Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution started — 3 tasks, all independent, running concurrently"
+    },
+    {
+      "timestamp": "2026-03-31T10:17:53.000Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "Team spawned for task-1: Fix PDF page number extraction — replace \\f-split with pagerender callback"
+    },
+    {
+      "timestamp": "2026-03-31T10:17:53.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-31T10:17:53.000Z",
+      "type": "team_spawned",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "Team spawned for task-2: Add force-reprocess button for processed documents"
+    },
+    {
+      "timestamp": "2026-03-31T10:17:53.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-31T10:17:53.000Z",
+      "type": "team_spawned",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "Team spawned for task-3: Improve system prompt for per-item list citations"
+    },
+    {
+      "timestamp": "2026-03-31T10:17:53.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-31T10:18:54.000Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 completed: Fix PDF page number extraction"
+    },
+    {
+      "timestamp": "2026-03-31T10:20:16.000Z",
+      "type": "task_completed",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 completed: Add force-reprocess button for processed documents"
+    },
+    {
+      "timestamp": "2026-03-31T10:20:16.000Z",
+      "type": "task_completed",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 completed: Improve system prompt for per-item list citations"
+    },
+    {
+      "timestamp": "2026-03-31T10:20:16.000Z",
+      "type": "execution_completed",
+      "task_id": null,
+      "agent": "pm",
+      "message": "All 3 tasks completed — plan execution finished in ~5 minutes"
+    }
+  ]
+}
