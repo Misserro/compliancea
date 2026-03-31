@@ -200,7 +200,8 @@
       "examplePrompt1": "What is the case reference number?",
       "examplePrompt2": "Who is the defendant in this case?",
       "examplePrompt3": "When is the next hearing?",
-      "examplePrompt4": "Find information in case documents"
+      "examplePrompt4": "Find information in case documents",
+      "sources": "Sources:"
     },
 
     "activity": {

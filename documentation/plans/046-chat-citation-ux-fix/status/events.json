@@ -1,0 +1,130 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-03-31T06:43:39.000Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution started. 4 tasks, all independent, concurrency limit 3. Monitor-only mode (no tmux session)."
+    },
+    {
+      "timestamp": "2026-03-31T06:43:39.000Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "Team spawned for task-1: Citation density — prompt tuning"
+    },
+    {
+      "timestamp": "2026-03-31T06:43:39.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-31T06:43:39.000Z",
+      "type": "team_spawned",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "Team spawned for task-2: Sources footer + limitedEvidence UI rework"
+    },
+    {
+      "timestamp": "2026-03-31T06:43:39.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "executor-2",
+      "message": "task-2 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-31T06:43:39.000Z",
+      "type": "team_spawned",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "Team spawned for task-3: Hover card scrollbar fix"
+    },
+    {
+      "timestamp": "2026-03-31T06:43:39.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "executor-3",
+      "message": "task-3 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-31T06:46:11.000Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 completed: Citation density — prompt tuning"
+    },
+    {
+      "timestamp": "2026-03-31T06:46:11.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "team task-1-team shut down"
+    },
+    {
+      "timestamp": "2026-03-31T06:46:11.000Z",
+      "type": "task_completed",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 completed: Sources footer + limitedEvidence UI rework"
+    },
+    {
+      "timestamp": "2026-03-31T06:46:11.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "team task-2-team shut down"
+    },
+    {
+      "timestamp": "2026-03-31T06:46:11.000Z",
+      "type": "task_completed",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 completed: Hover card scrollbar fix"
+    },
+    {
+      "timestamp": "2026-03-31T06:46:11.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "team task-3-team shut down"
+    },
+    {
+      "timestamp": "2026-03-31T06:46:11.000Z",
+      "type": "team_spawned",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "Team spawned for task-4: History fix + parse error logging"
+    },
+    {
+      "timestamp": "2026-03-31T06:46:11.000Z",
+      "type": "stage_entered",
+      "task_id": "task-4",
+      "agent": "executor-4",
+      "message": "task-4 entered planning stage"
+    },
+    {
+      "timestamp": "2026-03-31T06:47:54.000Z",
+      "type": "task_completed",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4 completed: History fix + parse error logging"
+    },
+    {
+      "timestamp": "2026-03-31T06:47:54.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "team task-4-team shut down"
+    },
+    {
+      "timestamp": "2026-03-31T06:47:54.000Z",
+      "type": "execution_completed",
+      "task_id": null,
+      "agent": "pm",
+      "message": "All 4 tasks completed. 890/891 tests pass. 1 pre-existing failure in court-fee.test.ts (floating-point, known since Plan 042, unrelated to this plan)."
+    }
+  ]
+}

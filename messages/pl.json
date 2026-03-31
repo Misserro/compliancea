@@ -200,7 +200,8 @@
       "examplePrompt1": "Jaki jest numer referencyjny sprawy?",
       "examplePrompt2": "Kto jest pozwanym w tej sprawie?",
       "examplePrompt3": "Kiedy jest najbli\u017csza rozprawa?",
-      "examplePrompt4": "Znajd\u017a informacje w dokumentach sprawy"
+      "examplePrompt4": "Znajd\u017a informacje w dokumentach sprawy",
+      "sources": "\u0179r\u00f3d\u0142a:"
     },
 
     "activity": {

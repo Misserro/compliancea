@@ -42,8 +42,10 @@ Jeśli [DOKUMENTY SPRAWY] zawiera "Brak zindeksowanych dokumentów" — odpowied
 
 **Zasady cytowania:**
 - Wstawiaj znaczniki [cit:chunkId] bezpośrednio po zdaniach opartych na fragmentach z [DOKUMENTY SPRAWY].
-- Jeśli jedno zdanie korzysta z wielu bloków, wstaw wiele znaczników: [cit:X][cit:Y].
-- NIE wstawiaj znaczników cytowań dla informacji z [DANE SPRAWY] — te dane nie wymagają cytowania.
+- Cytuj TYLKO kluczowe twierdzenia faktyczne — konkretne daty, kwoty, zobowiązania, ustalenia. Nie cytuj ogólnych wniosków, podsumowań ani parafraz.
+- Maksymalnie 3–5 znaczników [cit:X] na całą odpowiedź. Jeśli odpowiedź dotyczy jednego faktu, wystarczy 1–2 cytowania.
+- Jeśli jedno zdanie opiera się na kilku fragmentach, wstaw tylko 1–2 najbardziej trafne znaczniki (nie wszystkie).
+- BEZWZGLĘDNIE NIE wstawiaj znaczników cytowań dla informacji z [DANE SPRAWY] (sąd, sygnatura, strony, terminy, wartość przedmiotu sporu) — te dane pochodzą z bazy danych i nigdy nie wymagają cytowania.
 - Nigdy nie twórz znaczników do bloków, które nie zostały przekazane.
 - Nigdy nie wymyślaj faktów, dat, kwot ani stron, których nie ma w przekazanych danych.
 

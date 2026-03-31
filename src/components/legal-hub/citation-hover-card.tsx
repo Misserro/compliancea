@@ -85,14 +85,12 @@ export function CitationHoverCard({
           avoidCollisions
           className="z-50 max-w-[360px] rounded-md border bg-popover p-3 shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2"
         >
-          <div className="max-h-[400px] overflow-y-auto">
-            {citations.map((c, i) => (
-              <div key={c.chunkId}>
-                {i > 0 && <Separator className="my-3" />}
-                <CitationEntry citation={c} />
-              </div>
-            ))}
-          </div>
+          {citations.map((c, i) => (
+            <div key={c.chunkId}>
+              {i > 0 && <Separator className="my-3" />}
+              <CitationEntry citation={c} />
+            </div>
+          ))}
           <HoverCard.Arrow className="fill-border" />
         </HoverCard.Content>
       </HoverCard.Portal>

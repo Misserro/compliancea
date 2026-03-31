@@ -323,7 +323,7 @@ export async function POST(
 
     return NextResponse.json(structured);
   } catch (err: unknown) {
-    console.error("[chat/route] Error:", err);
+    console.error("[chat/route] Unhandled error:", err);
     return NextResponse.json({
       answerText: "",
       annotations: [],

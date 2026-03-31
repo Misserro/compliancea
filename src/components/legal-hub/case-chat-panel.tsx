@@ -123,10 +123,12 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
     setLoading(true);
 
     try {
-      const history = previousMessages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
+      const history = previousMessages
+        .filter((m) => !m.actionProposal) // exclude tool_use turns — cannot be serialized as plain strings
+        .map((m) => ({
+          role: m.role,
+          content: m.content,
+        }));
 
       const res = await fetch(`/api/legal-hub/cases/${caseId}/chat`, {
         method: "POST",
@@ -270,8 +272,13 @@ export function CaseChatPanel({ caseId }: CaseChatPanelProps) {
               ) : msg.structuredAnswer ? (
                 <>
                   <AnnotatedAnswer answer={msg.structuredAnswer} />
-                  {msg.structuredAnswer.confidence === "low" && (
+                  {msg.structuredAnswer.usedDocuments.length > 0 && (
                     <p className="text-xs text-muted-foreground mt-2">
+                      {t('chat.sources')} {msg.structuredAnswer.usedDocuments.map(d => d.name).join(', ')}
+                    </p>
+                  )}
+                  {msg.structuredAnswer.confidence === "low" && (
+                    <p className="text-xs text-muted-foreground mt-1">
                       {t('chat.limitedEvidence')}
                     </p>
                   )}

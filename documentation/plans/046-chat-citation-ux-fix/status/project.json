@@ -1,0 +1,14 @@
+{
+  "name": "046-chat-citation-ux-fix",
+  "description": "Fix 5 user-reported issues in Legal Hub case chat: citation density, missing sources footer, hover card scrollbar, broken history after action proposals, and silent parse error failures.",
+  "plan_file": "documentation/plans/046-chat-citation-ux-fix/README.md",
+  "status": "completed",
+  "started_at": "2026-03-31T06:43:39.000Z",
+  "ended_at": "2026-03-31T06:47:54.000Z",
+  "elapsed_seconds": 255,
+  "concurrency_limit": 3,
+  "total_tasks": 4,
+  "completed_tasks": 4,
+  "active_tasks": 0,
+  "pending_tasks": 0
+}
