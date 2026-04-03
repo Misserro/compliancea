@@ -1,0 +1,14 @@
+{
+  "name": "050-chat-resilience-retry",
+  "description": "Legal Hub Chat Resilience & Auto-Retry — fix 1-in-3-5 first-message failures caused by Voyage AI transient errors in getEmbedding()",
+  "plan_file": "documentation/plans/050-chat-resilience-retry/README.md",
+  "status": "executing",
+  "started_at": "2026-04-03T13:39:22.000Z",
+  "ended_at": null,
+  "elapsed_seconds": 182,
+  "concurrency_limit": 2,
+  "total_tasks": 2,
+  "completed_tasks": 1,
+  "active_tasks": 1,
+  "pending_tasks": 0
+}

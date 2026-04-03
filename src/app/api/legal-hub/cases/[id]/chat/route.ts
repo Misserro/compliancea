@@ -229,6 +229,22 @@ export async function POST(
       clearSessionContext(userId, caseIdStr);
     }
 
+    // Retry helper: retries processing once on failure, clearing session cache before retry
+    async function runWithRetry<T>(fn: () => Promise<T>, maxAttempts = 2, delayMs = 500): Promise<T> {
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          return await fn();
+        } catch (err) {
+          if (attempt === maxAttempts) throw err;
+          console.warn(`[chat/route] Processing attempt ${attempt} failed, retrying after ${delayMs}ms...`, err);
+          clearSessionContext(userId, caseIdStr);
+          await new Promise(r => setTimeout(r, delayMs));
+        }
+      }
+      throw new Error("unreachable");
+    }
+
+    return await runWithRetry(async () => {
     // Check session context cache
     const cachedSession = getSessionContext(userId, caseIdStr);
     const retrievalService = new CaseRetrievalService();
@@ -237,6 +253,7 @@ export async function POST(
     let allRetrievalChunks: RetrievalChunk[];
     let lowConfidence = false;
     let firstUserMessage: string;
+    let genResponse: Awaited<ReturnType<typeof anthropic.messages.create>>;
 
     if (cachedSession) {
       // ── Turn 2+ (cache hit): skip full retrieval pipeline ──
@@ -244,14 +261,20 @@ export async function POST(
       firstUserMessage = cachedSession.firstUserMessage;
 
       // Delta vector search: top 5, deduplicate against priming set
-      const deltaRaw = await (retrievalService as any)._getVectorCandidates(
-        message,
-        caseId,
-        5 + cachedSession.chunkIds.size // fetch extra to account for dedup filtering
-      );
-      const deltaChunks = (deltaRaw as RetrievalChunk[]).filter(
-        (c) => !cachedSession.chunkIds.has(c.chunkId)
-      ).slice(0, 5);
+      let deltaChunks: RetrievalChunk[] = [];
+      try {
+        const deltaRaw = await (retrievalService as any)._getVectorCandidates(
+          message,
+          caseId,
+          5 + cachedSession.chunkIds.size // fetch extra to account for dedup filtering
+        );
+        deltaChunks = (deltaRaw as RetrievalChunk[]).filter(
+          (c) => !cachedSession.chunkIds.has(c.chunkId)
+        ).slice(0, 5);
+      } catch (deltaErr) {
+        console.error("[chat/route] Delta vector search failed, falling back to priming only:", deltaErr);
+        deltaChunks = [];
+      }
 
       // Combine priming chunks + delta for citation validation
       allRetrievalChunks = [...cachedSession.primingChunks, ...deltaChunks];
@@ -315,7 +338,7 @@ export async function POST(
         { ...CASE_CHAT_TOOLS[CASE_CHAT_TOOLS.length - 1], cache_control: { type: "ephemeral" } },
       ];
 
-      var genResponse = await anthropic.messages.create({
+      genResponse = await anthropic.messages.create({
         model: modelName,
         max_tokens: 4096,
         system: [{ type: "text", text: groundedSystemPrompt, cache_control: { type: "ephemeral" } }],
@@ -375,7 +398,7 @@ export async function POST(
       ];
 
       // Turn 1: no history, priming pair contains the user message
-      var genResponse = await anthropic.messages.create({
+      genResponse = await anthropic.messages.create({
         model: modelName,
         max_tokens: 4096,
         system: [{ type: "text", text: groundedSystemPrompt, cache_control: { type: "ephemeral" } }],
@@ -479,6 +502,7 @@ export async function POST(
 
     logUsage();
     return NextResponse.json(structured);
+    }); // end runWithRetry
   } catch (err: unknown) {
     console.error("[chat/route] Unhandled error:", err);
     return NextResponse.json({
