@@ -1,0 +1,23 @@
+{
+  "task_id": "task-3",
+  "task_name": "Super-Admin Token Usage Dashboard",
+  "team_name": "task-3-team",
+  "goal": "New /api/admin/token-usage endpoint and /admin/token-usage page with sortable table, total row, super-admin guard, and nav link",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-04-03T10:50:52.000Z",
+  "ended_at": "2026-04-03T10:57:17.000Z",
+  "elapsed_seconds": 385,
+  "stages": {
+    "planning":       { "started_at": "2026-04-03T10:50:52.000Z", "ended_at": "2026-04-03T10:53:02.000Z", "elapsed_seconds": 130 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": "2026-04-03T10:53:02.000Z", "ended_at": "2026-04-03T10:57:17.000Z", "elapsed_seconds": 255 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-3", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-04-03T10:50:52.000Z", "ended_at": "2026-04-03T10:57:17.000Z" },
+    { "name": "reviewer-3", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-04-03T10:50:52.000Z", "ended_at": "2026-04-03T10:57:17.000Z" },
+    { "name": "tester-3",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-04-03T10:50:52.000Z", "ended_at": "2026-04-03T10:57:17.000Z" }
+  ]
+}

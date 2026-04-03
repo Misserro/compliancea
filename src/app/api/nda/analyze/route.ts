@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import Anthropic from "@anthropic-ai/sdk";
+import { anthropic } from "@/lib/anthropic-client";
 import fs from "fs/promises";
 import path from "path";
 import {
@@ -8,6 +8,8 @@ import {
   guessType,
   guessTypeFromMime,
 } from "@/lib/server-utils";
+import { logTokenUsage } from "@/lib/db-imports";
+import { PRICING } from "@/lib/constants";
 import { hasPermission } from "@/lib/permissions";
 
 export const runtime = "nodejs";
@@ -82,7 +84,6 @@ export async function POST(request: NextRequest) {
       .replaceAll("{NDA_TEXT}", ndaText);
 
     // Call Anthropic
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
 
     const message = await anthropic.messages.create({
@@ -98,6 +99,22 @@ export async function POST(request: NextRequest) {
 
     const inputTokens = message.usage?.input_tokens || 0;
     const outputTokens = message.usage?.output_tokens || 0;
+
+    const costUsd =
+      (inputTokens / 1_000_000) * PRICING.claude.sonnet.input +
+      (outputTokens / 1_000_000) * PRICING.claude.sonnet.output;
+    try {
+      logTokenUsage({
+        userId: Number(session.user.id),
+        orgId: Number(session.user.orgId),
+        route: '/api/nda/analyze',
+        model: 'sonnet',
+        inputTokens,
+        outputTokens,
+        voyageTokens: 0,
+        costUsd,
+      });
+    } catch (_) { /* silent */ }
 
     return NextResponse.json({
       markdown,

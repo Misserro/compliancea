@@ -211,3 +211,7 @@ export function updateMemberProfile(...args: any[]): any;
 
 // Dynamic Permission Dashboard (Plan 040 Task 1)
 export function getLegalHubDashboardData(...args: any[]): any;
+
+// Token Usage Tracking (Plan 048)
+export function logTokenUsage(...args: any[]): any;
+export function getTokenUsageSummary(...args: any[]): any;

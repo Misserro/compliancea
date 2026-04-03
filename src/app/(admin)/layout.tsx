@@ -17,6 +17,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             <nav className="flex items-center gap-4 text-sm">
               <Link href="/admin" className="text-muted-foreground hover:text-foreground transition-colors">Organizations</Link>
               <Link href="/admin/users" className="text-muted-foreground hover:text-foreground transition-colors">Users</Link>
+              <Link href="/admin/token-usage" className="text-muted-foreground hover:text-foreground transition-colors">Token Usage</Link>
             </nav>
           </div>
           <Link

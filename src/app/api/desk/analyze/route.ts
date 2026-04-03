@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import Anthropic from "@anthropic-ai/sdk";
+import { anthropic } from "@/lib/anthropic-client";
 import { ensureDb, extractTextFromBuffer, guessType, guessTypeFromMime } from "@/lib/server-utils";
+import { logTokenUsage } from "@/lib/db-imports";
+import { PRICING } from "@/lib/constants";
 import { getSettings } from "@/lib/settings-imports";
 import { searchDocuments } from "@/lib/search-imports";
 import { shouldSkipTranslation } from "@/lib/language-detection-imports";
@@ -101,10 +103,6 @@ export async function POST(request: NextRequest) {
     if (!docText) {
       return NextResponse.json({ error: "Could not extract text from the uploaded file." }, { status: 400 });
     }
-
-    const anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
 
     const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
     const haikuModel = "claude-3-haiku-20240307";
@@ -366,6 +364,23 @@ export async function POST(request: NextRequest) {
       usedHaikuForExtraction: usedHaiku,
       relevanceThresholdApplied: settings.useRelevanceThreshold,
     };
+
+    const costUsd =
+      (inputTokens / 1_000_000) * PRICING.claude.sonnet.input +
+      (outputTokens / 1_000_000) * PRICING.claude.sonnet.output +
+      (voyageTokens / 1_000) * PRICING.voyage;
+    try {
+      logTokenUsage({
+        userId: Number(session.user.id),
+        orgId: Number(session.user.orgId),
+        route: '/api/desk/analyze',
+        model: 'sonnet',
+        inputTokens,
+        outputTokens,
+        voyageTokens,
+        costUsd,
+      });
+    } catch (_) { /* silent */ }
 
     return NextResponse.json(out);
   } catch (err: unknown) {

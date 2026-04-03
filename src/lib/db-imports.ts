@@ -199,4 +199,7 @@ export {
   updateMemberProfile,
   // Dynamic Permission Dashboard (Plan 040 Task 1)
   getLegalHubDashboardData,
+  // Token Usage Tracking (Plan 048)
+  logTokenUsage,
+  getTokenUsageSummary,
 } from "../../lib/db.js";

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import Anthropic from "@anthropic-ai/sdk";
+import { anthropic } from "@/lib/anthropic-client";
 import fs from "fs/promises";
 import path from "path";
 import { ensureDb, extractTextFromBuffer, guessType, guessTypeFromMime, buildJsonSchemaDescription } from "@/lib/server-utils";
+import { logTokenUsage } from "@/lib/db-imports";
+import { PRICING } from "@/lib/constants";
 import { hasPermission } from "@/lib/permissions";
 
 export const runtime = "nodejs";
@@ -106,10 +108,6 @@ export async function POST(request: NextRequest) {
 
     const schemaDescription = buildJsonSchemaDescription(outputs);
 
-    const anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
-
     const prompt = [
       `Target language: ${targetLanguage}`,
       `Requested outputs: ${outputs.join(", ")}`,
@@ -201,6 +199,22 @@ export async function POST(request: NextRequest) {
         model: "sonnet",
       },
     };
+
+    const costUsd =
+      (inputTokens / 1_000_000) * PRICING.claude.sonnet.input +
+      (outputTokens / 1_000_000) * PRICING.claude.sonnet.output;
+    try {
+      logTokenUsage({
+        userId: Number(session.user.id),
+        orgId: Number(session.user.orgId),
+        route: '/api/analyze',
+        model: 'sonnet',
+        inputTokens,
+        outputTokens,
+        voyageTokens: 0,
+        costUsd,
+      });
+    } catch (_) { /* silent */ }
 
     return NextResponse.json(out);
   } catch (err: unknown) {

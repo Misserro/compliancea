@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import type Anthropic from "@anthropic-ai/sdk";
+import { anthropic } from "@/lib/anthropic-client";
 import fs from "fs/promises";
 import path from "path";
 import { auth } from "@/auth";
@@ -8,7 +9,9 @@ import {
   getLegalCaseById,
   getCaseParties,
   getCaseDeadlines,
+  logTokenUsage,
 } from "@/lib/db-imports";
+import { PRICING } from "@/lib/constants";
 import { CaseRetrievalService } from "@/lib/case-retrieval-imports";
 import {
   buildEvidencePrompt,
@@ -210,7 +213,6 @@ export async function POST(
       );
     }
 
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-6";
 
     // Step 1: Fetch structured case data (sync DB calls)
@@ -266,8 +268,30 @@ export async function POST(
       ],
     });
 
+    const inputTokens = genResponse.usage?.input_tokens || 0;
+    const outputTokens = genResponse.usage?.output_tokens || 0;
+
+    const logUsage = () => {
+      const costUsd =
+        (inputTokens / 1_000_000) * PRICING.claude.sonnet.input +
+        (outputTokens / 1_000_000) * PRICING.claude.sonnet.output;
+      try {
+        logTokenUsage({
+          userId: Number(session.user.id),
+          orgId: Number(session.user.orgId),
+          route: '/api/legal-hub/cases/chat',
+          model: 'sonnet',
+          inputTokens,
+          outputTokens,
+          voyageTokens: 0,
+          costUsd,
+        });
+      } catch (_) { /* silent */ }
+    };
+
     // Fix: max_tokens truncation — return clean fallback instead of raw JSON
     if (genResponse.stop_reason === "max_tokens") {
+      logUsage();
       return NextResponse.json({
         answerText:
           "Odpowiedź była zbyt długa i została przerwana. Spróbuj zadać bardziej szczegółowe pytanie.",
@@ -303,6 +327,7 @@ export async function POST(
         })
         .filter(Boolean);
 
+      logUsage();
       return NextResponse.json({
         type: "action_proposal",
         proposalText,
@@ -321,6 +346,7 @@ export async function POST(
       structured.confidence = "low";
     }
 
+    logUsage();
     return NextResponse.json(structured);
   } catch (err: unknown) {
     console.error("[chat/route] Unhandled error:", err);

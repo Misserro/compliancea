@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import Anthropic from "@anthropic-ai/sdk";
+import { anthropic } from "@/lib/anthropic-client";
 import fs from "fs/promises";
 import path from "path";
 import { ensureDb } from "@/lib/server-utils";
@@ -9,7 +9,9 @@ import {
   searchContractsByFilters,
   searchContractsByText,
   getObligationsForChat,
+  logTokenUsage,
 } from "@/lib/db-imports";
+import { PRICING } from "@/lib/constants";
 import { hasPermission } from "@/lib/permissions";
 
 export const runtime = "nodejs";
@@ -95,6 +97,9 @@ export async function POST(request: NextRequest) {
 
   await ensureDb();
 
+  let inputTokens = 0;
+  let outputTokens = 0;
+
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json({ error: "ANTHROPIC_API_KEY is not set." }, { status: 500 });
@@ -111,7 +116,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "message is required" }, { status: 400 });
     }
 
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
     const today = new Date().toISOString().split("T")[0];
 
@@ -124,6 +128,8 @@ export async function POST(request: NextRequest) {
         system: CLASSIFIER_SYSTEM.replace("{TODAY}", today),
         messages: [{ role: "user", content: message }],
       });
+      inputTokens += classifierResp.usage?.input_tokens || 0;
+      outputTokens += classifierResp.usage?.output_tokens || 0;
       const raw = classifierResp.content
         .filter((b) => b.type === "text")
         .map((b) => (b.type === "text" ? b.text : ""))
@@ -138,8 +144,27 @@ export async function POST(request: NextRequest) {
 
     const { intent, params, needsSelectedContract, disambiguationQuestion } = classification;
 
+    const logUsage = () => {
+      const costUsd =
+        (inputTokens / 1_000_000) * PRICING.claude.sonnet.input +
+        (outputTokens / 1_000_000) * PRICING.claude.sonnet.output;
+      try {
+        logTokenUsage({
+          userId: Number(session.user.id),
+          orgId: Number(session.user.orgId),
+          route: '/api/contracts/chat',
+          model: 'sonnet',
+          inputTokens,
+          outputTokens,
+          voyageTokens: 0,
+          costUsd,
+        });
+      } catch (_) { /* silent */ }
+    };
+
     // Handle disambiguation up front
     if (intent === "unknown" && disambiguationQuestion) {
+      logUsage();
       return NextResponse.json({
         answer: disambiguationQuestion,
         results: { contracts: [], obligations: [] },
@@ -150,6 +175,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (needsSelectedContract && !selectedContractId) {
+      logUsage();
       return NextResponse.json({
         answer:
           "Which contract are you asking about? Please expand a contract from the list on the left, then ask again — I'll use that as context.",
@@ -224,6 +250,7 @@ Expiry: ${doc.expiry_date || "not set"}
           }
         } else if (found.length > 1) {
           const names = found.map((c) => `"${c.name}"`).join(", ");
+          logUsage();
           return NextResponse.json({
             answer: `I found multiple contracts matching "${params.contractName}": ${names}. Which one would you like summarized? Please expand it from the list.`,
             results: { contracts: found, obligations: [] },
@@ -305,11 +332,15 @@ Expiry: ${doc.expiry_date || "not set"}
       messages: [...historyMessages, { role: "user", content: userContent }],
     });
 
+    inputTokens += genResponse.usage?.input_tokens || 0;
+    outputTokens += genResponse.usage?.output_tokens || 0;
+
     const answer = genResponse.content
       .filter((b) => b.type === "text")
       .map((b) => (b.type === "text" ? b.text : ""))
       .join("");
 
+    logUsage();
     return NextResponse.json({
       answer,
       results: { contracts, obligations },

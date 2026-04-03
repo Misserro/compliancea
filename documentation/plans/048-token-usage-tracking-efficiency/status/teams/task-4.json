@@ -1,0 +1,23 @@
+{
+  "task_id": "task-4",
+  "task_name": "Efficiency Improvements",
+  "team_name": "task-4-team",
+  "goal": "Anthropic client singleton (src/lib/anthropic-client.ts), tag pre-filter short-query bypass (<30 chars), JWT org re-hydration TTL cache (5s) in src/auth.ts",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-04-03T10:58:26.000Z",
+  "ended_at": "2026-04-03T11:05:39.000Z",
+  "elapsed_seconds": 433,
+  "stages": {
+    "planning":       { "started_at": "2026-04-03T10:58:26.000Z", "ended_at": "2026-04-03T11:05:39.000Z", "elapsed_seconds": 433 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-4", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-04-03T10:58:26.000Z", "ended_at": "2026-04-03T11:05:39.000Z" },
+    { "name": "reviewer-4", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-04-03T10:58:26.000Z", "ended_at": "2026-04-03T11:05:39.000Z" },
+    { "name": "tester-4",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-04-03T10:58:26.000Z", "ended_at": "2026-04-03T11:05:39.000Z" }
+  ]
+}

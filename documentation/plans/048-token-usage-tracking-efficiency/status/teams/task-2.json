@@ -1,0 +1,23 @@
+{
+  "task_id": "task-2",
+  "task_name": "Instrument All 8 AI Routes",
+  "team_name": "task-2-team",
+  "goal": "Add token capture to 4 routes missing it, then add fire-and-forget logTokenUsage() calls to all 8 AI routes",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-04-03T10:41:30.000Z",
+  "ended_at": "2026-04-03T10:49:50.000Z",
+  "elapsed_seconds": 500,
+  "stages": {
+    "planning":       { "started_at": "2026-04-03T10:41:30.000Z", "ended_at": "2026-04-03T10:47:08.000Z", "elapsed_seconds": 338 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": "2026-04-03T10:47:08.000Z", "ended_at": "2026-04-03T10:49:50.000Z", "elapsed_seconds": 162 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-2", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-04-03T10:41:30.000Z", "ended_at": "2026-04-03T10:49:50.000Z" },
+    { "name": "reviewer-2", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-04-03T10:41:30.000Z", "ended_at": "2026-04-03T10:49:50.000Z" },
+    { "name": "tester-2",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-04-03T10:41:30.000Z", "ended_at": "2026-04-03T10:49:50.000Z" }
+  ]
+}

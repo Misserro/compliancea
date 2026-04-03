@@ -40,6 +40,21 @@ declare module "@auth/core/jwt" {
   }
 }
 
+// ─── JWT org re-hydration TTL cache (Plan 048) ───────────────────────────────
+// Process-local cache to avoid redundant DB queries for burst requests.
+// Key: "${userId}:${orgId}". TTL: 5 seconds. Bypassed on org-switch (trigger === 'update').
+interface JwtCacheEntry {
+  orgId: number;
+  orgRole: string;
+  orgName: string;
+  isSuperAdmin: boolean;
+  permissions: Record<string, 'none' | 'view' | 'edit' | 'full'> | null;
+  orgFeatures: string[];
+  expiresAt: number;
+}
+const jwtOrgCache = new Map<string, JwtCacheEntry>();
+const JWT_CACHE_TTL = 5000; // 5 seconds
+
 // ─── NextAuth config ──────────────────────────────────────────────────────────
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -124,52 +139,83 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           createSession(token.sessionId, Number(token.id));
         }
 
-        // Refresh org context — preserve chosen org across requests
-        let membership: any = null;
-        if (trigger === "update" && session?.switchToOrgId) {
-          // Explicit org switch request from client via useSession().update()
-          membership = getOrgMemberForOrg(Number(token.id), Number(session.switchToOrgId));
-        } else if (token.orgId) {
-          // Re-fetch current active org (preserves chosen org across requests)
-          membership = getOrgMemberForOrg(Number(token.id), Number(token.orgId));
-          // If removed from org, fall back to first remaining org
-          if (!membership) membership = getOrgMemberByUserId(Number(token.id));
+        // TTL cache check — skip DB queries for burst requests (Plan 048)
+        const isOrgSwitch = trigger === "update" && session?.switchToOrgId;
+        const cacheKey = `${token.id}:${token.orgId}`;
+        const cached = !isOrgSwitch ? jwtOrgCache.get(cacheKey) : undefined;
+
+        if (cached && cached.expiresAt > Date.now()) {
+          // Cache hit — apply cached org context to token
+          token.orgId = cached.orgId;
+          token.orgRole = cached.orgRole;
+          token.orgName = cached.orgName;
+          token.isSuperAdmin = cached.isSuperAdmin;
+          token.permissions = cached.permissions;
+          token.orgFeatures = cached.orgFeatures;
         } else {
-          // No org set yet — pick first
-          membership = getOrgMemberByUserId(Number(token.id));
-        }
+          // Cache miss or expired or org-switch — run DB queries
 
-        if (membership) {
-          // getOrgMemberForOrg returns camelCase (orgId, orgName)
-          // getOrgMemberByUserId returns snake_case (org_id, org_name)
-          token.orgId = (membership.orgId ?? membership.org_id) as number;
-          token.orgRole = membership.role as string;
-          token.orgName = (membership.orgName ?? membership.org_name) as string;
-        }
+          // Refresh org context — preserve chosen org across requests
+          let membership: any = null;
+          if (isOrgSwitch) {
+            // Explicit org switch request from client via useSession().update()
+            membership = getOrgMemberForOrg(Number(token.id), Number(session.switchToOrgId));
+          } else if (token.orgId) {
+            // Re-fetch current active org (preserves chosen org across requests)
+            membership = getOrgMemberForOrg(Number(token.id), Number(token.orgId));
+            // If removed from org, fall back to first remaining org
+            if (!membership) membership = getOrgMemberByUserId(Number(token.id));
+          } else {
+            // No org set yet — pick first
+            membership = getOrgMemberByUserId(Number(token.id));
+          }
 
-        // Refresh super admin flag (picks up promotions without re-login)
-        const saUser = get(`SELECT is_super_admin FROM users WHERE id = ?`, [Number(token.id)]);
-        token.isSuperAdmin = !!saUser?.is_super_admin;
+          if (membership) {
+            // getOrgMemberForOrg returns camelCase (orgId, orgName)
+            // getOrgMemberByUserId returns snake_case (org_id, org_name)
+            token.orgId = (membership.orgId ?? membership.org_id) as number;
+            token.orgRole = membership.role as string;
+            token.orgName = (membership.orgName ?? membership.org_name) as string;
+          }
 
-        // Load permissions for member role (owner/admin get null = full access)
-        if (membership && membership.role === 'member') {
-          const perms = getMemberPermissions(Number(token.orgId), Number(token.id));
-          token.permissions = Object.fromEntries((perms as any[]).map((p: any) => [p.resource, p.action]));
-        } else {
-          token.permissions = null;
-        }
+          // Refresh super admin flag (picks up promotions without re-login)
+          const saUser = get(`SELECT is_super_admin FROM users WHERE id = ?`, [Number(token.id)]);
+          token.isSuperAdmin = !!saUser?.is_super_admin;
 
-        // Refresh org feature flags (Plan 034)
-        if (token.isSuperAdmin) {
-          token.orgFeatures = [...FEATURES];
-        } else if (token.orgId) {
-          const featureRows = getOrgFeatures(Number(token.orgId));
-          const disabledSet = new Set(
-            (featureRows as any[]).filter((r: any) => !r.enabled).map((r: any) => r.feature)
-          );
-          token.orgFeatures = FEATURES.filter(f => !disabledSet.has(f));
-        } else {
-          token.orgFeatures = [...FEATURES];
+          // Load permissions for member role (owner/admin get null = full access)
+          if (membership && membership.role === 'member') {
+            const perms = getMemberPermissions(Number(token.orgId), Number(token.id));
+            token.permissions = Object.fromEntries((perms as any[]).map((p: any) => [p.resource, p.action]));
+          } else {
+            token.permissions = null;
+          }
+
+          // Refresh org feature flags (Plan 034)
+          if (token.isSuperAdmin) {
+            token.orgFeatures = [...FEATURES];
+          } else if (token.orgId) {
+            const featureRows = getOrgFeatures(Number(token.orgId));
+            const disabledSet = new Set(
+              (featureRows as any[]).filter((r: any) => !r.enabled).map((r: any) => r.feature)
+            );
+            token.orgFeatures = FEATURES.filter(f => !disabledSet.has(f));
+          } else {
+            token.orgFeatures = [...FEATURES];
+          }
+
+          // Store in cache with TTL
+          if (token.orgId) {
+            const newCacheKey = `${token.id}:${token.orgId}`;
+            jwtOrgCache.set(newCacheKey, {
+              orgId: token.orgId,
+              orgRole: token.orgRole as string,
+              orgName: token.orgName as string,
+              isSuperAdmin: !!token.isSuperAdmin,
+              permissions: token.permissions ?? null,
+              orgFeatures: token.orgFeatures ?? [...FEATURES],
+              expiresAt: Date.now() + JWT_CACHE_TTL,
+            });
+          }
         }
       }
       return token;

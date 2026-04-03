@@ -653,6 +653,36 @@ Primary key: `(org_id, resource)`
 
 ---
 
+### token_usage
+
+Per-invocation AI token consumption log. One row per AI endpoint call per user. Used by the super-admin token usage dashboard. (Added Plan 048)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INTEGER PRIMARY KEY AUTOINCREMENT | Row identifier |
+| user_id | INTEGER NOT NULL FK → users(id) | User who triggered the AI call |
+| org_id | INTEGER NOT NULL FK → organizations(id) | Org context at time of call |
+| route | TEXT NOT NULL | API route that generated the usage (e.g. `/api/ask`, `/api/analyze`, `/api/legal-hub/cases/chat`) |
+| model | TEXT NOT NULL | Primary model used: `sonnet`, `haiku` |
+| input_tokens | INTEGER NOT NULL DEFAULT 0 | Claude input tokens consumed |
+| output_tokens | INTEGER NOT NULL DEFAULT 0 | Claude output tokens consumed |
+| voyage_tokens | INTEGER NOT NULL DEFAULT 0 | Voyage AI embedding tokens consumed (0 if no embeddings used) |
+| cost_usd | REAL NOT NULL DEFAULT 0 | Estimated cost in USD computed from PRICING constants |
+| created_at | DATETIME DEFAULT CURRENT_TIMESTAMP | Timestamp of the AI call |
+
+**Indexes:**
+- PRIMARY KEY (id)
+- INDEX (user_id)
+- INDEX (org_id)
+- INDEX (created_at)
+
+**Notes:**
+- Writes are fire-and-forget — a failed insert must not affect the AI response
+- `cost_usd` = `(input_tokens / 1_000_000 * model_input_rate) + (output_tokens / 1_000_000 * model_output_rate) + (voyage_tokens / 1_000 * voyage_rate)`
+- Rates from `src/lib/constants.ts` PRICING: Sonnet $3.00/$15.00 per 1M, Haiku $0.25/$1.25 per 1M, Voyage $0.02 per 1K
+
+---
+
 ## Storage Size Estimates
 
 **documents**: ~2-5 KB per record (varies with full_text)

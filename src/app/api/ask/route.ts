@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import Anthropic from "@anthropic-ai/sdk";
+import { anthropic } from "@/lib/anthropic-client";
 import fs from "fs/promises";
 import path from "path";
 import { ensureDb } from "@/lib/server-utils";
-import { getDocumentById } from "@/lib/db-imports";
+import { getDocumentById, logTokenUsage } from "@/lib/db-imports";
 import { getSettings } from "@/lib/settings-imports";
+import { PRICING } from "@/lib/constants";
 import { searchDocuments, formatSearchResultsForCitations, getSourceDocuments, extractQueryTags, scoreDocumentsByTags } from "@/lib/search-imports";
 import { hasPermission } from "@/lib/permissions";
 
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
     let targetDocumentIds = documentIds || [];
     let tagPreFilterUsed = false;
 
-    if (targetDocumentIds.length === 0) {
+    if (targetDocumentIds.length === 0 && question.trim().length >= 30) {
       try {
         const queryTagResult = await extractQueryTags(question);
         const tagMatchedIds = scoreDocumentsByTags(queryTagResult.tags, 15, activeOnly, orgId);
@@ -92,6 +93,22 @@ export async function POST(request: NextRequest) {
     }
 
     if (searchResults.length === 0) {
+      const costUsd =
+        (inputTokens / 1_000_000) * PRICING.claude.sonnet.input +
+        (outputTokens / 1_000_000) * PRICING.claude.sonnet.output +
+        (voyageTokens / 1_000) * PRICING.voyage;
+      try {
+        logTokenUsage({
+          userId: Number(session.user.id),
+          orgId: Number(session.user.orgId),
+          route: '/api/ask',
+          model: 'sonnet',
+          inputTokens,
+          outputTokens,
+          voyageTokens,
+          costUsd,
+        });
+      } catch (_) { /* silent */ }
       return NextResponse.json({
         answer: "I couldn't find any relevant information in the selected documents to answer your question.",
         sources: [],
@@ -111,10 +128,6 @@ export async function POST(request: NextRequest) {
       path.join(process.cwd(), "prompts/ask.md"),
       "utf-8"
     );
-
-    const anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
 
     const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
 
@@ -137,6 +150,23 @@ export async function POST(request: NextRequest) {
         return "";
       })
       .join("");
+
+    const costUsd =
+      (inputTokens / 1_000_000) * PRICING.claude.sonnet.input +
+      (outputTokens / 1_000_000) * PRICING.claude.sonnet.output +
+      (voyageTokens / 1_000) * PRICING.voyage;
+    try {
+      logTokenUsage({
+        userId: Number(session.user.id),
+        orgId: Number(session.user.orgId),
+        route: '/api/ask',
+        model: 'sonnet',
+        inputTokens,
+        outputTokens,
+        voyageTokens,
+        costUsd,
+      });
+    } catch (_) { /* silent */ }
 
     return NextResponse.json({
       answer,

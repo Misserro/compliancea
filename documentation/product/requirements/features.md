@@ -214,6 +214,14 @@ Two modes for handling external documents:
 - **Migration prerequisite guard** — API rejects own_s3→platform_s3 migration if org credentials are missing or platform S3 is not configured; UI disables the button with an explanatory tooltip
 - **Admin panel per-org migration UI** — Each org row in the admin panel has a migration panel (in the expandable section) showing available migration actions and live progress
 
+### Token Usage Dashboard (Plan 048)
+- **Super-admin visibility** — Super admin can view a cross-org, cross-user breakdown of AI token consumption at `/admin/token-usage`
+- **Per-user aggregates** — Table showing each user's all-time cumulative totals: Claude input tokens, Claude output tokens, Voyage embedding tokens, and estimated cost in USD
+- **Cost estimation** — Estimated cost calculated from PRICING constants (Sonnet $3.00/$15.00 per 1M input/output, Haiku $0.25/$1.25, Voyage $0.02 per 1K); displayed per user and as a platform total
+- **Sorted by cost** — Table sorted by estimated cost descending; shows org and email per user
+- **All AI routes tracked** — Token usage persisted for all 8 AI-calling routes: `/api/ask`, `/api/analyze`, `/api/nda/analyze`, `/api/desk/analyze`, `/api/legal-hub/cases/[id]/chat`, `/api/contracts/chat`, `/api/legal-hub/wizard/ai-assist`, `/api/legal-hub/wizard/ai-polish`
+- **Non-blocking writes** — Usage inserts are fire-and-forget; a DB write failure never affects the AI response
+
 ### Global Admin (Plan 030)
 - **Super admin role** — A system-level `is_super_admin` flag on the users table, separate from per-org roles. Super admins operate across all organizations.
 - **Admin panel** — Dedicated `/admin` section (outside the normal app layout) listing all organizations with status, member count, and management actions.
