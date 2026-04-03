@@ -20,6 +20,12 @@ import {
 } from "@/lib/citation-assembler-imports";
 import { hasPermission } from "@/lib/permissions";
 import { LEGAL_CASE_STATUSES } from "@/lib/constants";
+import {
+  getSessionContext,
+  setSessionContext,
+  clearSessionContext,
+} from "@/lib/chat-context-cache";
+import type { RetrievalChunk } from "@/lib/chat-context-cache";
 
 export const runtime = "nodejs";
 
@@ -192,7 +198,7 @@ export async function POST(
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
 
-    let body: { message?: unknown; history?: unknown };
+    let body: { message?: unknown; history?: unknown; forceRefresh?: unknown };
     try {
       body = await request.json();
     } catch {
@@ -201,9 +207,10 @@ export async function POST(
         { status: 400 }
       );
     }
-    const { message, history = [] } = body as {
+    const { message, history = [], forceRefresh = false } = body as {
       message: string;
       history: Array<{ role: "user" | "assistant"; content: string }>;
+      forceRefresh?: boolean;
     };
 
     if (!message || typeof message !== "string" || !message.trim()) {
@@ -214,67 +221,189 @@ export async function POST(
     }
 
     const modelName = process.env.CLAUDE_MODEL || "claude-sonnet-4-6";
+    const userId = String(session.user.id);
+    const caseIdStr = String(caseId);
 
-    // Step 1: Fetch structured case data (sync DB calls)
-    const parties = getCaseParties(caseId) as PartyRow[];
-    const deadlines = getCaseDeadlines(caseId) as DeadlineRow[];
-    const structuredContext = buildStructuredContext(
-      legalCase,
-      parties,
-      deadlines
-    );
+    // Clear session cache if forceRefresh requested
+    if (forceRefresh) {
+      clearSessionContext(userId, caseIdStr);
+    }
 
-    // Step 2: Run document retrieval (async)
-    const highRisk = isHighRiskQuery(message);
+    // Check session context cache
+    const cachedSession = getSessionContext(userId, caseIdStr);
     const retrievalService = new CaseRetrievalService();
-    const retrieval = await retrievalService.search(
-      message,
-      caseId,
-      highRisk
-        ? { bm25Limit: 80, vectorLimit: 80, rerankTopK: 30 }
-        : {}
-    );
 
-    // Step 3: Build combined user message
-    const evidenceSection =
-      retrieval.results.length > 0
-        ? buildEvidencePrompt(retrieval.results)
-        : "Brak zindeksowanych dokumentów dla tej sprawy.";
+    let primedContext: string;
+    let allRetrievalChunks: RetrievalChunk[];
+    let lowConfidence = false;
+    let firstUserMessage: string;
 
-    const userContent = `${message}\n\n[DANE SPRAWY]\n${structuredContext}\n\n[DOKUMENTY SPRAWY]\n${evidenceSection}`;
+    if (cachedSession) {
+      // ── Turn 2+ (cache hit): skip full retrieval pipeline ──
+      primedContext = cachedSession.primedContext;
+      firstUserMessage = cachedSession.firstUserMessage;
 
-    // Step 4: Read system prompt and call Claude with tools
-    const groundedSystemPrompt = await fs.readFile(
-      path.join(process.cwd(), "prompts/case-chat-grounded.md"),
-      "utf-8"
-    );
+      // Delta vector search: top 5, deduplicate against priming set
+      const deltaRaw = await (retrievalService as any)._getVectorCandidates(
+        message,
+        caseId,
+        5 + cachedSession.chunkIds.size // fetch extra to account for dedup filtering
+      );
+      const deltaChunks = (deltaRaw as RetrievalChunk[]).filter(
+        (c) => !cachedSession.chunkIds.has(c.chunkId)
+      ).slice(0, 5);
 
-    const historyMessages = history
-      .slice(-HISTORY_TURNS)
-      .map((h) => ({
-        role: h.role as "user" | "assistant",
-        content: h.content,
-      }));
+      // Combine priming chunks + delta for citation validation
+      allRetrievalChunks = [...cachedSession.primingChunks, ...deltaChunks];
 
-    const genResponse = await anthropic.messages.create({
-      model: modelName,
-      max_tokens: 4096,
-      system: groundedSystemPrompt,
-      tools: CASE_CHAT_TOOLS,
-      tool_choice: { type: "auto" },
-      messages: [
-        ...historyMessages,
-        { role: "user", content: userContent },
-      ],
-    });
+      // Build delta evidence section (if any new chunks found)
+      const deltaEvidence = deltaChunks.length > 0
+        ? buildEvidencePrompt(deltaChunks)
+        : "";
+
+      // Build messages: priming pair at [0], then history, then current message
+      const historyMessages = history.slice(-HISTORY_TURNS);
+
+      // Remaining history after the first user+assistant pair (which is embedded in priming)
+      const remainingHistory: Array<{ role: "user" | "assistant"; content: string }> = [];
+      if (historyMessages.length > 2) {
+        // historyMessages[0] = first user (embedded in priming pair)
+        // historyMessages[1] = first assistant reply
+        // historyMessages[2..] = remaining turns
+        for (let i = 2; i < historyMessages.length; i++) {
+          remainingHistory.push({
+            role: historyMessages[i].role as "user" | "assistant",
+            content: historyMessages[i].content,
+          });
+        }
+      }
+
+      const firstAssistantReply = historyMessages.length > 1
+        ? historyMessages[1].content
+        : "";
+
+      const currentUserContent = deltaEvidence
+        ? `${message}\n\n[DODATKOWY KONTEKST]\n${deltaEvidence}`
+        : message;
+
+      const messages: Anthropic.MessageParam[] = [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: primedContext, cache_control: { type: "ephemeral" } },
+            { type: "text", text: firstUserMessage },
+          ],
+        } as Anthropic.MessageParam,
+        ...(firstAssistantReply
+          ? [{ role: "assistant" as const, content: firstAssistantReply }]
+          : []),
+        ...remainingHistory.map((h) => ({
+          role: h.role as "user" | "assistant",
+          content: h.content,
+        })),
+        { role: "user", content: currentUserContent },
+      ];
+
+      // Read system prompt and call Claude
+      const groundedSystemPrompt = await fs.readFile(
+        path.join(process.cwd(), "prompts/case-chat-grounded.md"),
+        "utf-8"
+      );
+
+      const cachedTools: Anthropic.Tool[] = [
+        ...CASE_CHAT_TOOLS.slice(0, -1),
+        { ...CASE_CHAT_TOOLS[CASE_CHAT_TOOLS.length - 1], cache_control: { type: "ephemeral" } },
+      ];
+
+      var genResponse = await anthropic.messages.create({
+        model: modelName,
+        max_tokens: 4096,
+        system: [{ type: "text", text: groundedSystemPrompt, cache_control: { type: "ephemeral" } }],
+        tools: cachedTools,
+        tool_choice: { type: "auto" },
+        messages,
+      });
+    } else {
+      // ── Turn 1 (cache miss): full retrieval pipeline ──
+
+      // Step 1: Fetch structured case data (sync DB calls)
+      const parties = getCaseParties(caseId) as PartyRow[];
+      const deadlines = getCaseDeadlines(caseId) as DeadlineRow[];
+      const structuredContext = buildStructuredContext(
+        legalCase,
+        parties,
+        deadlines
+      );
+
+      // Step 2: Run document retrieval with broader top-K for priming set
+      const highRisk = isHighRiskQuery(message);
+      const retrieval = await retrievalService.search(
+        message,
+        caseId,
+        highRisk
+          ? { bm25Limit: 80, vectorLimit: 80, rerankTopK: 30 }
+          : { rerankTopK: 30 }
+      );
+
+      lowConfidence = retrieval.lowConfidence;
+
+      // Step 3: Assemble priming context
+      const evidenceSection =
+        retrieval.results.length > 0
+          ? buildEvidencePrompt(retrieval.results)
+          : "Brak zindeksowanych dokumentów dla tej sprawy.";
+
+      primedContext = `[DANE SPRAWY]\n${structuredContext}\n\n[DOKUMENTY SPRAWY]\n${evidenceSection}`;
+
+      // Store retrieval results as typed chunks
+      allRetrievalChunks = retrieval.results as RetrievalChunk[];
+
+      // Cache session context for subsequent turns
+      const chunkIds = new Set<number>(allRetrievalChunks.map((c) => c.chunkId));
+      firstUserMessage = message;
+      setSessionContext(userId, caseIdStr, primedContext, chunkIds, allRetrievalChunks, firstUserMessage);
+
+      // Step 4: Build messages with priming pair at position 0
+      const groundedSystemPrompt = await fs.readFile(
+        path.join(process.cwd(), "prompts/case-chat-grounded.md"),
+        "utf-8"
+      );
+
+      const cachedTools: Anthropic.Tool[] = [
+        ...CASE_CHAT_TOOLS.slice(0, -1),
+        { ...CASE_CHAT_TOOLS[CASE_CHAT_TOOLS.length - 1], cache_control: { type: "ephemeral" } },
+      ];
+
+      // Turn 1: no history, priming pair contains the user message
+      var genResponse = await anthropic.messages.create({
+        model: modelName,
+        max_tokens: 4096,
+        system: [{ type: "text", text: groundedSystemPrompt, cache_control: { type: "ephemeral" } }],
+        tools: cachedTools,
+        tool_choice: { type: "auto" },
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: primedContext, cache_control: { type: "ephemeral" } },
+              { type: "text", text: message },
+            ],
+          } as Anthropic.MessageParam,
+        ],
+      });
+    }
 
     const inputTokens = genResponse.usage?.input_tokens || 0;
     const outputTokens = genResponse.usage?.output_tokens || 0;
+    const cacheReadTokens = genResponse.usage?.cache_read_input_tokens || 0;
+    const cacheWriteTokens = genResponse.usage?.cache_creation_input_tokens || 0;
 
     const logUsage = () => {
       const costUsd =
         (inputTokens / 1_000_000) * PRICING.claude.sonnet.input +
-        (outputTokens / 1_000_000) * PRICING.claude.sonnet.output;
+        (outputTokens / 1_000_000) * PRICING.claude.sonnet.output +
+        (cacheReadTokens / 1_000_000) * PRICING.claude.sonnet.cacheRead +
+        (cacheWriteTokens / 1_000_000) * PRICING.claude.sonnet.cacheWrite;
       try {
         logTokenUsage({
           userId: Number(session.user.id),
@@ -285,6 +414,8 @@ export async function POST(
           outputTokens,
           voyageTokens: 0,
           costUsd,
+          cacheReadTokens,
+          cacheWriteTokens,
         });
       } catch (_) { /* silent */ }
     };
@@ -340,9 +471,9 @@ export async function POST(
       .map((b) => (b.type === "text" ? b.text : ""))
       .join("");
 
-    const structured = parseCitationResponse(rawText, retrieval.results);
+    const structured = parseCitationResponse(rawText, allRetrievalChunks);
 
-    if (retrieval.lowConfidence || retrieval.results.length === 0) {
+    if (lowConfidence || allRetrievalChunks.length === 0) {
       structured.confidence = "low";
     }
 

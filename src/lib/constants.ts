@@ -107,7 +107,7 @@ export const STATUS_COLORS: Record<string, string> = {
 
 export const PRICING = {
   claude: {
-    sonnet: { input: 3.0, output: 15.0 },
+    sonnet: { input: 3.0, output: 15.0, cacheRead: 0.30, cacheWrite: 3.75 },
     haiku: { input: 0.25, output: 1.25 },
   },
   voyage: 0.02,

@@ -1,0 +1,67 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-04-03T13:03:31.000Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan 049 execution started — Legal Hub Chat Cost Optimisation (3 tasks, 2 concurrent)"
+    },
+    {
+      "timestamp": "2026-04-03T13:04:58.000Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1-team spawned — Prompt Caching: System + Tools (executor-1, reviewer-1, tester-1)"
+    },
+    {
+      "timestamp": "2026-04-03T13:04:58.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-04-03T13:07:45.000Z",
+      "type": "team_spawned",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2-team spawned — History Payload Slimming (executor-2, reviewer-2, tester-2)"
+    },
+    {
+      "timestamp": "2026-04-03T13:07:45.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 entered planning stage"
+    },
+    {
+      "timestamp": "2026-04-03T13:09:10.000Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 completed — Prompt Caching: System + Tools (~4m total, 0 retries)"
+    },
+    {
+      "timestamp": "2026-04-03T13:09:10.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1-team shut down — executor-1, reviewer-1, tester-1 decommissioned"
+    },
+    {
+      "timestamp": "2026-04-03T13:10:36.000Z",
+      "type": "team_spawned",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3-team spawned — Session Priming Context Cache (executor-3, reviewer-3, tester-3)"
+    },
+    {
+      "timestamp": "2026-04-03T13:10:36.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 entered planning stage"
+    }
+  ]
+}
