@@ -1,0 +1,14 @@
+{
+  "name": "051-nav-restructure-hub-dashboards",
+  "description": "Replace flat hub-labeled sidebar with three collapsible category sections (Contract, Legal, Documents), each with a clickable header linking to a dedicated hub dashboard and chevron toggle. Restructure URL routes to align with new hierarchy and add redirects for old URLs.",
+  "plan_file": "documentation/plans/051-nav-restructure-hub-dashboards/README.md",
+  "status": "executing",
+  "started_at": "2026-04-07T08:58:30Z",
+  "ended_at": null,
+  "elapsed_seconds": 5025,
+  "concurrency_limit": 3,
+  "total_tasks": 5,
+  "completed_tasks": 4,
+  "active_tasks": 1,
+  "pending_tasks": 0
+}

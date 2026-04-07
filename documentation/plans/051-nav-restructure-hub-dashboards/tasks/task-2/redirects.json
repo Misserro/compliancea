@@ -1,0 +1,4 @@
+[
+  { "source": "/obligations", "destination": "/contracts/obligations", "permanent": true },
+  { "source": "/contracts/new", "destination": "/contracts/list/new", "permanent": true }
+]

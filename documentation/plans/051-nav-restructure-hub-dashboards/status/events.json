@@ -1,0 +1,186 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-04-07T08:58:30Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution started"
+    },
+    {
+      "timestamp": "2026-04-07T08:58:50Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "Team spawned for task-1: Legal Hub route migration + /legal dashboard"
+    },
+    {
+      "timestamp": "2026-04-07T08:58:50Z",
+      "type": "team_spawned",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "Team spawned for task-2: Contracts Hub route migration + /contracts dashboard"
+    },
+    {
+      "timestamp": "2026-04-07T08:58:50Z",
+      "type": "team_spawned",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "Team spawned for task-3: Documents Hub route migration + /documents dashboard"
+    },
+    {
+      "timestamp": "2026-04-07T08:58:55Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-04-07T08:58:55Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 entered planning stage"
+    },
+    {
+      "timestamp": "2026-04-07T08:58:55Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 entered planning stage"
+    },
+    {
+      "timestamp": "2026-04-07T09:01:57Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 entered implementation stage (planning took ~3m)"
+    },
+    {
+      "timestamp": "2026-04-07T09:02:50Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 entered implementation stage (planning took ~4m)"
+    },
+    {
+      "timestamp": "2026-04-07T09:02:50Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 entered implementation stage (planning took ~4m)"
+    },
+    {
+      "timestamp": "2026-04-07T09:03:52Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 entered review stage (implementation took ~1m)"
+    },
+    {
+      "timestamp": "2026-04-07T09:04:05Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 entered review stage (implementation took ~1m)"
+    },
+    {
+      "timestamp": "2026-04-07T09:04:48Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 entered review stage (implementation took ~3m)"
+    },
+    {
+      "timestamp": "2026-04-07T09:04:48Z",
+      "type": "pipeline_spawn",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4 spawned in pipeline mode: Sidebar collapsible category navigation (awaiting approval to implement)"
+    },
+    {
+      "timestamp": "2026-04-07T10:19:33Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 completed: Legal Hub route migration + /legal dashboard (~81m total)"
+    },
+    {
+      "timestamp": "2026-04-07T10:19:33Z",
+      "type": "task_completed",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 completed: Contracts Hub route migration + /contracts dashboard (~81m total)"
+    },
+    {
+      "timestamp": "2026-04-07T10:19:33Z",
+      "type": "task_completed",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 completed: Documents Hub route migration + /documents dashboard (~81m total)"
+    },
+    {
+      "timestamp": "2026-04-07T10:19:33Z",
+      "type": "team_shutdown",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 team decommissioned"
+    },
+    {
+      "timestamp": "2026-04-07T10:19:33Z",
+      "type": "team_shutdown",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 team decommissioned"
+    },
+    {
+      "timestamp": "2026-04-07T10:19:33Z",
+      "type": "team_shutdown",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 team decommissioned"
+    },
+    {
+      "timestamp": "2026-04-07T10:19:33Z",
+      "type": "implementation_approved",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4 implementation approved — pipeline_mode cleared, proceeding to implement"
+    },
+    {
+      "timestamp": "2026-04-07T10:19:33Z",
+      "type": "stage_entered",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4 entered implementation stage (planning took ~75m in pipeline mode)"
+    },
+    {
+      "timestamp": "2026-04-07T10:22:15Z",
+      "type": "task_completed",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4 completed: Sidebar collapsible category navigation (~77m total)"
+    },
+    {
+      "timestamp": "2026-04-07T10:22:15Z",
+      "type": "team_shutdown",
+      "task_id": "task-4",
+      "agent": "pm",
+      "message": "task-4 team decommissioned"
+    },
+    {
+      "timestamp": "2026-04-07T10:22:15Z",
+      "type": "team_spawned",
+      "task_id": "task-5",
+      "agent": "pm",
+      "message": "Team spawned for task-5: Internal link sweep + i18n cleanup"
+    },
+    {
+      "timestamp": "2026-04-07T10:22:15Z",
+      "type": "stage_entered",
+      "task_id": "task-5",
+      "agent": "pm",
+      "message": "task-5 entered planning stage"
+    }
+  ]
+}

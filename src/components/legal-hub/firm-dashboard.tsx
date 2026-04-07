@@ -40,7 +40,7 @@ export function FirmDashboard() {
   useEffect(() => {
     if (status === "loading") return;
     if (!isAdmin) {
-      router.replace("/legal-hub");
+      router.replace("/legal/cases");
       return;
     }
     fetchFirmStats();

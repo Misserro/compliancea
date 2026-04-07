@@ -132,6 +132,13 @@
       "task_id": "task-3",
       "agent": "team-lead",
       "message": "task-3 team shut down"
+    },
+    {
+      "timestamp": "2026-03-30T11:24:28.000Z",
+      "type": "execution_completed",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution completed — 3/3 tasks, 890/891 tests passing, tsc clean"
     }
   ]
 }

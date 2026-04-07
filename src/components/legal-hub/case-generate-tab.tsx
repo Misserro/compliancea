@@ -283,7 +283,7 @@ export function CaseGenerateTab({
               <p className="text-sm text-muted-foreground">
                 {t('generate.noTemplates')}{" "}
                 <a
-                  href="/legal-hub/templates"
+                  href="/legal/templates"
                   className="underline text-primary"
                 >
                   {t('generate.templatesLink')}

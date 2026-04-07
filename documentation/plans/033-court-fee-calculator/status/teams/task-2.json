@@ -3,21 +3,21 @@
   "task_name": "Court Fee Row in Case Metadata Form",
   "team_name": "task-2-team",
   "goal": "Add read-only Court Fee row to view mode of CaseMetadataForm. Visible for civil/PLN cases, hidden for other case types, note for non-PLN.",
-  "status": "planning",
+  "status": "completed",
   "pipeline_mode": false,
   "started_at": "2026-03-21T08:00:37.000Z",
-  "ended_at": null,
-  "elapsed_seconds": 0,
+  "ended_at": "2026-03-21T08:02:32.000Z",
+  "elapsed_seconds": 115,
   "stages": {
-    "planning":       { "started_at": "2026-03-21T08:00:37.000Z", "ended_at": null, "elapsed_seconds": 0 },
-    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "planning":       { "started_at": "2026-03-21T08:00:37.000Z", "ended_at": "2026-03-21T08:01:27.000Z", "elapsed_seconds": 50 },
+    "implementation": { "started_at": "2026-03-21T08:01:27.000Z", "ended_at": "2026-03-21T08:01:57.000Z", "elapsed_seconds": 30 },
     "review":         { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
     "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
   },
   "retry_count": 0,
   "members": [
-    { "name": "executor-2", "role": "executor", "model": "opus",   "status": "active", "spawned_at": "2026-03-21T08:00:37.000Z", "ended_at": null },
-    { "name": "reviewer-2", "role": "reviewer", "model": "sonnet", "status": "idle",   "spawned_at": "2026-03-21T08:00:37.000Z", "ended_at": null },
-    { "name": "tester-2",   "role": "tester",   "model": "sonnet", "status": "idle",   "spawned_at": "2026-03-21T08:00:37.000Z", "ended_at": null }
+    { "name": "executor-2", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-03-21T08:00:37.000Z", "ended_at": "2026-03-21T08:02:32.000Z" },
+    { "name": "reviewer-2", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-03-21T08:00:37.000Z", "ended_at": "2026-03-21T08:02:32.000Z" },
+    { "name": "tester-2",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-03-21T08:00:37.000Z", "ended_at": "2026-03-21T08:02:32.000Z" }
   ]
 }

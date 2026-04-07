@@ -62,6 +62,41 @@
       "task_id": "task-3",
       "agent": "pm",
       "message": "task-3 entered planning stage"
+    },
+    {
+      "timestamp": "2026-04-03T13:15:41.000Z",
+      "type": "task_completed",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 completed — History Payload Slimming (~8m total, 0 retries)"
+    },
+    {
+      "timestamp": "2026-04-03T13:15:41.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2-team shut down — executor-2, reviewer-2, tester-2 decommissioned"
+    },
+    {
+      "timestamp": "2026-04-03T13:15:41.000Z",
+      "type": "task_completed",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 completed — Session Priming Context Cache (~5m total, 0 retries)"
+    },
+    {
+      "timestamp": "2026-04-03T13:15:41.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3-team shut down — executor-3, reviewer-3, tester-3 decommissioned"
+    },
+    {
+      "timestamp": "2026-04-03T13:15:41.000Z",
+      "type": "execution_completed",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan 049 execution completed — 3/3 tasks completed, 0 escalated, ~12m total wall-clock"
     }
   ]
 }

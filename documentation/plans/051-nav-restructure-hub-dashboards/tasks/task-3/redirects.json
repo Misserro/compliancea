@@ -1,0 +1,4 @@
+[
+  { "source": "/document-tools", "destination": "/documents/ai-tools", "permanent": true },
+  { "source": "/ask", "destination": "/documents/ai-tools", "permanent": true }
+]

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { FileText, ClipboardCheck, Settings, Layers, Shield, LayoutDashboard, Sun, Moon, Monitor, Users, LogOut, ListChecks, Scale, Building2, Check, ChevronDown } from "lucide-react";
+import { FileText, ClipboardCheck, Settings, Layers, Shield, LayoutDashboard, Sun, Moon, Monitor, Users, LogOut, ListChecks, Scale, Building2, Check, ChevronDown, ChevronRight } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -11,18 +11,23 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuAction,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
+  SidebarSeparator,
   SidebarTrigger,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { useSession, signOut } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "./language-switcher";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -193,131 +198,192 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Contract Hub */}
-        {canView('contracts') && canAccessFeature('contracts') && (
+        {/* Hub Categories */}
         <SidebarGroup>
-          <SidebarGroupLabel>{tSidebar("contractHub")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              {/* Contract Category */}
+              {canView('contracts') && canAccessFeature('contracts') && (
               <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === "/contracts" || pathname.startsWith("/contracts/")}
-                  tooltip={tSidebar("contracts")}
-                >
-                  <Link href="/contracts">
-                    <ClipboardCheck />
-                    <span>{tSidebar("contracts")}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === "/obligations" || pathname.startsWith("/obligations/")}
-                  tooltip={tSidebar("obligations")}
-                >
-                  <Link href="/obligations">
-                    <ListChecks />
-                    <span>{tSidebar("obligations")}</span>
-                    {overdueCount > 0 && (
-                      <Badge
-                        variant="destructive"
-                        className="ml-auto h-5 min-w-5 px-1.5 text-xs"
-                      >
-                        {overdueCount}
-                      </Badge>
-                    )}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        )}
-
-        {/* Legal Hub */}
-        {canView('legal_hub') && canAccessFeature('legal_hub') && (
-        <SidebarGroup>
-          <SidebarGroupLabel>{tSidebar("legalHub")}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === "/legal-hub" || (pathname.startsWith("/legal-hub/") && !pathname.startsWith("/legal-hub/templates") && !pathname.startsWith("/legal-hub/firm"))}
-                  tooltip={tSidebar("cases")}
-                >
-                  <Link href="/legal-hub">
-                    <Scale />
-                    <span>{tSidebar("cases")}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === "/legal-hub/templates" || pathname.startsWith("/legal-hub/templates/")}
-                  tooltip={tSidebar("templates")}
-                >
-                  <Link href="/legal-hub/templates">
-                    <FileText />
-                    <span>{tSidebar("templates")}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              {sessionData?.user?.orgRole !== "member" && (
-                <>
-                  <Separator className="my-1" />
-                  <SidebarMenuItem>
+                <Collapsible defaultOpen className="group/collapsible">
+                  <div className="flex items-center">
                     <SidebarMenuButton
                       asChild
-                      isActive={pathname === "/legal-hub/firm" || pathname.startsWith("/legal-hub/firm/")}
-                      tooltip={tSidebar("myLawFirm")}
+                      isActive={pathname === "/contracts" || pathname.startsWith("/contracts/")}
+                      tooltip={tSidebar("contract")}
                     >
-                      <Link href="/legal-hub/firm">
-                        <Building2 />
-                        <span>{tSidebar("myLawFirm")}</span>
+                      <Link href="/contracts">
+                        <ClipboardCheck />
+                        <span>{tSidebar("contract")}</span>
                       </Link>
                     </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuAction showOnHover={false}>
+                        <ChevronRight className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        <span className="sr-only">Toggle</span>
+                      </SidebarMenuAction>
+                    </CollapsibleTrigger>
+                  </div>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={pathname === "/contracts/list" || pathname.startsWith("/contracts/list/")}
+                        >
+                          <Link href="/contracts/list">
+                            <ClipboardCheck />
+                            <span>{tSidebar("contracts")}</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={pathname === "/contracts/obligations" || pathname.startsWith("/contracts/obligations/")}
+                        >
+                          <Link href="/contracts/obligations">
+                            <ListChecks />
+                            <span>{tSidebar("obligations")}</span>
+                            {overdueCount > 0 && (
+                              <Badge
+                                variant="destructive"
+                                className="ml-auto h-5 min-w-5 px-1.5 text-xs"
+                              >
+                                {overdueCount}
+                              </Badge>
+                            )}
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </Collapsible>
+              </SidebarMenuItem>
+              )}
+
+              {/* Legal Category */}
+              {canView('legal_hub') && canAccessFeature('legal_hub') && (
+              <SidebarMenuItem>
+                <Collapsible defaultOpen className="group/collapsible">
+                  <div className="flex items-center">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === "/legal" || pathname.startsWith("/legal/")}
+                      tooltip={tSidebar("legal")}
+                    >
+                      <Link href="/legal">
+                        <Scale />
+                        <span>{tSidebar("legal")}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuAction showOnHover={false}>
+                        <ChevronRight className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        <span className="sr-only">Toggle</span>
+                      </SidebarMenuAction>
+                    </CollapsibleTrigger>
+                  </div>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={pathname === "/legal/cases" || pathname.startsWith("/legal/cases/")}
+                        >
+                          <Link href="/legal/cases">
+                            <Scale />
+                            <span>{tSidebar("cases")}</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={pathname === "/legal/templates" || pathname.startsWith("/legal/templates/")}
+                        >
+                          <Link href="/legal/templates">
+                            <FileText />
+                            <span>{tSidebar("templates")}</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      {sessionData?.user?.orgRole !== "member" && (
+                        <>
+                          <SidebarSeparator className="my-1" />
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={pathname === "/legal/firm" || pathname.startsWith("/legal/firm/")}
+                            >
+                              <Link href="/legal/firm">
+                                <Building2 />
+                                <span>{tSidebar("myLawFirm")}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        </>
+                      )}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </Collapsible>
+              </SidebarMenuItem>
+              )}
+
+              {/* Documents Category */}
+              {canView('documents') && (
+              <SidebarMenuItem>
+                <Collapsible defaultOpen className="group/collapsible">
+                  <div className="flex items-center">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === "/documents" || pathname.startsWith("/documents/")}
+                      tooltip={tSidebar("documents")}
+                    >
+                      <Link href="/documents">
+                        <FileText />
+                        <span>{tSidebar("documents")}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuAction showOnHover={false}>
+                        <ChevronRight className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        <span className="sr-only">Toggle</span>
+                      </SidebarMenuAction>
+                    </CollapsibleTrigger>
+                  </div>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={pathname === "/documents/library" || pathname.startsWith("/documents/library/")}
+                        >
+                          <Link href="/documents/library">
+                            <FileText />
+                            <span>{tSidebar("documents")}</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={pathname === "/documents/ai-tools" || pathname.startsWith("/documents/ai-tools/")}
+                        >
+                          <Link href="/documents/ai-tools">
+                            <Layers />
+                            <span>{tSidebar("aiTools")}</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </Collapsible>
+              </SidebarMenuItem>
               )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        )}
-
-        {/* Documents Hub */}
-        {(() => {
-          const docHubItems = [
-            { title: tSidebar("documents"), href: "/documents", icon: FileText, resource: "documents", feature: "" },
-            { title: tSidebar("aiTools"), href: "/document-tools", icon: Layers, resource: "documents", feature: "" },
-          ].filter((item) => canView(item.resource) && (!item.feature || canAccessFeature(item.feature)));
-
-          return docHubItems.length > 0 ? (
-            <SidebarGroup>
-              <SidebarGroupLabel>{tSidebar("documentsHub")}</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {docHubItems.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                    return (
-                      <SidebarMenuItem key={item.href}>
-                        <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-                          <Link href={item.href}>
-                            <item.icon />
-                            <span>{item.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ) : null;
-        })()}
 
         {/* Bottom standalones */}
         <SidebarGroup>

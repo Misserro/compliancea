@@ -2,13 +2,13 @@
   "name": "049-legal-hub-chat-cost-optimisation",
   "description": "Reduce Legal Hub case chat cost ~40-50% via prompt caching, history payload slimming, and session priming context cache",
   "plan_file": "documentation/plans/049-legal-hub-chat-cost-optimisation/README.md",
-  "status": "executing",
+  "status": "completed",
   "started_at": "2026-04-03T13:03:31.000Z",
-  "ended_at": null,
-  "elapsed_seconds": 425,
+  "ended_at": "2026-04-03T13:15:41.000Z",
+  "elapsed_seconds": 730,
   "concurrency_limit": 2,
   "total_tasks": 3,
-  "completed_tasks": 1,
-  "active_tasks": 2,
+  "completed_tasks": 3,
+  "active_tasks": 0,
   "pending_tasks": 0
 }

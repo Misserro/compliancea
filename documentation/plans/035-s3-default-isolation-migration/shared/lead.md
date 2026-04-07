@@ -57,3 +57,42 @@ Three interconnected S3 storage improvements:
 - (2026-03-22) `'s3'` legacy tag keeps old fallback behavior permanently (no forced migration of old records)
 - (2026-03-22) `migration_jobs` org_id is nullable for backward compat with global migration
 - (2026-03-22) Global migration API (`POST /api/admin/migrations/storage`) unchanged
+
+## Execution Complete
+
+**Plan:** 035-s3-default-isolation-migration
+**Tasks:** 5 completed, 0 skipped, 0 escalated
+
+### Tasks Completed
+- Task 1: getAllOrganizations fix + createOrganization default + org creation warning
+- Task 2: Granular storage_backend tags + strict read/delete isolation in storage.js
+- Task 3: Migration worker extended — per-org filtering + own_s3→platform_s3 + line 181 fix
+- Task 4: Per-org migration API (POST/GET /api/admin/migrations/storage/orgs/[orgId])
+- Task 5: OrgMigrationPanel component + admin panel integration
+
+### Files Modified
+- `lib/db.js` — getAllOrganizations, createOrganization, migration_jobs ALTER TABLE, new job functions
+- `lib/db.d.ts` — type declarations
+- `lib/storage.js` — putFile return values, resolveReadConfig, getFile/deleteFile routing, new exports
+- `lib/storage.d.ts` — type declarations
+- `src/lib/db-imports.ts` — new DB function re-exports
+- `src/lib/migration-worker.ts` — line 181 fix, 5 new functions
+- `src/app/api/admin/orgs/route.ts` — storagePolicy in GET, platform S3 warning in POST
+- `src/app/api/admin/migrations/storage/orgs/[orgId]/route.ts` — new file
+- `src/app/(admin)/admin/page.tsx` — platformConfigured + orgS3Configured
+- `src/components/admin/admin-org-list.tsx` — OrgMigrationPanel integration
+- `src/components/admin/create-org-dialog.tsx` — warning banner
+- `src/components/admin/org-migration-panel.tsx` — new file
+- `tests/unit/storage-driver-unit.test.ts` — stale test fixes
+- `tests/integration/storage-config-api.test.ts` — stale test fixes
+- `documentation/technology/architecture/database-schema.md` — updated
+- `documentation/product/requirements/features.md` — updated
+
+### Test Results
+- Per-task tests: 5/5 passed (reviewer + tester PASS on each)
+- Final gate (full suite): PASSED — 709/709 tests, TypeScript clean
+- 8 stale tests fixed (mock + assertion updates)
+
+### Git
+- Commit: 1002d8a
+- Pushed to origin/main

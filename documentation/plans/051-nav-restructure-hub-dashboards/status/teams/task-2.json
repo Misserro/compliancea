@@ -1,0 +1,23 @@
+{
+  "task_id": "task-2",
+  "task_name": "Contracts Hub: route migration + /contracts dashboard",
+  "team_name": "task-2-team",
+  "goal": "Add a new hub dashboard at /contracts, move the existing contracts list to /contracts/list, move obligations from /obligations to /contracts/obligations, and add redirects.",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-04-07T08:58:50Z",
+  "ended_at": "2026-04-07T10:19:33Z",
+  "elapsed_seconds": 4843,
+  "stages": {
+    "planning":       { "started_at": "2026-04-07T08:58:55Z", "ended_at": "2026-04-07T09:02:50Z", "elapsed_seconds": 235 },
+    "implementation": { "started_at": "2026-04-07T09:02:50Z", "ended_at": "2026-04-07T09:04:05Z", "elapsed_seconds": 75 },
+    "review":         { "started_at": "2026-04-07T09:04:05Z", "ended_at": "2026-04-07T10:19:33Z", "elapsed_seconds": 4528 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-2",  "role": "executor",  "model": "opus",   "status": "completed",  "spawned_at": "2026-04-07T08:58:50Z", "ended_at": "2026-04-07T10:19:33Z" },
+    { "name": "reviewer-2",  "role": "reviewer",  "model": "sonnet", "status": "completed",  "spawned_at": "2026-04-07T08:58:50Z", "ended_at": "2026-04-07T10:19:33Z" },
+    { "name": "tester-2",    "role": "tester",    "model": "sonnet", "status": "completed",  "spawned_at": "2026-04-07T08:58:50Z", "ended_at": "2026-04-07T10:19:33Z" }
+  ]
+}

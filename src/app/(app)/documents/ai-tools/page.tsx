@@ -11,7 +11,7 @@ import type { Document } from "@/lib/types";
 
 type Tab = "analyze" | "ask";
 
-export default function DocumentToolsPage() {
+export default function DocumentAiToolsPage() {
   const t = useTranslations("Documents");
   const [activeTab, setActiveTab] = useState<Tab>("analyze");
   const [documents, setDocuments] = useState<Document[]>([]);

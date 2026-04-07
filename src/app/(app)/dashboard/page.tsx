@@ -108,7 +108,7 @@ export default function DashboardPage() {
               )}
               {showContracts && data.obligations && (
                 <KpiCard
-                  icon={AlertTriangle} label={t("overdue")} href="/obligations"
+                  icon={AlertTriangle} label={t("overdue")} href="/contracts/obligations"
                   value={data.obligations.overdue}
                   sub={t("activeObligationsSub", { count: data.obligations.active })}
                   accent={data.obligations.overdue > 0 ? "red" : undefined}
@@ -123,7 +123,7 @@ export default function DashboardPage() {
               )}
               {showLegalHub && data.legalHub && (
                 <KpiCard
-                  icon={Scale} label={t("openCases")} href="/legal-hub"
+                  icon={Scale} label={t("openCases")} href="/legal"
                   value={openCount}
                   subNode={
                     statusBadge ? (
@@ -173,7 +173,7 @@ export default function DashboardPage() {
                     return (
                       <button
                         key={o.id}
-                        onClick={() => router.push("/obligations")}
+                        onClick={() => router.push("/contracts/obligations")}
                         className="group w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors text-left"
                       >
                         <div className="min-w-0">
@@ -213,7 +213,7 @@ export default function DashboardPage() {
                   data.contracts.expiringSoon.map(c => (
                     <button
                       key={c.id}
-                      onClick={() => router.push("/contracts")}
+                      onClick={() => router.push("/contracts/list")}
                       className="group w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors text-left"
                     >
                       <div className="min-w-0">
@@ -254,7 +254,7 @@ export default function DashboardPage() {
                     return (
                       <button
                         key={d.id}
-                        onClick={() => router.push("/legal-hub")}
+                        onClick={() => router.push("/legal")}
                         className="group w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors text-left"
                       >
                         <div className="min-w-0">
@@ -293,7 +293,7 @@ export default function DashboardPage() {
                   data.legalHub.recentCases.map(c => (
                     <button
                       key={c.id}
-                      onClick={() => router.push(`/legal-hub/${c.id}`)}
+                      onClick={() => router.push(`/legal/cases/${c.id}`)}
                       className="group w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors text-left"
                     >
                       <div className="min-w-0">

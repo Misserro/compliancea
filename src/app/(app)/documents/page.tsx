@@ -1,451 +1,173 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, type ElementType } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Search, X } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { UploadSection } from "@/components/documents/upload-section";
-import { ActionBar } from "@/components/documents/action-bar";
-import { DocumentList } from "@/components/documents/document-list";
-import { MetadataDialog } from "@/components/documents/metadata-dialog";
-import { ContractActionDialog } from "@/components/documents/contract-action-dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { FileText, FileCheck, FolderOpen, Layers, AlertTriangle, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { DOCUMENT_STATUSES, CONTRACT_STATUSES } from "@/lib/constants";
-import { PERMISSION_LEVELS, type PermissionLevel } from "@/lib/permissions";
+import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
-import type { Document } from "@/lib/types";
+import { PERMISSION_LEVELS, type PermissionLevel } from "@/lib/permissions";
 
-// All filterable statuses: document statuses + contract statuses (deduped)
-const ALL_STATUSES = Array.from(
-  new Set([...DOCUMENT_STATUSES, ...CONTRACT_STATUSES])
-) as string[];
+interface DashboardData {
+  docs?: { total: number; processed: number; byType: Record<string, number> };
+}
 
-const permLevel = (perms: Record<string, string> | null | undefined, resource: string) =>
-  PERMISSION_LEVELS[(perms?.[resource] ?? 'full') as PermissionLevel] ?? 3;
-
-export default function DocumentsPage() {
+function KpiCard({
+  icon: Icon, label, value, sub, href,
+}: {
+  icon: ElementType; label: string; value: number | string;
+  sub?: string; href: string;
+}) {
   const router = useRouter();
-  const { data: sessionData } = useSession();
-  const t = useTranslations('Documents');
-  const permissions = sessionData?.user?.permissions;
-  const canEdit = permLevel(permissions, 'documents') >= 2;
-  const canDelete = permLevel(permissions, 'documents') >= 3;
-  const [documents, setDocuments] = useState<Document[]>([]);
+  return (
+    <button
+      onClick={() => router.push(href)}
+      className="flex flex-col gap-1 rounded-xl border bg-card p-5 text-left shadow-sm hover:shadow-md transition-shadow w-full"
+    >
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Icon className="h-4 w-4" />
+        <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
+      </div>
+      <p className="text-3xl font-bold">{value}</p>
+      {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+    </button>
+  );
+}
+
+export default function DocumentsHubPage() {
+  const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [allExpanded, setAllExpanded] = useState(false);
-  const [processingIds, setProcessingIds] = useState<Set<number>>(new Set());
-  const [retaggingIds, setRetaggingIds] = useState<Set<number>>(new Set());
+  const [error, setError] = useState(false);
+  const router = useRouter();
+  const t = useTranslations("DocumentsHub");
+  const { data: sessionData } = useSession();
 
-  // Search & filter state
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [typeFilter, setTypeFilter] = useState<"all" | "policies">("all");
-
-  // Metadata dialog state
-  const [metadataDoc, setMetadataDoc] = useState<Document | null>(null);
-  const [metadataOpen, setMetadataOpen] = useState(false);
-
-  // Contract action dialog state
-  const [contractDocId, setContractDocId] = useState<number | null>(null);
-  const [contractOpen, setContractOpen] = useState(false);
-
-  const loadDocuments = useCallback(async () => {
-    try {
-      const res = await fetch("/api/documents");
-      if (res.ok) {
-        const data = await res.json();
-        setDocuments(data.documents || []);
-      }
-    } catch (err) {
-      toast.error(`${t('loadError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
+  const permissions = sessionData?.user?.permissions;
+  function canView(resource: string): boolean {
+    if (!permissions) return true;
+    const level = PERMISSION_LEVELS[(permissions[resource] ?? 'full') as PermissionLevel] ?? 3;
+    return level >= 1;
+  }
 
   useEffect(() => {
-    loadDocuments();
-  }, [loadDocuments]);
+    fetch("/api/dashboard")
+      .then(r => r.json())
+      .then(d => setData(d))
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, []);
 
-  // Filtered documents derived from search + status
-  const filteredDocuments = useMemo(() => {
-    let result = documents;
-
-    if (typeFilter === "policies") {
-      result = result.filter((d) => d.doc_type && ["policy", "procedure"].includes(d.doc_type));
-    }
-
-    if (statusFilter !== "all") {
-      result = result.filter((d) => d.status === statusFilter);
-    }
-
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      result = result.filter((d) => d.name.toLowerCase().includes(q));
-    }
-
-    return result;
-  }, [documents, search, statusFilter, typeFilter]);
-
-  async function handleScanServer() {
-    try {
-      const res = await fetch("/api/documents/scan", { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success(data.message);
-        setDocuments(data.documents || []);
-      } else {
-        toast.error(data.error);
-      }
-    } catch (err) {
-      toast.error(`${t('scanError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
-    }
+  if (!canView('documents')) {
+    return null;
   }
 
-  async function handleScanGDrive() {
-    try {
-      const res = await fetch("/api/gdrive/scan", { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success(data.message);
-        if (data.documents) setDocuments(data.documents);
-      } else {
-        toast.error(data.error);
-      }
-    } catch (err) {
-      toast.error(`${t('gdriveScanError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
-    }
-  }
-
-  async function handleProcessAll() {
-    const unprocessed = documents.filter((d) => !d.processed);
-    if (unprocessed.length === 0) {
-      toast.info(t('allProcessed'));
-      return;
-    }
-
-    toast.info(t('processingCount', { count: unprocessed.length }));
-    let processed = 0;
-    let failed = 0;
-
-    for (const doc of unprocessed) {
-      setProcessingIds((prev) => new Set(prev).add(doc.id));
-      try {
-        const res = await fetch(`/api/documents/${doc.id}/process`, { method: "POST" });
-        if (res.ok) {
-          processed++;
-        } else {
-          failed++;
-        }
-      } catch {
-        failed++;
-      }
-      setProcessingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(doc.id);
-        return next;
-      });
-    }
-
-    toast.success(t('processedResult', { processed, failed }));
-    await loadDocuments();
-  }
-
-  async function handleRetagAll() {
-    try {
-      const res = await fetch("/api/documents/retag-all", { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success(data.message);
-        await loadDocuments();
-      } else {
-        toast.error(data.error);
-      }
-    } catch (err) {
-      toast.error(`${t('retagError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
-    }
-  }
-
-  async function handleCategoryChange(id: number, category: string | null) {
-    try {
-      const res = await fetch(`/api/documents/${id}/category`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setDocuments((prev) =>
-          prev.map((d) => (d.id === id ? data.document : d))
-        );
-      }
-    } catch (err) {
-      toast.error(`${t('categoryError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
-    }
-  }
-
-  async function handleProcess(id: number) {
-    setProcessingIds((prev) => new Set(prev).add(id));
-    try {
-      const res = await fetch(`/api/documents/${id}/process`, { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success(data.message || t('documentProcessed'));
-        await loadDocuments();
-      } else {
-        toast.error(data.error);
-      }
-    } catch (err) {
-      toast.error(`${t('processError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
-    } finally {
-      setProcessingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    }
-  }
-
-  async function handleReprocess(id: number) {
-    setProcessingIds((prev) => new Set(prev).add(id));
-    try {
-      const res = await fetch(`/api/documents/${id}/process?force=true`, { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success(data.message || t('reprocessSuccess'));
-        await loadDocuments();
-      } else {
-        toast.error(data.error);
-      }
-    } catch (err) {
-      toast.error(`${t('processError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
-    } finally {
-      setProcessingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    }
-  }
-
-  async function handleRetag(id: number) {
-    setRetaggingIds((prev) => new Set(prev).add(id));
-    try {
-      const res = await fetch(`/api/documents/${id}/retag`, { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success(data.message);
-        await loadDocuments();
-      } else {
-        toast.error(data.error);
-      }
-    } catch (err) {
-      toast.error(`${t('retagError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
-    } finally {
-      setRetaggingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    }
-  }
-
-  async function handleDelete(id: number) {
-    try {
-      const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setDocuments((prev) => prev.filter((d) => d.id !== id));
-        toast.success(t('documentDeleted'));
-      } else {
-        const data = await res.json();
-        toast.error(data.error);
-      }
-    } catch (err) {
-      toast.error(`${t('deleteError')}: ${err instanceof Error ? err.message : "Unknown error"}`);
-    }
-  }
-
-  async function handleSaveMetadata(id: number, metadata: Record<string, unknown>) {
-    const res = await fetch(`/api/documents/${id}/metadata`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(metadata),
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setDocuments((prev) =>
-        prev.map((d) => (d.id === id ? data.document : d))
-      );
-      toast.success(t('metadataSaved'));
-    } else {
-      toast.error(data.error || t('metadataSaveError'));
-    }
-  }
-
-  function handleStatusMessage(message: string, type: "success" | "error" | "info") {
-    if (type === "success") toast.success(message);
-    else if (type === "error") toast.error(message);
-    else toast.info(message);
-  }
-
-  const hasActiveFilters = search.trim() !== "" || statusFilter !== "all" || typeFilter !== "all";
+  const docs = data?.docs;
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="p-6 max-w-6xl mx-auto space-y-8">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight">{t('title')}</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          {t('subtitle')}
-        </p>
+        <h2 className="text-2xl font-semibold tracking-tight">{t("title")}</h2>
+        <p className="text-sm text-muted-foreground mt-1">{t("subtitle")}</p>
       </div>
 
-      {/* Type filter chips */}
-      <div className="flex gap-2">
-        <Button
-          variant={typeFilter === "all" ? "secondary" : "ghost"}
-          size="sm"
-          className="h-7 px-3 text-xs"
-          onClick={() => setTypeFilter("all")}
-        >
-          {t('typeFilter.all')}
-        </Button>
-        <Button
-          variant={typeFilter === "policies" ? "secondary" : "ghost"}
-          size="sm"
-          className="h-7 px-3 text-xs"
-          onClick={() => setTypeFilter("policies")}
-        >
-          {t('typeFilter.policies')}
-        </Button>
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        {loading ? (
+          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)
+        ) : docs ? (
+          <>
+            <KpiCard
+              icon={FileText}
+              label={t("totalDocuments")}
+              href="/documents/library"
+              value={docs.total}
+              sub={t("totalSub")}
+            />
+            <KpiCard
+              icon={FileCheck}
+              label={t("processed")}
+              href="/documents/library"
+              value={docs.processed}
+              sub={t("processedSub", { total: docs.total })}
+            />
+            <KpiCard
+              icon={Layers}
+              label={t("aiTools")}
+              href="/documents/ai-tools"
+              value={t("aiToolsValue")}
+              sub={t("aiToolsSub")}
+            />
+          </>
+        ) : null}
       </div>
 
-      {canEdit && (
-        <UploadSection
-          onUploadComplete={loadDocuments}
-          onStatusMessage={handleStatusMessage}
-        />
-      )}
-
-      {canEdit && (
-        <ActionBar
-          onScanServer={handleScanServer}
-          onScanGDrive={handleScanGDrive}
-          onProcessAll={handleProcessAll}
-          onRetagAll={handleRetagAll}
-          allExpanded={allExpanded}
-          onToggleExpand={() => setAllExpanded(!allExpanded)}
-        />
-      )}
-
-      {/* Search & filter bar */}
-      <div className="flex flex-wrap items-center gap-2">
-        {/* Search input */}
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <Input
-            placeholder={t('searchByName')}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-9 text-sm"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
+      {error && !loading && (
+        <div className="rounded-xl border bg-card p-8 text-center">
+          <AlertTriangle className="mx-auto h-8 w-8 text-muted-foreground/40 mb-3" />
+          <p className="text-sm font-medium">{t("errorTitle")}</p>
+          <p className="text-xs text-muted-foreground mt-1">{t("errorSub")}</p>
         </div>
+      )}
 
-        {/* Status filter */}
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-9 w-[160px] text-sm">
-            <SelectValue placeholder={t('filterByStatus')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('allStatuses')}</SelectItem>
-            {ALL_STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s.replace("_", " ")}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Active filter summary + clear */}
-        {hasActiveFilters && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              {t('documentCount', { filtered: filteredDocuments.length, total: documents.length })}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={() => { setSearch(""); setStatusFilter("all"); setTypeFilter("all"); }}
-            >
-              <X className="h-3 w-3 mr-1" />
-              {t('clearFilters')}
-            </Button>
+      {/* Document types breakdown */}
+      {!loading && docs && Object.keys(docs.byType).length > 0 && (
+        <div className="rounded-xl border bg-card shadow-sm">
+          <div className="px-5 py-4 border-b">
+            <h3 className="text-sm font-semibold">{t("byType")}</h3>
+            <p className="text-xs text-muted-foreground">{t("byTypeSub")}</p>
           </div>
-        )}
-      </div>
-
-      {loading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-20 w-full rounded-lg" />
-          <Skeleton className="h-20 w-full rounded-lg" />
-          <Skeleton className="h-20 w-full rounded-lg" />
+          <div className="divide-y">
+            {Object.entries(docs.byType)
+              .sort(([, a], [, b]) => b - a)
+              .map(([type, count]) => (
+                <button
+                  key={type}
+                  onClick={() => router.push("/documents/library")}
+                  className="group w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <p className="text-xs font-medium truncate capitalize">{type}</p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0 ml-3">
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      {count}
+                    </span>
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </button>
+              ))}
+          </div>
         </div>
-      ) : (
-        <DocumentList
-          documents={filteredDocuments}
-          allExpanded={allExpanded}
-          processingIds={processingIds}
-          retaggingIds={retaggingIds}
-          onCategoryChange={handleCategoryChange}
-          onProcess={handleProcess}
-          onReprocess={handleReprocess}
-          onRetag={handleRetag}
-          onDelete={handleDelete}
-          onEditMetadata={(doc) => {
-            setMetadataDoc(doc);
-            setMetadataOpen(true);
-          }}
-          onManageContract={(docId) => {
-            setContractDocId(docId);
-            setContractOpen(true);
-          }}
-          canEdit={canEdit}
-          canDelete={canDelete}
-        />
       )}
 
-      <MetadataDialog
-        document={metadataDoc}
-        open={metadataOpen}
-        onOpenChange={setMetadataOpen}
-        onSave={handleSaveMetadata}
-      />
-
-      <ContractActionDialog
-        docId={contractDocId}
-        open={contractOpen}
-        onOpenChange={setContractOpen}
-        onNavigateToObligations={() => router.push("/obligations")}
-        onRefreshDocuments={loadDocuments}
-      />
+      {/* Quick actions */}
+      {!loading && !error && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <button
+            onClick={() => router.push("/documents/library")}
+            className="flex items-center gap-3 rounded-xl border bg-card p-5 text-left shadow-sm hover:shadow-md transition-shadow"
+          >
+            <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+            <div>
+              <p className="text-sm font-medium">{t("libraryAction")}</p>
+              <p className="text-xs text-muted-foreground">{t("libraryActionSub")}</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto shrink-0" />
+          </button>
+          <button
+            onClick={() => router.push("/documents/ai-tools")}
+            className="flex items-center gap-3 rounded-xl border bg-card p-5 text-left shadow-sm hover:shadow-md transition-shadow"
+          >
+            <Layers className="h-5 w-5 text-muted-foreground shrink-0" />
+            <div>
+              <p className="text-sm font-medium">{t("aiToolsAction")}</p>
+              <p className="text-xs text-muted-foreground">{t("aiToolsActionSub")}</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto shrink-0" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

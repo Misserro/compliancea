@@ -1,0 +1,6 @@
+[
+  { "source": "/legal-hub/templates", "destination": "/legal/templates", "permanent": true },
+  { "source": "/legal-hub/firm", "destination": "/legal/firm", "permanent": true },
+  { "source": "/legal-hub/:id", "destination": "/legal/cases/:id", "permanent": true },
+  { "source": "/legal-hub", "destination": "/legal/cases", "permanent": true }
+]

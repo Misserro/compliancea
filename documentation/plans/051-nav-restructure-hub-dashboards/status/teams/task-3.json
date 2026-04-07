@@ -1,0 +1,23 @@
+{
+  "task_id": "task-3",
+  "task_name": "Documents Hub: route migration + /documents dashboard",
+  "team_name": "task-3-team",
+  "goal": "Add a new hub dashboard at /documents, move the existing documents library to /documents/library, and move AI Tools from /document-tools to /documents/ai-tools.",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-04-07T08:58:50Z",
+  "ended_at": "2026-04-07T10:19:33Z",
+  "elapsed_seconds": 4843,
+  "stages": {
+    "planning":       { "started_at": "2026-04-07T08:58:55Z", "ended_at": "2026-04-07T09:01:57Z", "elapsed_seconds": 182 },
+    "implementation": { "started_at": "2026-04-07T09:01:57Z", "ended_at": "2026-04-07T09:04:48Z", "elapsed_seconds": 171 },
+    "review":         { "started_at": "2026-04-07T09:04:48Z", "ended_at": "2026-04-07T10:19:33Z", "elapsed_seconds": 4485 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-3",  "role": "executor",  "model": "opus",   "status": "completed",  "spawned_at": "2026-04-07T08:58:50Z", "ended_at": "2026-04-07T10:19:33Z" },
+    { "name": "reviewer-3",  "role": "reviewer",  "model": "sonnet", "status": "completed",  "spawned_at": "2026-04-07T08:58:50Z", "ended_at": "2026-04-07T10:19:33Z" },
+    { "name": "tester-3",    "role": "tester",    "model": "sonnet", "status": "completed",  "spawned_at": "2026-04-07T08:58:50Z", "ended_at": "2026-04-07T10:19:33Z" }
+  ]
+}

@@ -47,7 +47,7 @@ export function CaseCard({ legalCase }: CaseCardProps) {
     tType(legalCase.case_type);
 
   return (
-    <Link href={`/legal-hub/${legalCase.id}`}>
+    <Link href={`/legal/cases/${legalCase.id}`}>
       <div className="bg-card border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">

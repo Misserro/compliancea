@@ -1,0 +1,23 @@
+{
+  "task_id": "task-1",
+  "task_name": "Legal Hub: route migration + /legal dashboard",
+  "team_name": "task-1-team",
+  "goal": "Migrate all Legal Hub pages from /legal-hub/* to /legal/*, create a new hub dashboard at /legal, and add permanent redirects for old URLs.",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-04-07T08:58:50Z",
+  "ended_at": "2026-04-07T10:19:33Z",
+  "elapsed_seconds": 4843,
+  "stages": {
+    "planning":       { "started_at": "2026-04-07T08:58:55Z", "ended_at": "2026-04-07T09:02:50Z", "elapsed_seconds": 235 },
+    "implementation": { "started_at": "2026-04-07T09:02:50Z", "ended_at": "2026-04-07T09:03:52Z", "elapsed_seconds": 62 },
+    "review":         { "started_at": "2026-04-07T09:03:52Z", "ended_at": "2026-04-07T10:19:33Z", "elapsed_seconds": 4541 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-1",  "role": "executor",  "model": "opus",   "status": "completed",  "spawned_at": "2026-04-07T08:58:50Z", "ended_at": "2026-04-07T10:19:33Z" },
+    { "name": "reviewer-1",  "role": "reviewer",  "model": "sonnet", "status": "completed",  "spawned_at": "2026-04-07T08:58:50Z", "ended_at": "2026-04-07T10:19:33Z" },
+    { "name": "tester-1",    "role": "tester",    "model": "sonnet", "status": "completed",  "spawned_at": "2026-04-07T08:58:50Z", "ended_at": "2026-04-07T10:19:33Z" }
+  ]
+}

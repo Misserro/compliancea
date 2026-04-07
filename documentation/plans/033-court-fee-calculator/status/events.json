@@ -34,6 +34,27 @@
       "task_id": "task-2",
       "agent": "executor-2",
       "message": "Task 2 entered planning stage."
+    },
+    {
+      "timestamp": "2026-03-21T08:02:32.000Z",
+      "type": "task_completed",
+      "task_id": "task-2",
+      "agent": "executor-2",
+      "message": "Task 2 completed: Court Fee Row in Case Metadata Form. case-metadata-form.tsx updated with import and view-mode grid row. tsc --noEmit clean."
+    },
+    {
+      "timestamp": "2026-03-21T08:02:32.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "Task 2 team shut down. All members decommissioned."
+    },
+    {
+      "timestamp": "2026-03-21T08:02:32.000Z",
+      "type": "execution_completed",
+      "task_id": null,
+      "agent": "pm",
+      "message": "All 2 tasks completed successfully. 0 escalations, 0 retries, 0 stalls. Total elapsed: ~2 minutes."
     }
   ]
 }
