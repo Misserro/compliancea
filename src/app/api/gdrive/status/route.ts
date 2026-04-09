@@ -22,7 +22,7 @@ export async function GET() {
 
   await ensureDb();
   try {
-    const status = getGDriveStatus();
+    const status = getGDriveStatus(orgId);
     return NextResponse.json(status);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";

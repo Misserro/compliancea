@@ -38,6 +38,7 @@ export interface Document {
   commencement_date: string | null;
   expiry_date: string | null;
   contract_type: string | null;
+  is_historical: number;
 }
 
 export interface Obligation {
@@ -197,6 +198,7 @@ export interface Contract {
   commencement_date: string | null;
   expiry_date: string | null;
   contract_type: string | null;
+  is_historical?: number;
   totalObligations: number;
   activeObligations: number;
   overdueObligations: number;

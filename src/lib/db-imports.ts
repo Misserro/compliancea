@@ -139,6 +139,7 @@ export {
   getOrgMemberByUserId,
   addOrgMember,
   getOrgSettings,
+  getOrgSetting,
   setOrgSetting,
   deleteOrgSettings,
   getOrgMembers,

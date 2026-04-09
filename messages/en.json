@@ -732,6 +732,9 @@
       "contractType": "Contract Type"
     },
 
+    "historical": "Historical",
+    "historicalNote": "Historical — no obligations tracked",
+
     "addDialog": {
       "title": "Add New Contract",
       "contractDocument": "Contract Document",
@@ -1378,7 +1381,11 @@
       "expiresInHours": "Expires in {count} hours",
       "expiresIn1Hour": "Expires in 1 hour",
       "expiresSoon": "Expires soon"
-    }
+    },
+
+    "historicalCutoff": "Historical cutoff date",
+    "historicalCutoffHelp": "Contracts expiring before this date are marked historical (no obligations generated)",
+    "driveIdLabel": "Shared Drive ID or Folder ID"
   },
   "Admin": {
     "title": "Admin Panel",

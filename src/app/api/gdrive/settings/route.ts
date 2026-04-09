@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
-import { getAppSetting, setAppSetting } from "@/lib/db-imports";
+import { getOrgSetting, setOrgSetting } from "@/lib/db-imports";
 import { hasPermission } from "@/lib/permissions";
 
 export const runtime = "nodejs";
+
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export async function GET() {
   const session = await auth();
@@ -22,8 +26,10 @@ export async function GET() {
 
   await ensureDb();
   try {
-    const credentialsJson = getAppSetting("gdriveServiceAccount") || "";
-    const folderId = getAppSetting("gdriveFolderId") || "";
+    const credentialsJson = getOrgSetting(orgId, "gdrive_service_account") || "";
+    const folderId = getOrgSetting(orgId, "gdrive_drive_id") || "";
+    const historicalCutoff = getOrgSetting(orgId, "gdrive_historical_cutoff") || todayISO();
+    const enabled = getOrgSetting(orgId, "gdrive_enabled") === "1";
 
     // Extract service account email for display (don't expose full credentials)
     let serviceAccountEmail = "";
@@ -40,6 +46,8 @@ export async function GET() {
       folderId,
       hasCredentials: !!credentialsJson,
       serviceAccountEmail,
+      historicalCutoff,
+      enabled,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
@@ -64,7 +72,7 @@ export async function PATCH(request: NextRequest) {
   await ensureDb();
   try {
     const body = await request.json();
-    const { serviceAccountJson, folderId } = body;
+    const { serviceAccountJson, folderId, historicalCutoff } = body;
 
     if (serviceAccountJson !== undefined) {
       // Validate JSON before saving
@@ -81,14 +89,28 @@ export async function PATCH(request: NextRequest) {
           return NextResponse.json({ error: "Invalid JSON format." }, { status: 400 });
         }
       }
-      setAppSetting("gdriveServiceAccount", serviceAccountJson.trim());
+      setOrgSetting(orgId, "gdrive_service_account", serviceAccountJson.trim());
     }
     if (folderId !== undefined) {
-      setAppSetting("gdriveFolderId", folderId.trim());
+      setOrgSetting(orgId, "gdrive_drive_id", folderId.trim());
+    }
+    if (historicalCutoff !== undefined) {
+      if (historicalCutoff && !/^\d{4}-\d{2}-\d{2}$/.test(historicalCutoff)) {
+        return NextResponse.json(
+          { error: "Invalid historical cutoff date. Use YYYY-MM-DD format." },
+          { status: 400 }
+        );
+      }
+      setOrgSetting(orgId, "gdrive_historical_cutoff", historicalCutoff || "");
     }
 
+    // Auto-set enabled flag when credentials + driveId are both provided
+    const currentCreds = getOrgSetting(orgId, "gdrive_service_account") || "";
+    const currentDriveId = getOrgSetting(orgId, "gdrive_drive_id") || "";
+    const isEnabled = !!(currentCreds && currentDriveId);
+    setOrgSetting(orgId, "gdrive_enabled", isEnabled ? "1" : "");
+
     // Return updated state
-    const currentCreds = getAppSetting("gdriveServiceAccount") || "";
     let serviceAccountEmail = "";
     if (currentCreds) {
       try {
@@ -99,9 +121,11 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json({
-      folderId: getAppSetting("gdriveFolderId") || "",
+      folderId: currentDriveId,
       hasCredentials: !!currentCreds,
       serviceAccountEmail,
+      historicalCutoff: getOrgSetting(orgId, "gdrive_historical_cutoff") || todayISO(),
+      enabled: isEnabled,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -9,8 +10,10 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 export function GDriveSection() {
+  const t = useTranslations("Settings");
   const [serviceAccountJson, setServiceAccountJson] = useState("");
   const [folderId, setFolderId] = useState("");
+  const [historicalCutoff, setHistoricalCutoff] = useState(() => new Date().toISOString().slice(0, 10));
   const [hasCredentials, setHasCredentials] = useState(false);
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
@@ -22,6 +25,9 @@ export function GDriveSection() {
         setFolderId(data.folderId || "");
         setHasCredentials(data.hasCredentials || false);
         setEmail(data.serviceAccountEmail || "");
+        if (data.historicalCutoff) {
+          setHistoricalCutoff(data.historicalCutoff);
+        }
       })
       .catch(() => {});
   }, []);
@@ -34,6 +40,7 @@ export function GDriveSection() {
         body.serviceAccountJson = serviceAccountJson;
       }
       body.folderId = folderId;
+      body.historicalCutoff = historicalCutoff;
 
       const res = await fetch("/api/gdrive/settings", {
         method: "PATCH",
@@ -45,6 +52,9 @@ export function GDriveSection() {
         setHasCredentials(data.hasCredentials);
         setEmail(data.serviceAccountEmail || "");
         setServiceAccountJson("");
+        if (data.historicalCutoff) {
+          setHistoricalCutoff(data.historicalCutoff);
+        }
         toast.success("Google Drive settings saved");
       } else {
         toast.error(data.error || "Failed to save settings");
@@ -83,7 +93,7 @@ export function GDriveSection() {
         </div>
 
         <div>
-          <Label htmlFor="folder-id">Google Drive Folder ID</Label>
+          <Label htmlFor="folder-id">{t("driveIdLabel")}</Label>
           <Input
             id="folder-id"
             value={folderId}
@@ -91,6 +101,18 @@ export function GDriveSection() {
             placeholder="1ABC2DEF3GHI..."
             className="mt-1.5"
           />
+        </div>
+
+        <div>
+          <Label htmlFor="historical-cutoff">{t("historicalCutoff")}</Label>
+          <Input
+            id="historical-cutoff"
+            type="date"
+            value={historicalCutoff}
+            onChange={(e) => setHistoricalCutoff(e.target.value)}
+            className="mt-1.5"
+          />
+          <p className="text-xs text-muted-foreground mt-1">{t("historicalCutoffHelp")}</p>
         </div>
 
         <Button onClick={handleSave} disabled={saving}>

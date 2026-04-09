@@ -143,6 +143,7 @@ export function getOrgById(...args: any[]): any;
 export function getOrgMemberByUserId(...args: any[]): any;
 export function addOrgMember(...args: any[]): any;
 export function getOrgSettings(...args: any[]): any;
+export function getOrgSetting(...args: any[]): any;
 export function setOrgSetting(...args: any[]): any;
 export function deleteOrgSettings(...args: any[]): any;
 export function getOrgMembers(...args: any[]): any;

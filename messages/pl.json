@@ -692,6 +692,8 @@
       "vendorPlaceholder": "Nazwa dostawcy...",
       "contractType": "Typ umowy"
     },
+    "historical": "Historyczna",
+    "historicalNote": "Historyczna — brak śledzonych zobowiązań",
     "addDialog": {
       "title": "Dodaj nową umowę",
       "contractDocument": "Dokument umowy",
@@ -1299,7 +1301,11 @@
       "defaultPermissions": "Domyślne uprawnienia członków",
       "defaultPermissionsDesc": "Domyślne poziomy uprawnień stosowane do nowych członków po dołączeniu do organizacji.",
       "defaultPermissionUpdated": "Domyślne uprawnienie {resource} zaktualizowane"
-    }
+    },
+
+    "historicalCutoff": "Data graniczna historycznych",
+    "historicalCutoffHelp": "Umowy wygasające przed tą datą są oznaczane jako historyczne (bez generowania zobowiązań)",
+    "driveIdLabel": "ID Shared Drive lub ID folderu"
   },
   "Admin": {
     "title": "Panel administracyjny",

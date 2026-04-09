@@ -23,7 +23,7 @@ export async function POST() {
 
   await ensureDb();
   try {
-    const status = getGDriveStatus();
+    const status = getGDriveStatus(orgId);
     if (!status.available) {
       return NextResponse.json(
         { error: status.error || "Google Drive not configured" },
@@ -31,7 +31,7 @@ export async function POST() {
       );
     }
 
-    const result = await scanGDrive();
+    const result = await scanGDrive(orgId);
     const documents = getAllDocuments(orgId);
 
     let message = `Google Drive scan complete. Added: ${result.added}, Updated: ${result.updated}, Removed: ${result.deleted}, Unchanged: ${result.unchanged}`;

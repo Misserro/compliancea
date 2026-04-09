@@ -216,3 +216,11 @@ export const CASE_DOCUMENT_CATEGORY_COLORS: Record<string, string> = {
   internal_notes: "bg-neutral-100 text-neutral-800 dark:bg-neutral-900 dark:text-neutral-200",
   other: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
 };
+
+export const GDRIVE_SETTINGS_KEYS = {
+  serviceAccount: 'gdrive_service_account',
+  driveId: 'gdrive_drive_id',
+  historicalCutoff: 'gdrive_historical_cutoff',
+  lastSyncTime: 'gdrive_last_sync_time',
+  enabled: 'gdrive_enabled',
+} as const;
