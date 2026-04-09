@@ -1,0 +1,14 @@
+{
+  "team": "task-5",
+  "description": "Card UI fixes — truncation + contract_type badge",
+  "members": {
+    "executor-5": { "pane": "background", "spawned_at": "2026-04-09T00:05:00.000Z" },
+    "reviewer-5": { "pane": "background", "spawned_at": "2026-04-09T00:05:00.000Z" },
+    "tester-5":   { "pane": "background", "spawned_at": "2026-04-09T00:05:00.000Z" }
+  },
+  "stage": "review",
+  "stage_started_at": "2026-04-09T00:07:00.000Z",
+  "pipeline_mode": false,
+  "retry_count": 0,
+  "last_updated": "2026-04-09T00:07:00.000Z"
+}

@@ -689,7 +689,8 @@
       "expiryDateLabel": "Data wygaśnięcia",
       "indefinite": "Bezterminowa",
       "companyPlaceholder": "Nazwa firmy...",
-      "vendorPlaceholder": "Nazwa dostawcy..."
+      "vendorPlaceholder": "Nazwa dostawcy...",
+      "contractType": "Typ umowy"
     },
     "addDialog": {
       "title": "Dodaj nową umowę",

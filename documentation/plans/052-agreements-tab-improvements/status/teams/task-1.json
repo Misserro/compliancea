@@ -1,0 +1,14 @@
+{
+  "team": "task-1",
+  "description": "DB migration + types + constants",
+  "members": {
+    "executor-1": { "pane": "background", "spawned_at": "2026-04-09T00:02:00.000Z", "ended_at": "2026-04-09T00:06:00.000Z" },
+    "reviewer-1": { "pane": "background", "spawned_at": "2026-04-09T00:02:00.000Z", "ended_at": "2026-04-09T00:06:00.000Z" },
+    "tester-1":   { "pane": "background", "spawned_at": "2026-04-09T00:02:00.000Z", "ended_at": "2026-04-09T00:06:00.000Z" }
+  },
+  "stage": "completed",
+  "completed_at": "2026-04-09T00:06:00.000Z",
+  "pipeline_mode": false,
+  "retry_count": 0,
+  "last_updated": "2026-04-09T00:06:00.000Z"
+}

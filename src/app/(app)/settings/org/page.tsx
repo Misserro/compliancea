@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Building2, Users, Calendar, Shield } from "lucide-react";
+import { Building2, Users, Calendar, Shield, Database, Loader2 } from "lucide-react";
 import { RESOURCES, RESOURCE_LABELS, type PermissionLevel } from "@/lib/permissions";
 import { PERMISSION_LEVEL_COLORS } from "@/lib/constants";
 
@@ -39,6 +39,15 @@ export default function OrgSettingsPage() {
   const [defaults, setDefaults] = useState<Record<string, string> | null>(null);
   const [defaultsLoading, setDefaultsLoading] = useState(false);
   const [savingResource, setSavingResource] = useState<string | null>(null);
+
+  // Backfill contract data state
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillResult, setBackfillResult] = useState<{
+    processed: number;
+    named: number;
+    classified: number;
+    skipped: number;
+  } | null>(null);
 
   const orgRole = sessionData?.user?.orgRole;
   const canEdit = orgRole === "owner" || orgRole === "admin";
@@ -129,6 +138,31 @@ export default function OrgSettingsPage() {
       );
     } finally {
       setSavingResource(null);
+    }
+  }
+
+  async function handleBackfill() {
+    setBackfilling(true);
+    setBackfillResult(null);
+    try {
+      const res = await fetch("/api/admin/backfill-contract-types", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setBackfillResult(data);
+        toast.success(
+          `Processed ${data.processed} contracts: ${data.named} named, ${data.classified} classified, ${data.skipped} skipped`
+        );
+      } else {
+        toast.error(data.error || "Backfill failed");
+      }
+    } catch (err) {
+      toast.error(
+        `Error: ${err instanceof Error ? err.message : "Unknown error"}`
+      );
+    } finally {
+      setBackfilling(false);
     }
   }
 
@@ -332,6 +366,42 @@ export default function OrgSettingsPage() {
                 })}
               </div>
             ) : null}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Contract Data Backfill -- visible to owners and admins only */}
+      {canEdit && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Database className="size-4" />
+              Contract Data
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Retroactively name and classify existing contracts using AI.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button
+              onClick={handleBackfill}
+              disabled={backfilling}
+              size="sm"
+            >
+              {backfilling ? (
+                <>
+                  <Loader2 className="size-4 mr-2 animate-spin" />
+                  Processing contracts...
+                </>
+              ) : (
+                "Backfill contract names & types"
+              )}
+            </Button>
+            {backfillResult && (
+              <p className="text-sm text-muted-foreground">
+                Processed {backfillResult.processed} contracts: {backfillResult.named} named, {backfillResult.classified} classified, {backfillResult.skipped} skipped.
+              </p>
+            )}
           </CardContent>
         </Card>
       )}

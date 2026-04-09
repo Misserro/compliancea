@@ -5,7 +5,7 @@ import { ChevronDown, ChevronRight, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
 import type { Contract } from "@/lib/types";
-import { STATUS_COLORS } from "@/lib/constants";
+import { STATUS_COLORS, CONTRACT_TYPES } from "@/lib/constants";
 import { ContractMetadataDisplay } from "./contract-metadata-display";
 import { InvoiceSection } from "./invoice-section";
 import { ContractDocumentsSection } from "./contract-documents-section";
@@ -126,7 +126,7 @@ export function ContractCard({ contract, onContractUpdate, onSelect, isSelected 
         }}
       >
         <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3 flex-1">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
             <button
               className="mt-1 text-muted-foreground hover:text-foreground transition-colors"
             >
@@ -137,14 +137,19 @@ export function ContractCard({ contract, onContractUpdate, onSelect, isSelected 
               )}
             </button>
 
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <h3 className="font-semibold text-base">{contract.name}</h3>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusColor}`}>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1 min-w-0">
+                <h3 className="font-semibold text-base truncate">{contract.name}</h3>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${statusColor}`}>
                   {statusDisplay}
                 </span>
+                {contract.contract_type && (
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground whitespace-nowrap">
+                    {CONTRACT_TYPES.find(ct => ct.value === contract.contract_type)?.label ?? contract.contract_type}
+                  </span>
+                )}
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground truncate">
                 {contract.contracting_vendor || contract.client || t("noVendor")}
                 {contract.expiry_date && (
                   <span className="ml-2 text-xs">

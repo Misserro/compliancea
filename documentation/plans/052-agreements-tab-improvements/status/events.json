@@ -1,0 +1,252 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-04-09T00:00:00.000Z",
+      "type": "PM_INIT",
+      "message": "PM dashboard initialized. Watchdog started. Awaiting Lead spawns."
+    },
+    {
+      "timestamp": "2026-04-09T00:01:00.000Z",
+      "type": "SPAWNED",
+      "team": "knowledge-052-agreements",
+      "message": "Shared knowledge agent spawned (background pane)."
+    },
+    {
+      "timestamp": "2026-04-09T00:02:00.000Z",
+      "type": "SPAWNED",
+      "team": "task-1",
+      "message": "Task 1 team spawned: executor-1, reviewer-1, tester-1 (all background)."
+    },
+    {
+      "timestamp": "2026-04-09T00:02:00.000Z",
+      "type": "STAGE",
+      "team": "task-1",
+      "stage": "planning",
+      "message": "Task 1 entered planning stage."
+    },
+    {
+      "timestamp": "2026-04-09T00:03:00.000Z",
+      "type": "STAGE",
+      "team": "task-1",
+      "stage": "implementation",
+      "message": "Task 1 entered implementation stage."
+    },
+    {
+      "timestamp": "2026-04-09T00:04:00.000Z",
+      "type": "STAGE",
+      "team": "task-1",
+      "stage": "review",
+      "message": "Task 1 entered review stage."
+    },
+    {
+      "timestamp": "2026-04-09T00:05:00.000Z",
+      "type": "PIPELINE-SPAWN",
+      "team": "task-2",
+      "message": "Task 2 pipeline-spawned (planning): executor-2, reviewer-2, tester-2 (all background)."
+    },
+    {
+      "timestamp": "2026-04-09T00:05:00.000Z",
+      "type": "STAGE",
+      "team": "task-2",
+      "stage": "planning",
+      "message": "Task 2 entered planning stage."
+    },
+    {
+      "timestamp": "2026-04-09T00:05:00.000Z",
+      "type": "PIPELINE-SPAWN",
+      "team": "task-4",
+      "message": "Task 4 pipeline-spawned (planning): executor-4, reviewer-4, tester-4 (all background)."
+    },
+    {
+      "timestamp": "2026-04-09T00:05:00.000Z",
+      "type": "STAGE",
+      "team": "task-4",
+      "stage": "planning",
+      "message": "Task 4 entered planning stage."
+    },
+    {
+      "timestamp": "2026-04-09T00:05:00.000Z",
+      "type": "PIPELINE-SPAWN",
+      "team": "task-5",
+      "message": "Task 5 pipeline-spawned (planning): executor-5, reviewer-5, tester-5 (all background)."
+    },
+    {
+      "timestamp": "2026-04-09T00:05:00.000Z",
+      "type": "STAGE",
+      "team": "task-5",
+      "stage": "planning",
+      "message": "Task 5 entered planning stage."
+    },
+    {
+      "timestamp": "2026-04-09T00:06:00.000Z",
+      "type": "COMPLETED",
+      "team": "task-1",
+      "message": "Task 1 completed: DB migration + types + constants."
+    },
+    {
+      "timestamp": "2026-04-09T00:06:00.000Z",
+      "type": "SHUTDOWN",
+      "team": "task-1",
+      "message": "Task 1 members shut down (executor-1, reviewer-1, tester-1)."
+    },
+    {
+      "timestamp": "2026-04-09T00:06:00.000Z",
+      "type": "APPROVED-IMPL",
+      "team": "task-2",
+      "message": "Task 2 implementation approved — pipeline_mode disabled."
+    },
+    {
+      "timestamp": "2026-04-09T00:06:00.000Z",
+      "type": "APPROVED-IMPL",
+      "team": "task-4",
+      "message": "Task 4 implementation approved — pipeline_mode disabled."
+    },
+    {
+      "timestamp": "2026-04-09T00:06:00.000Z",
+      "type": "APPROVED-IMPL",
+      "team": "task-5",
+      "message": "Task 5 implementation approved — pipeline_mode disabled."
+    },
+    {
+      "timestamp": "2026-04-09T00:06:00.000Z",
+      "type": "STAGE",
+      "team": "task-2",
+      "stage": "implementation",
+      "message": "Task 2 entered implementation stage."
+    },
+    {
+      "timestamp": "2026-04-09T00:06:00.000Z",
+      "type": "STAGE",
+      "team": "task-4",
+      "stage": "implementation",
+      "message": "Task 4 entered implementation stage."
+    },
+    {
+      "timestamp": "2026-04-09T00:06:00.000Z",
+      "type": "STAGE",
+      "team": "task-5",
+      "stage": "implementation",
+      "message": "Task 5 entered implementation stage."
+    },
+    {
+      "timestamp": "2026-04-09T00:07:00.000Z",
+      "type": "STAGE",
+      "team": "task-2",
+      "stage": "review",
+      "message": "Task 2 entered review stage."
+    },
+    {
+      "timestamp": "2026-04-09T00:07:00.000Z",
+      "type": "STAGE",
+      "team": "task-5",
+      "stage": "review",
+      "message": "Task 5 entered review stage."
+    },
+    {
+      "timestamp": "2026-04-09T00:08:00.000Z",
+      "type": "COMPLETED",
+      "team": "task-2",
+      "message": "Task 2 completed: Extend Claude extraction (contract_type + suggested_name)."
+    },
+    {
+      "timestamp": "2026-04-09T00:08:00.000Z",
+      "type": "SHUTDOWN",
+      "team": "task-2",
+      "message": "Task 2 members shut down (executor-2, reviewer-2, tester-2)."
+    },
+    {
+      "timestamp": "2026-04-09T00:08:00.000Z",
+      "type": "PIPELINE-SPAWN",
+      "team": "task-3",
+      "message": "Task 3 pipeline-spawned (planning): executor-3, reviewer-3, tester-3 (all background)."
+    },
+    {
+      "timestamp": "2026-04-09T00:08:00.000Z",
+      "type": "STAGE",
+      "team": "task-3",
+      "stage": "planning",
+      "message": "Task 3 entered planning stage."
+    },
+    {
+      "timestamp": "2026-04-09T00:08:00.000Z",
+      "type": "PIPELINE-SPAWN",
+      "team": "task-6",
+      "message": "Task 6 pipeline-spawned (planning): executor-6, reviewer-6, tester-6 (all background)."
+    },
+    {
+      "timestamp": "2026-04-09T00:08:00.000Z",
+      "type": "STAGE",
+      "team": "task-6",
+      "stage": "planning",
+      "message": "Task 6 entered planning stage."
+    },
+    {
+      "timestamp": "2026-04-09T00:09:00.000Z",
+      "type": "APPROVED-IMPL",
+      "team": "task-6",
+      "message": "Task 6 implementation approved — pipeline_mode disabled."
+    },
+    {
+      "timestamp": "2026-04-09T00:09:00.000Z",
+      "type": "STAGE",
+      "team": "task-6",
+      "stage": "implementation",
+      "message": "Task 6 entered implementation stage."
+    },
+    {
+      "timestamp": "2026-04-09T00:10:00.000Z",
+      "type": "STAGE",
+      "team": "task-3",
+      "stage": "review",
+      "message": "Task 3 entered review stage."
+    },
+    {
+      "timestamp": "2026-04-09T00:11:00.000Z",
+      "type": "COMPLETED",
+      "team": "task-3",
+      "message": "Task 3 completed: Processing pipeline — write name, contract_type, contracting parties."
+    },
+    {
+      "timestamp": "2026-04-09T00:11:00.000Z",
+      "type": "SHUTDOWN",
+      "team": "task-3",
+      "message": "Task 3 members shut down (executor-3, reviewer-3, tester-3)."
+    },
+    {
+      "timestamp": "2026-04-09T00:11:00.000Z",
+      "type": "COMPLETED",
+      "team": "task-4",
+      "message": "Task 4 completed: PATCH API + metadata display + new contract form."
+    },
+    {
+      "timestamp": "2026-04-09T00:11:00.000Z",
+      "type": "SHUTDOWN",
+      "team": "task-4",
+      "message": "Task 4 members shut down (executor-4, reviewer-4, tester-4)."
+    },
+    {
+      "timestamp": "2026-04-09T00:12:00.000Z",
+      "type": "STAGE",
+      "team": "task-6",
+      "stage": "review",
+      "message": "Task 6 entered review stage."
+    },
+    {
+      "timestamp": "2026-04-09T00:13:00.000Z",
+      "type": "COMPLETED",
+      "team": "task-6",
+      "message": "Task 6 completed: Retroactive admin endpoint + trigger UI."
+    },
+    {
+      "timestamp": "2026-04-09T00:13:00.000Z",
+      "type": "SHUTDOWN",
+      "team": "task-6",
+      "message": "Task 6 members shut down (executor-6, reviewer-6, tester-6)."
+    },
+    {
+      "timestamp": "2026-04-09T00:13:00.000Z",
+      "type": "FINAL-GATE",
+      "message": "All 6 tasks completed. Final regression gate tester spawning."
+    }
+  ]
+}

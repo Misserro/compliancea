@@ -1,0 +1,14 @@
+{
+  "team": "task-2",
+  "description": "Extend Claude extraction (contract_type + suggested_name)",
+  "members": {
+    "executor-2": { "pane": "background", "spawned_at": "2026-04-09T00:05:00.000Z", "ended_at": "2026-04-09T00:08:00.000Z" },
+    "reviewer-2": { "pane": "background", "spawned_at": "2026-04-09T00:05:00.000Z", "ended_at": "2026-04-09T00:08:00.000Z" },
+    "tester-2":   { "pane": "background", "spawned_at": "2026-04-09T00:05:00.000Z", "ended_at": "2026-04-09T00:08:00.000Z" }
+  },
+  "stage": "completed",
+  "completed_at": "2026-04-09T00:08:00.000Z",
+  "pipeline_mode": false,
+  "retry_count": 0,
+  "last_updated": "2026-04-09T00:08:00.000Z"
+}

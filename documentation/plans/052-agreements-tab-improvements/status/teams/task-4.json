@@ -1,0 +1,14 @@
+{
+  "team": "task-4",
+  "description": "PATCH API + metadata display + new contract form (manual editing)",
+  "members": {
+    "executor-4": { "pane": "background", "spawned_at": "2026-04-09T00:05:00.000Z", "ended_at": "2026-04-09T00:11:00.000Z" },
+    "reviewer-4": { "pane": "background", "spawned_at": "2026-04-09T00:05:00.000Z", "ended_at": "2026-04-09T00:11:00.000Z" },
+    "tester-4":   { "pane": "background", "spawned_at": "2026-04-09T00:05:00.000Z", "ended_at": "2026-04-09T00:11:00.000Z" }
+  },
+  "stage": "completed",
+  "completed_at": "2026-04-09T00:11:00.000Z",
+  "pipeline_mode": false,
+  "retry_count": 0,
+  "last_updated": "2026-04-09T00:11:00.000Z"
+}

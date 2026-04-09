@@ -1,0 +1,14 @@
+{
+  "team": "task-6",
+  "description": "Retroactive admin endpoint + trigger UI",
+  "members": {
+    "executor-6": { "pane": "background", "spawned_at": "2026-04-09T00:08:00.000Z", "ended_at": "2026-04-09T00:13:00.000Z" },
+    "reviewer-6": { "pane": "background", "spawned_at": "2026-04-09T00:08:00.000Z", "ended_at": "2026-04-09T00:13:00.000Z" },
+    "tester-6":   { "pane": "background", "spawned_at": "2026-04-09T00:08:00.000Z", "ended_at": "2026-04-09T00:13:00.000Z" }
+  },
+  "stage": "completed",
+  "completed_at": "2026-04-09T00:13:00.000Z",
+  "pipeline_mode": false,
+  "retry_count": 0,
+  "last_updated": "2026-04-09T00:13:00.000Z"
+}

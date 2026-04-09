@@ -728,7 +728,8 @@
       "expiryDateLabel": "Expiry Date",
       "indefinite": "Indefinite",
       "companyPlaceholder": "Company name...",
-      "vendorPlaceholder": "Vendor name..."
+      "vendorPlaceholder": "Vendor name...",
+      "contractType": "Contract Type"
     },
 
     "addDialog": {

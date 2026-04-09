@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DEPARTMENTS, OBLIGATION_CATEGORIES, CONTRACT_STATUS_DISPLAY, INVOICE_CURRENCIES, REPORTING_FREQUENCIES } from "@/lib/constants";
+import { DEPARTMENTS, OBLIGATION_CATEGORIES, CONTRACT_STATUS_DISPLAY, CONTRACT_TYPES, INVOICE_CURRENCIES, REPORTING_FREQUENCIES } from "@/lib/constants";
 
 interface ObligationDraft {
   key: string;
@@ -208,6 +208,7 @@ export function ContractsNewForm() {
   const [signatureDate, setSignatureDate] = useState("");
   const [commencementDate, setCommencementDate] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
+  const [contractType, setContractType] = useState("");
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("unsigned");
   const [obligations, setObligations] = useState<ObligationDraft[]>([]);
@@ -268,6 +269,7 @@ export function ContractsNewForm() {
           signature_date: signatureDate,
           commencement_date: commencementDate,
           expiry_date: expiryDate,
+          contract_type: contractType || undefined,
           category,
           status,
           doc_type: "contract",
@@ -350,6 +352,15 @@ export function ContractsNewForm() {
           <div>
             <label className="block text-sm font-medium mb-1">Contracting vendor</label>
             <input type="text" className="w-full border border-input rounded px-3 py-2 text-sm bg-background" value={contractingVendor} onChange={(e) => setContractingVendor(e.target.value)} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Contract type</label>
+            <select className="w-full border border-input rounded px-3 py-2 text-sm bg-background" value={contractType} onChange={(e) => setContractType(e.target.value)}>
+              <option value="">-- select --</option>
+              {CONTRACT_TYPES.map((ct) => (
+                <option key={ct.value} value={ct.value}>{ct.label}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Signature date</label>

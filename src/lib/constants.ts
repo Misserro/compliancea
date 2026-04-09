@@ -16,6 +16,18 @@ export const DOCUMENT_STATUSES = ["draft", "in_review", "approved", "archived", 
 
 export const CONTRACT_STATUSES = ["unsigned", "signed", "active", "terminated"] as const;
 
+export const CONTRACT_TYPES = [
+  { value: "vendor", label: "Vendor / Supplier Agreement" },
+  { value: "b2b", label: "B2B / Service Agreement" },
+  { value: "employment", label: "Employment / HR Contract" },
+  { value: "nda", label: "NDA / Confidentiality Agreement" },
+  { value: "lease", label: "Lease / Rental Agreement" },
+  { value: "licensing", label: "Licensing / IP Agreement" },
+  { value: "partnership", label: "Partnership / Joint Venture" },
+  { value: "framework", label: "Framework / Master Agreement" },
+  { value: "other", label: "Other" },
+] as const;
+
 export const OBLIGATION_STATUSES = ["active", "inactive", "met", "waived", "finalized", "failed"] as const;
 
 export const OBLIGATION_CATEGORIES = ["payment", "reporting", "compliance", "operational"] as const;

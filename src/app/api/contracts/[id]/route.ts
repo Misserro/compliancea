@@ -96,6 +96,7 @@ export async function PATCH(
       status,
       category,
       doc_type,
+      contract_type,
       contracting_company,
       contracting_vendor,
       signature_date,
@@ -108,6 +109,7 @@ export async function PATCH(
     if (status !== undefined) metadata.status = status;
     if (category !== undefined) metadata.category = category;
     if (doc_type !== undefined) metadata.doc_type = doc_type;
+    if (contract_type !== undefined) metadata.contract_type = contract_type;
     if (contracting_company !== undefined) metadata.contracting_company = contracting_company;
     if (contracting_vendor !== undefined) metadata.contracting_vendor = contracting_vendor;
     if (signature_date !== undefined) metadata.signature_date = signature_date;

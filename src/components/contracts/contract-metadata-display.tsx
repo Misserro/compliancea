@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Pencil, Check, X } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import type { Contract } from "@/lib/types";
+import { CONTRACT_TYPES } from "@/lib/constants";
 
 interface ContractMetadataDisplayProps {
   contract: Contract;
@@ -17,6 +18,7 @@ export function ContractMetadataDisplay({ contract, onSave }: ContractMetadataDi
   const tCommon = useTranslations("Common");
   const locale = useLocale();
   const [form, setForm] = useState({
+    contract_type: contract.contract_type || "",
     contracting_company: contract.contracting_company || "",
     contracting_vendor: contract.contracting_vendor || "",
     signature_date: contract.signature_date || "",
@@ -43,6 +45,7 @@ export function ContractMetadataDisplay({ contract, onSave }: ContractMetadataDi
     setSaving(true);
     try {
       await onSave({
+        contract_type: form.contract_type || null,
         contracting_company: form.contracting_company || null,
         contracting_vendor: form.contracting_vendor || null,
         signature_date: form.signature_date || null,
@@ -57,6 +60,7 @@ export function ContractMetadataDisplay({ contract, onSave }: ContractMetadataDi
 
   const handleCancel = () => {
     setForm({
+      contract_type: contract.contract_type || "",
       contracting_company: contract.contracting_company || "",
       contracting_vendor: contract.contracting_vendor || "",
       signature_date: contract.signature_date || "",
@@ -111,6 +115,19 @@ export function ContractMetadataDisplay({ contract, onSave }: ContractMetadataDi
               onChange={(e) => setForm({ ...form, contracting_vendor: e.target.value })}
               placeholder={t("metadata.vendorPlaceholder")}
             />
+          </div>
+          <div>
+            <label className="text-muted-foreground text-xs font-medium mb-1 block">{t("metadata.contractType")}</label>
+            <select
+              className="w-full px-2 py-1.5 border rounded text-sm bg-background"
+              value={form.contract_type}
+              onChange={(e) => setForm({ ...form, contract_type: e.target.value })}
+            >
+              <option value="">-- select --</option>
+              {CONTRACT_TYPES.map((ct) => (
+                <option key={ct.value} value={ct.value}>{ct.label}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="text-muted-foreground text-xs font-medium mb-1 block">{t("metadata.signatureDate")}</label>
@@ -174,6 +191,11 @@ export function ContractMetadataDisplay({ contract, onSave }: ContractMetadataDi
         <div>
           <div className="text-muted-foreground text-xs font-medium mb-1">{t("metadata.contractName")}</div>
           <div className="font-medium">{contract.name}</div>
+        </div>
+
+        <div>
+          <div className="text-muted-foreground text-xs font-medium mb-1">{t("metadata.contractType")}</div>
+          <div>{CONTRACT_TYPES.find(ct => ct.value === contract.contract_type)?.label ?? "\u2014"}</div>
         </div>
 
         <div>

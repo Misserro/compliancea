@@ -203,6 +203,24 @@ export async function POST(
         if (contractResult.expiry_date) contractMeta.expiry_date = contractResult.expiry_date;
         updateDocumentMetadata(documentId, { metadata_json: JSON.stringify(contractMeta) });
 
+        // Write AI-extracted contract fields: name, type, parties
+        const contractFieldsUpdate: Record<string, unknown> = {
+          contract_type: contractResult.contract_type,
+        };
+
+        if (contractResult.suggested_name !== null) {
+          contractFieldsUpdate.name = contractResult.suggested_name;
+        }
+
+        if (contractResult.parties && contractResult.parties.length > 0 && !taggedDoc.contracting_company) {
+          contractFieldsUpdate.contracting_company = contractResult.parties[0];
+        }
+        if (contractResult.parties && contractResult.parties.length > 1 && !taggedDoc.contracting_vendor) {
+          contractFieldsUpdate.contracting_vendor = contractResult.parties[1];
+        }
+
+        updateDocumentMetadata(documentId, contractFieldsUpdate);
+
         // Map contract status to the obligation stage that should be active
         const statusToActiveStage: Record<string, string> = {
           unsigned: "not_signed",
