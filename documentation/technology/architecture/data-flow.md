@@ -296,6 +296,7 @@ sequenceDiagram
 - **Historical flag** - During processing, if `expiry_date < org's gdrive_historical_cutoff`, document is marked `is_historical=1` and obligation extraction is skipped (Plan 053)
 - **Task creation** - Review tasks for modified/deleted files
 - **Deletion tracking** - Mark as deleted, don't auto-remove
+- **Shared Drive support** - All `files.list` calls require `supportsAllDrives: true` + `includeItemsFromAllDrives: true`. All `files.get` and `files.export` calls also require `supportsAllDrives: true`. Without these flags on every API call, Google Drive API silently returns no results for Shared Drive contents and 404s on file downloads. The service account must be explicitly added as a member of the Shared Drive (viewer access to a folder within it is not sufficient).
 
 ## Data Export Flows
 
