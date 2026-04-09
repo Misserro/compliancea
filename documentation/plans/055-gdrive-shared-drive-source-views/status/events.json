@@ -1,0 +1,132 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-04-09T00:00:00Z",
+      "type": "dashboard_initialized",
+      "message": "Project Manager dashboard initialized for plan 055-gdrive-shared-drive-source-views",
+      "data": {
+        "total_tasks": 2,
+        "concurrency_limit": 2
+      }
+    },
+    {
+      "timestamp": "2026-04-09T14:30:46Z",
+      "type": "team_spawned",
+      "message": "SPAWNED task-1-team: Fix GDrive Shared Drive download failures",
+      "data": {
+        "team": "task-1-team",
+        "task": 1,
+        "members": ["executor-1", "reviewer-1", "tester-1"]
+      }
+    },
+    {
+      "timestamp": "2026-04-09T14:31:09Z",
+      "type": "stage_update",
+      "message": "task-1-team entered stage: planning",
+      "data": {
+        "team": "task-1-team",
+        "task": 1,
+        "stage": "planning"
+      }
+    },
+    {
+      "timestamp": "2026-04-09T14:31:51Z",
+      "type": "team_spawned",
+      "message": "SPAWNED task-2-team: Contracts GDrive filter + Documents source tabs + hide upload UI",
+      "data": {
+        "team": "task-2-team",
+        "task": 2,
+        "members": ["executor-2", "reviewer-2", "tester-2"]
+      }
+    },
+    {
+      "timestamp": "2026-04-09T14:32:17Z",
+      "type": "stage_update",
+      "message": "task-2-team entered stage: planning",
+      "data": {
+        "team": "task-2-team",
+        "task": 2,
+        "stage": "planning"
+      }
+    },
+    {
+      "timestamp": "2026-04-09T14:32:39Z",
+      "type": "stage_update",
+      "message": "task-1-team entered stage: impl",
+      "data": {
+        "team": "task-1-team",
+        "task": 1,
+        "stage": "impl"
+      }
+    },
+    {
+      "timestamp": "2026-04-09T14:34:01Z",
+      "type": "stage_update",
+      "message": "task-2-team entered stage: impl",
+      "data": {
+        "team": "task-2-team",
+        "task": 2,
+        "stage": "impl"
+      }
+    },
+    {
+      "timestamp": "2026-04-09T14:34:43Z",
+      "type": "task_completed",
+      "message": "task-1-team COMPLETED: Fix GDrive Shared Drive download failures",
+      "data": {
+        "team": "task-1-team",
+        "task": 1,
+        "completed_tasks": 1,
+        "active_teams": 1
+      }
+    },
+    {
+      "timestamp": "2026-04-09T14:34:43Z",
+      "type": "team_shutdown",
+      "message": "task-1-team SHUTDOWN",
+      "data": {
+        "team": "task-1-team",
+        "task": 1
+      }
+    },
+    {
+      "timestamp": "2026-04-09T14:37:30Z",
+      "type": "stage_update",
+      "message": "task-2-team entered stage: review",
+      "data": {
+        "team": "task-2-team",
+        "task": 2,
+        "stage": "review"
+      }
+    },
+    {
+      "timestamp": "2026-04-09T14:58:31Z",
+      "type": "task_completed",
+      "message": "task-2-team COMPLETED: Contracts GDrive filter + Documents source tabs + hide upload UI",
+      "data": {
+        "team": "task-2-team",
+        "task": 2,
+        "completed_tasks": 2,
+        "active_teams": 0
+      }
+    },
+    {
+      "timestamp": "2026-04-09T14:58:31Z",
+      "type": "project_completed",
+      "message": "All 2 tasks completed. Plan 055 execution finished.",
+      "data": {
+        "total_tasks": 2,
+        "completed_tasks": 2
+      }
+    },
+    {
+      "timestamp": "2026-04-09T14:58:31Z",
+      "type": "team_shutdown",
+      "message": "task-2-team SHUTDOWN",
+      "data": {
+        "team": "task-2-team",
+        "task": 2
+      }
+    }
+  ]
+}

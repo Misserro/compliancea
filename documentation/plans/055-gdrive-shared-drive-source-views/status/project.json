@@ -1,0 +1,12 @@
+{
+  "plan": "055-gdrive-shared-drive-source-views",
+  "title": "GDrive Shared Drive Fix + Source Views",
+  "started_at": "2026-04-09T00:00:00Z",
+  "status": "completed",
+  "total_tasks": 2,
+  "completed_tasks": 2,
+  "active_teams": 0,
+  "pipeline_mode": false,
+  "concurrency_limit": 2,
+  "last_updated": "2026-04-09T14:58:31Z"
+}

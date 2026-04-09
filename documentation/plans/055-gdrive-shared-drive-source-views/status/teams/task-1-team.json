@@ -1,0 +1,17 @@
+{
+  "team": "task-1-team",
+  "task": 1,
+  "description": "Fix GDrive Shared Drive download failures",
+  "spawned_at": "2026-04-09T14:30:46Z",
+  "stage": "completed",
+  "stage_started_at": "2026-04-09T14:32:39Z",
+  "completed_at": "2026-04-09T14:34:43Z",
+  "pipeline_mode": false,
+  "retry_count": 0,
+  "members": {
+    "executor-1": { "status": "done", "started_at": "2026-04-09T14:30:46Z", "ended_at": "2026-04-09T14:34:43Z" },
+    "reviewer-1": { "status": "done", "started_at": "2026-04-09T14:30:46Z", "ended_at": "2026-04-09T14:34:43Z" },
+    "tester-1": { "status": "done", "started_at": "2026-04-09T14:30:46Z", "ended_at": "2026-04-09T14:34:43Z" }
+  },
+  "last_updated": "2026-04-09T14:34:43Z"
+}

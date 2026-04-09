@@ -1,0 +1,17 @@
+{
+  "team": "task-2-team",
+  "task": 2,
+  "description": "Contracts GDrive filter + Documents source tabs + hide upload UI",
+  "spawned_at": "2026-04-09T14:31:51Z",
+  "stage": "completed",
+  "stage_started_at": "2026-04-09T14:37:30Z",
+  "completed_at": "2026-04-09T14:58:31Z",
+  "pipeline_mode": false,
+  "retry_count": 0,
+  "members": {
+    "executor-2": { "status": "done", "started_at": "2026-04-09T14:31:51Z", "ended_at": "2026-04-09T14:58:31Z" },
+    "reviewer-2": { "status": "done", "started_at": "2026-04-09T14:31:51Z", "ended_at": "2026-04-09T14:58:31Z" },
+    "tester-2": { "status": "done", "started_at": "2026-04-09T14:31:51Z", "ended_at": "2026-04-09T14:58:31Z" }
+  },
+  "last_updated": "2026-04-09T14:58:31Z"
+}

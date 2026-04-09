@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Search, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { UploadSection } from "@/components/documents/upload-section";
 import { ActionBar } from "@/components/documents/action-bar";
 import { DocumentList } from "@/components/documents/document-list";
 import { MetadataDialog } from "@/components/documents/metadata-dialog";
@@ -46,10 +45,12 @@ export default function DocumentsLibraryPage() {
   const [processingIds, setProcessingIds] = useState<Set<number>>(new Set());
   const [retaggingIds, setRetaggingIds] = useState<Set<number>>(new Set());
 
+  // Source tab state
+  const [sourceTab, setSourceTab] = useState<"gdrive" | "uploaded">("gdrive");
+
   // Search & filter state
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [typeFilter, setTypeFilter] = useState<"all" | "policies">("all");
 
   // Metadata dialog state
   const [metadataDoc, setMetadataDoc] = useState<Document | null>(null);
@@ -59,9 +60,11 @@ export default function DocumentsLibraryPage() {
   const [contractDocId, setContractDocId] = useState<number | null>(null);
   const [contractOpen, setContractOpen] = useState(false);
 
-  const loadDocuments = useCallback(async () => {
+  const loadDocuments = useCallback(async (source?: string) => {
+    const src = source ?? sourceTab;
+    setLoading(true);
     try {
-      const res = await fetch("/api/documents");
+      const res = await fetch(`/api/documents?source=${src}`);
       if (res.ok) {
         const data = await res.json();
         setDocuments(data.documents || []);
@@ -71,7 +74,7 @@ export default function DocumentsLibraryPage() {
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [t, sourceTab]);
 
   useEffect(() => {
     loadDocuments();
@@ -80,10 +83,6 @@ export default function DocumentsLibraryPage() {
   // Filtered documents derived from search + status
   const filteredDocuments = useMemo(() => {
     let result = documents;
-
-    if (typeFilter === "policies") {
-      result = result.filter((d) => d.doc_type && ["policy", "procedure"].includes(d.doc_type));
-    }
 
     if (statusFilter !== "all") {
       result = result.filter((d) => d.status === statusFilter);
@@ -95,7 +94,7 @@ export default function DocumentsLibraryPage() {
     }
 
     return result;
-  }, [documents, search, statusFilter, typeFilter]);
+  }, [documents, search, statusFilter]);
 
   async function handleScanServer() {
     try {
@@ -292,13 +291,12 @@ export default function DocumentsLibraryPage() {
     }
   }
 
-  function handleStatusMessage(message: string, type: "success" | "error" | "info") {
-    if (type === "success") toast.success(message);
-    else if (type === "error") toast.error(message);
-    else toast.info(message);
-  }
+  const hasActiveFilters = search.trim() !== "" || statusFilter !== "all";
 
-  const hasActiveFilters = search.trim() !== "" || statusFilter !== "all" || typeFilter !== "all";
+  function handleSourceTabChange(tab: "gdrive" | "uploaded") {
+    setSourceTab(tab);
+    setDocuments([]);
+  }
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
@@ -309,32 +307,25 @@ export default function DocumentsLibraryPage() {
         </p>
       </div>
 
-      {/* Type filter chips */}
+      {/* Source tabs */}
       <div className="flex gap-2">
         <Button
-          variant={typeFilter === "all" ? "secondary" : "ghost"}
+          variant={sourceTab === "gdrive" ? "secondary" : "ghost"}
           size="sm"
           className="h-7 px-3 text-xs"
-          onClick={() => setTypeFilter("all")}
+          onClick={() => handleSourceTabChange("gdrive")}
         >
-          {t('typeFilter.all')}
+          {t('sourceTab.googleDrive')}
         </Button>
         <Button
-          variant={typeFilter === "policies" ? "secondary" : "ghost"}
+          variant={sourceTab === "uploaded" ? "secondary" : "ghost"}
           size="sm"
           className="h-7 px-3 text-xs"
-          onClick={() => setTypeFilter("policies")}
+          onClick={() => handleSourceTabChange("uploaded")}
         >
-          {t('typeFilter.policies')}
+          {t('sourceTab.uploaded')}
         </Button>
       </div>
-
-      {canEdit && (
-        <UploadSection
-          onUploadComplete={loadDocuments}
-          onStatusMessage={handleStatusMessage}
-        />
-      )}
 
       {canEdit && (
         <ActionBar
@@ -393,7 +384,7 @@ export default function DocumentsLibraryPage() {
               variant="ghost"
               size="sm"
               className="h-7 px-2 text-xs"
-              onClick={() => { setSearch(""); setStatusFilter("all"); setTypeFilter("all"); }}
+              onClick={() => { setSearch(""); setStatusFilter("all"); }}
             >
               <X className="h-3 w-3 mr-1" />
               {t('clearFilters')}

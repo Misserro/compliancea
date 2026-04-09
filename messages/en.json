@@ -1225,6 +1225,11 @@
       "policies": "Policies"
     },
 
+    "sourceTab": {
+      "googleDrive": "Google Drive",
+      "uploaded": "Uploaded"
+    },
+
     "docSelect": {
       "noDocuments": "No documents available.",
       "uncategorized": "Uncategorized"

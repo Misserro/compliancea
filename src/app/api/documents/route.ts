@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { ensureDb } from "@/lib/server-utils";
 import { getAllDocuments } from "@/lib/db-imports";
@@ -6,7 +6,7 @@ import { hasPermission } from "@/lib/permissions";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -21,9 +21,11 @@ export async function GET() {
     }
   }
 
+  const source = request.nextUrl.searchParams.get("source") || undefined;
+
   await ensureDb();
   try {
-    const documents = getAllDocuments(orgId);
+    const documents = getAllDocuments(orgId, source);
     return NextResponse.json({ documents });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
