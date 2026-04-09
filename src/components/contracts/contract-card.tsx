@@ -9,6 +9,8 @@ import { STATUS_COLORS, CONTRACT_TYPES } from "@/lib/constants";
 import { ContractMetadataDisplay } from "./contract-metadata-display";
 import { InvoiceSection } from "./invoice-section";
 import { ContractDocumentsSection } from "./contract-documents-section";
+import { ContractAnnexesSection } from "./contract-annexes-section";
+import { ContractGDriveInvoicesSection } from "./contract-gdrive-invoices-section";
 
 interface ContractCardProps {
   contract: Contract;
@@ -188,6 +190,8 @@ export function ContractCard({ contract, onContractUpdate, onSelect, isSelected 
                   {contract.name}
                 </a>
               </div>
+              <ContractAnnexesSection contractId={contract.id} />
+              <ContractGDriveInvoicesSection contractId={contract.id} />
             </div>
 
             {/* Right column: status strip + action buttons */}

@@ -735,6 +735,10 @@
     "historical": "Historical",
     "historicalNote": "Historical — no obligations tracked",
 
+    "annexes": "Annexes",
+    "linkedInvoices": "Linked Invoices",
+    "due": "Due",
+
     "addDialog": {
       "title": "Add New Contract",
       "contractDocument": "Contract Document",
@@ -1041,7 +1045,9 @@
       "legalHold": "Legal Hold",
       "autoTagged": "Auto-tagged",
       "gdrive": "GDrive",
-      "local": "Local"
+      "local": "Local",
+      "unmatchedAnnex": "Unmatched annex",
+      "unmatchedInvoice": "Unmatched invoice"
     },
 
     "metadata": {

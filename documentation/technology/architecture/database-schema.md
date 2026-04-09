@@ -494,6 +494,7 @@ Invoice records attached to contracts. Stores financial data, payment status, an
 | is_paid | INTEGER DEFAULT 0 | 0 = unpaid, 1 = paid |
 | invoice_file_path | TEXT | Path to uploaded invoice PDF on disk |
 | payment_confirmation_path | TEXT | Path to uploaded payment confirmation file on disk |
+| document_id | INTEGER | FK → documents.id (nullable — set when invoice was auto-imported from Google Drive; links to the documents library entry) |
 | created_at | DATETIME DEFAULT CURRENT_TIMESTAMP | Record creation timestamp |
 | updated_at | DATETIME DEFAULT CURRENT_TIMESTAMP | Last update timestamp |
 
@@ -503,6 +504,7 @@ Invoice records attached to contracts. Stores financial data, payment status, an
 
 **Relationships:**
 - `contract_id` references `documents.id` (ON DELETE CASCADE)
+- `document_id` references `documents.id` (ON DELETE SET NULL — nullable; only set for GDrive-sourced invoices)
 
 **Overdue rule:** An invoice is overdue when `date_of_payment < today AND is_paid = 0`.
 
@@ -523,7 +525,7 @@ Junction table linking additional documents (amendments, addenda, exhibits) to c
 | document_id | INTEGER | FK → documents.id (nullable — set when linking an existing library document) |
 | file_path | TEXT | Path to uploaded attachment file on disk (nullable — set when uploading a new file) |
 | file_name | TEXT | Original filename for display |
-| document_type | TEXT | Classification: amendment, addendum, exhibit, other |
+| document_type | TEXT | Classification: amendment, addendum, exhibit, annex, other |
 | label | TEXT | Optional human-readable label |
 | added_at | DATETIME DEFAULT CURRENT_TIMESTAMP | Attachment timestamp |
 

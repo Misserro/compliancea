@@ -216,3 +216,11 @@ export function getLegalHubDashboardData(...args: any[]): any;
 // Token Usage Tracking (Plan 048)
 export function logTokenUsage(...args: any[]): any;
 export function getTokenUsageSummary(...args: any[]): any;
+
+// GDrive Document Classification (Plan 054)
+export function findMatchingContract(...args: any[]): any;
+export function insertContractDocument(...args: any[]): any;
+export function getUnmatchedAnnexes(...args: any[]): any;
+export function getUnmatchedInvoices(...args: any[]): any;
+export function insertContractInvoiceFromGDrive(...args: any[]): any;
+export function getDocumentFullText(...args: any[]): any;

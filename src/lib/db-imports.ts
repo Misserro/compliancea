@@ -203,4 +203,11 @@ export {
   // Token Usage Tracking (Plan 048)
   logTokenUsage,
   getTokenUsageSummary,
+  // GDrive Document Classification (Plan 054)
+  findMatchingContract,
+  insertContractDocument,
+  getUnmatchedAnnexes,
+  getUnmatchedInvoices,
+  insertContractInvoiceFromGDrive,
+  getDocumentFullText,
 } from "../../lib/db.js";

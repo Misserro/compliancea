@@ -694,6 +694,11 @@
     },
     "historical": "Historyczna",
     "historicalNote": "Historyczna — brak śledzonych zobowiązań",
+
+    "annexes": "Aneksy",
+    "linkedInvoices": "Powiązane faktury",
+    "due": "Termin",
+
     "addDialog": {
       "title": "Dodaj nową umowę",
       "contractDocument": "Dokument umowy",
@@ -984,7 +989,9 @@
       "legalHold": "Blokada prawna",
       "autoTagged": "Auto-otagowany",
       "gdrive": "GDrive",
-      "local": "Lokalny"
+      "local": "Lokalny",
+      "unmatchedAnnex": "Niedopasowany aneks",
+      "unmatchedInvoice": "Niedopasowana faktura"
     },
     "metadata": {
       "title": "Edytuj metadane",

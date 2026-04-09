@@ -39,6 +39,7 @@ export interface Document {
   expiry_date: string | null;
   contract_type: string | null;
   is_historical: number;
+  is_unmatched?: number;
 }
 
 export interface Obligation {
@@ -217,6 +218,7 @@ export interface Invoice {
   is_paid: number;
   invoice_file_path: string | null;
   payment_confirmation_path: string | null;
+  document_id?: number | null;
   created_at: string;
   updated_at: string;
 }

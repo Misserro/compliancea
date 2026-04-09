@@ -32,6 +32,18 @@ export function DocumentBadges({ doc, expanded = false }: DocumentBadgesProps) {
         </span>
       )}
 
+      {/* Unmatched annex/invoice badges — always visible */}
+      {doc.is_unmatched === 1 && doc.doc_type === 'annex' && (
+        <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+          {t('badges.unmatchedAnnex')}
+        </Badge>
+      )}
+      {doc.is_unmatched === 1 && doc.doc_type === 'invoice' && (
+        <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+          {t('badges.unmatchedInvoice')}
+        </Badge>
+      )}
+
       {/* Expanded badges */}
       {expanded && (
         <>

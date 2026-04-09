@@ -1,0 +1,17 @@
+{
+  "plan": "054-gdrive-document-classification",
+  "title": "GDrive Document Classification — Annexes, Invoices, Non-Contracts",
+  "status": "in_progress",
+  "total_tasks": 3,
+  "completed_tasks": 0,
+  "in_progress_tasks": 0,
+  "pending_tasks": 3,
+  "concurrency_limit": 2,
+  "started_at": "2026-04-09T14:00:00+02:00",
+  "updated_at": "2026-04-09T14:00:00+02:00",
+  "tasks": [
+    { "id": 1, "title": "Classification engine and DB infrastructure", "status": "pending", "dependencies": [] },
+    { "id": 2, "title": "Maintenance cycle — classification branch + re-match loop", "status": "pending", "dependencies": [1] },
+    { "id": 3, "title": "UI — Annexes/Invoices in contract detail, unmatched labels in Documents tab", "status": "pending", "dependencies": [1, 2] }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "task_id": 2,
+  "title": "Maintenance cycle — classification branch + re-match loop",
+  "status": "completed",
+  "stage": "done",
+  "team": {
+    "executor": "executor-2",
+    "reviewer": "reviewer-2",
+    "tester": "tester-2"
+  },
+  "started_at": "2026-04-09T14:10:00+02:00",
+  "updated_at": "2026-04-09T14:10:00+02:00",
+  "dependencies": [1]
+}
