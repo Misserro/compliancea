@@ -120,6 +120,8 @@ Primary table for document library storage.
 | signature_date | DATE | Contract signature date |
 | commencement_date | DATE | Contract start date |
 | expiry_date | DATE | Contract end date |
+| contract_type | TEXT | Contract type enum: vendor, b2b, employment, nda, lease, licensing, partnership, framework, other (added Plan 052) |
+| is_historical | INTEGER DEFAULT 0 | Historical contract flag — set during processing when expiry_date < org's gdrive_historical_cutoff; historical contracts have no obligations generated (added Plan 053) |
 
 **Indexes:**
 - PRIMARY KEY (id)
@@ -380,8 +382,35 @@ Key-value configuration storage.
 - PRIMARY KEY (key)
 
 **Notes:**
-- Stores: API keys, GDrive credentials, feature flags, configuration
+- Stores: API keys, legacy feature flags, global configuration
+- GDrive credentials moved to `org_settings` per-org keys in Plan 053
 - Sensitive values should be encrypted
+
+---
+
+### org_settings
+
+Per-org key-value configuration storage. (Added Plan 027+)
+
+**Columns:**
+
+| Column | Type | Description |
+|--------|------|-------------|
+| org_id | INTEGER | Organization ID (FK → organizations.id) |
+| key | TEXT | Setting key |
+| value | TEXT | Setting value (may be JSON or encrypted) |
+| updated_at | DATETIME DEFAULT CURRENT_TIMESTAMP | Last update timestamp |
+
+**Indexes:**
+- PRIMARY KEY (org_id, key)
+
+**Known keys:**
+- `s3Bucket`, `s3Region`, `s3AccessKeyId`, `s3SecretEncrypted`, `s3Endpoint` — per-org S3 storage (Plan 029)
+- `gdrive_service_account` — service account JSON for Google Drive (Plan 053)
+- `gdrive_drive_id` — Shared Drive ID or folder ID (Plan 053)
+- `gdrive_historical_cutoff` — ISO date string; contracts with expiry before this date are marked historical (Plan 053)
+- `gdrive_last_sync_time` — ISO timestamp of last successful GDrive sync; persisted to survive restarts (Plan 053)
+- `gdrive_enabled` — `"1"` if GDrive integration is active for this org (Plan 053)
 
 ---
 

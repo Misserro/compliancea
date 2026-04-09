@@ -288,10 +288,13 @@ sequenceDiagram
 ```
 
 **Key Features:**
-- **Periodic polling** - Runs every N minutes (configurable)
+- **Per-org credentials** - Each org has its own service account JSON + Shared Drive ID stored in `org_settings` (Plan 053). Maintenance cycle loops all orgs with GDrive enabled.
+- **Periodic polling** - Runs every N minutes (configurable via `GDRIVE_SYNC_INTERVAL_MINUTES`); per-org last sync time persisted to `org_settings.gdrive_last_sync_time`
 - **Change detection** - Compare modified times
-- **Local cache** - Files stored in gdrive/ folder
-- **Task creation** - Review tasks for changes
+- **Local cache** - Files stored in gdrive/ folder with filename `{driveFileId}_{name}`
+- **Auto-processing** - New GDrive documents are automatically processed as contracts in the maintenance cycle (Plan 053)
+- **Historical flag** - During processing, if `expiry_date < org's gdrive_historical_cutoff`, document is marked `is_historical=1` and obligation extraction is skipped (Plan 053)
+- **Task creation** - Review tasks for modified/deleted files
 - **Deletion tracking** - Mark as deleted, don't auto-remove
 
 ## Data Export Flows
