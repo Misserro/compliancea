@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import fs from "fs/promises";
 import pdfParse from "pdf-parse";
-import { ensureDb, extractTextFromPath, guessType } from "@/lib/server-utils";
+import { ensureDb, extractTextFromBuffer, guessType } from "@/lib/server-utils";
+import { getFile } from "@/lib/storage-imports";
 import {
   getDocumentById,
   updateDocumentMetadata,
@@ -59,15 +59,22 @@ export async function POST(
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
-    // Check if file still exists
+    // Read file via storage backend (handles local, org_s3, platform_s3)
+    let fileBuffer: Buffer;
     try {
-      await fs.access(document.path);
+      fileBuffer = await getFile(
+        orgId,
+        document.storage_backend || "local",
+        document.storage_key,
+        document.path
+      );
     } catch {
-      return NextResponse.json({ error: "Document file not found on disk" }, { status: 404 });
+      return NextResponse.json({ error: "Document file not accessible" }, { status: 404 });
     }
 
-    // Extract text
-    const text = await extractTextFromPath(document.path);
+    // Extract text using already-read buffer
+    const kind = guessType(document.name) || guessType(document.path) || "";
+    const text = await extractTextFromBuffer(fileBuffer, kind);
     if (!text) {
       return NextResponse.json({ error: "Could not extract text from document" }, { status: 400 });
     }
@@ -78,7 +85,6 @@ export async function POST(
     const contentHash = computeContentHash(text);
     let fileHash = null;
     try {
-      const fileBuffer = await fs.readFile(document.path);
       fileHash = computeFileHash(fileBuffer);
     } catch {
       // File hash is optional
@@ -397,8 +403,7 @@ export async function POST(
     let totalChunks = 0;
 
     if (fileType === "pdf") {
-      // Page-aware chunking for PDFs
-      const fileBuffer = await fs.readFile(document.path);
+      // Page-aware chunking for PDFs (reuse fileBuffer already read above)
       const pageTexts: { pageNumber: number; text: string }[] = [];
 
       function renderPage(pageData: any): Promise<string> {

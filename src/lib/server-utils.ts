@@ -35,10 +35,57 @@ export function guessTypeFromMime(mimetype: string): string | null {
   return null;
 }
 
+async function extractTextViaOcr(pdfBuffer: Buffer): Promise<string> {
+  const { getDocument, GlobalWorkerOptions } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const { createCanvas } = await import("@napi-rs/canvas");
+  const { createWorker } = await import("tesseract.js");
+
+  GlobalWorkerOptions.workerSrc = "";
+
+  const pageImages: Buffer[] = [];
+  const pdfDoc = await getDocument({ data: new Uint8Array(pdfBuffer) }).promise;
+  for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+    try {
+      const page = await pdfDoc.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 2.0 });
+      const canvas = createCanvas(viewport.width, viewport.height);
+      const ctx = canvas.getContext("2d");
+      // @ts-expect-error — pdfjs-dist expects browser CanvasRenderingContext2D but @napi-rs/canvas is compatible
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      pageImages.push(canvas.toBuffer("image/png"));
+    } catch (err) {
+      console.warn(`[OCR fallback] Failed to render page ${pageNum}:`, err);
+    }
+  }
+
+  if (pageImages.length === 0) return "";
+
+  const worker = await createWorker(["pol", "eng"]);
+  try {
+    const texts: string[] = [];
+    for (let i = 0; i < pageImages.length; i++) {
+      try {
+        const { data: { text } } = await worker.recognize(pageImages[i]);
+        texts.push(text.trim());
+      } catch (err) {
+        console.warn(`[OCR fallback] Failed to OCR page image ${i + 1}:`, err);
+      }
+    }
+    return texts.filter(Boolean).join("\n\n");
+  } finally {
+    await worker.terminate();
+  }
+}
+
 export async function extractTextFromBuffer(buffer: Buffer, fileType: string): Promise<string> {
   if (fileType === "pdf") {
     const parsed = await pdfParse(buffer);
-    return (parsed.text || "").trim();
+    const text = (parsed.text || "").trim();
+    if (text.length > 0) return text;
+
+    console.warn("[OCR fallback] pdf-parse returned empty text \u2014 running Tesseract OCR");
+    const ocrText = await extractTextViaOcr(buffer);
+    return ocrText;
   }
   if (fileType === "docx") {
     const result = await mammoth.extractRawText({ buffer });

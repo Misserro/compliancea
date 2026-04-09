@@ -24,6 +24,9 @@ const nextConfig = {
       // sql.js needs special handling for WASM
       config.externals.push({
         'sql.js': 'commonjs sql.js',
+        '@napi-rs/canvas': 'commonjs @napi-rs/canvas',
+        'pdfjs-dist/legacy/build/pdf.mjs': 'commonjs pdfjs-dist/legacy/build/pdf.mjs',
+        'tesseract.js': 'commonjs tesseract.js',
       });
     }
     return config;
