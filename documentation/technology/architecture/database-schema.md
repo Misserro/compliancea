@@ -423,6 +423,8 @@ Per-org key-value configuration storage. (Added Plan 027+)
 **documents -> contract_obligations**
 - One contract has many obligations
 - CASCADE DELETE (delete obligations when contract deleted)
+- **Important:** SQLite `ON DELETE CASCADE` requires `PRAGMA foreign_keys = ON` per-connection. This PRAGMA is not set in the application — obligation cleanup on document delete is handled via explicit `DELETE FROM contract_obligations WHERE document_id = ?` in the delete API route.
+- **Archive / GDrive-delete rule:** When a contract is archived (`documents.status = 'archived'`) or marked as deleted by GDrive sync (`documents.sync_status = 'deleted'`), its obligations must be deleted explicitly. These are application-level status changes (not DB hard-deletes), so the FK cascade does not fire and the application must call `deleteObligationsByDocumentId()` directly.
 
 **contract_obligations -> tasks**
 - One obligation can generate multiple tasks
