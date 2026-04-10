@@ -1,0 +1,14 @@
+{
+  "name": "060-hidden-contract-obligation-cleanup",
+  "description": "Fix data integrity bug where overdue obligation counts include obligations from archived or GDrive-deleted contracts",
+  "plan_file": "documentation/plans/060-hidden-contract-obligation-cleanup/README.md",
+  "status": "completed",
+  "started_at": "2026-04-10T12:20:46.000Z",
+  "ended_at": "2026-04-10T12:34:16.000Z",
+  "elapsed_seconds": 810,
+  "concurrency_limit": 2,
+  "total_tasks": 1,
+  "completed_tasks": 1,
+  "active_tasks": 0,
+  "pending_tasks": 0
+}

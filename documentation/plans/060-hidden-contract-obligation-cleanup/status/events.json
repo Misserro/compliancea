@@ -1,0 +1,53 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-04-10T12:20:46.000Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution started — 060-hidden-contract-obligation-cleanup, 1 task total"
+    },
+    {
+      "timestamp": "2026-04-10T12:22:07.000Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1-team spawned: Fix obligation cleanup for archived and GDrive-deleted contracts"
+    },
+    {
+      "timestamp": "2026-04-10T12:22:07.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-04-10T12:22:34.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 entered implementation stage (plan.md written)"
+    },
+    {
+      "timestamp": "2026-04-10T12:28:08.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "reviewer-1",
+      "message": "task-1 entered review/testing stage (impl.md written)"
+    },
+    {
+      "timestamp": "2026-04-10T12:34:16.000Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 completed — TypeScript clean, build passes, all 7 success criteria met"
+    },
+    {
+      "timestamp": "2026-04-10T12:34:16.000Z",
+      "type": "execution_completed",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution completed — 1/1 tasks done, 0 escalated, 0 skipped"
+    }
+  ]
+}

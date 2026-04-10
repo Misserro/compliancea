@@ -1,0 +1,23 @@
+{
+  "task_id": "task-1",
+  "task_name": "Fix obligation cleanup for archived and GDrive-deleted contracts",
+  "team_name": "task-1-team",
+  "goal": "Delete obligations when contract is archived or GDrive-deleted; add safety-net filters to obligation queries; fix deleteDocument to explicitly clean up obligations",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-04-10T12:22:07.000Z",
+  "ended_at": "2026-04-10T12:34:16.000Z",
+  "elapsed_seconds": 729,
+  "stages": {
+    "planning":       { "started_at": "2026-04-10T12:22:07.000Z", "ended_at": "2026-04-10T12:22:34.000Z", "elapsed_seconds": 27 },
+    "implementation": { "started_at": "2026-04-10T12:22:34.000Z", "ended_at": "2026-04-10T12:28:08.000Z", "elapsed_seconds": 334 },
+    "review":         { "started_at": "2026-04-10T12:28:08.000Z", "ended_at": "2026-04-10T12:34:16.000Z", "elapsed_seconds": 368 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-1",  "role": "executor",  "model": "opus",   "status": "completed", "spawned_at": "2026-04-10T12:22:07.000Z", "ended_at": "2026-04-10T12:34:16.000Z" },
+    { "name": "reviewer-1",  "role": "reviewer",  "model": "sonnet", "status": "completed", "spawned_at": "2026-04-10T12:22:07.000Z", "ended_at": "2026-04-10T12:34:16.000Z" },
+    { "name": "tester-1",    "role": "tester",    "model": "sonnet", "status": "completed", "spawned_at": "2026-04-10T12:22:07.000Z", "ended_at": "2026-04-10T12:34:16.000Z" }
+  ]
+}

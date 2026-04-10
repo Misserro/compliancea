@@ -51,6 +51,7 @@ export {
   getObligationById,
   updateObligation,
   deleteObligation,
+  deleteObligationsByDocumentId,
   spawnDueObligations,
   getUpcomingObligations,
   getOverdueObligations,

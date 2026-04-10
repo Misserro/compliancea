@@ -6,6 +6,7 @@ import {
   getContractById,
   updateContractMetadata,
   getObligationsByDocumentId,
+  deleteObligationsByDocumentId,
 } from "@/lib/db-imports";
 import { ensureDb } from "@/lib/server-utils";
 import { hasPermission } from "@/lib/permissions";
@@ -117,6 +118,11 @@ export async function PATCH(
     if (expiry_date !== undefined) metadata.expiry_date = expiry_date;
 
     await updateContractMetadata(id, metadata);
+
+    // When archiving, delete all obligations for this contract
+    if (metadata.status === 'archived') {
+      deleteObligationsByDocumentId(id);
+    }
 
     const updatedContract = await getContractById(id, orgId);
     if (!updatedContract) {
