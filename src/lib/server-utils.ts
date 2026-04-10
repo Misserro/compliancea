@@ -40,7 +40,7 @@ async function extractTextViaOcr(pdfBuffer: Buffer): Promise<string> {
   const { createCanvas } = await import("@napi-rs/canvas");
   const { createWorker } = await import("tesseract.js");
 
-  GlobalWorkerOptions.workerSrc = "";
+  GlobalWorkerOptions.workerSrc = "pdfjs-dist/legacy/build/pdf.worker.mjs";
 
   const pageImages: Buffer[] = [];
   const pdfDoc = await getDocument({ data: new Uint8Array(pdfBuffer) }).promise;
