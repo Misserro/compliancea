@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
 import type { Contract } from "@/lib/types";
 import { STATUS_COLORS, CONTRACT_TYPES } from "@/lib/constants";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ContractMetadataDisplay } from "./contract-metadata-display";
 import { InvoiceSection } from "./invoice-section";
 import { ContractDocumentsSection } from "./contract-documents-section";
@@ -17,6 +18,8 @@ interface ContractCardProps {
   onContractUpdate?: () => void;
   onSelect?: (contractId: number | null, contractName: string | null) => void;
   isSelected?: boolean;
+  isMultiSelected?: boolean;
+  onToggleSelect?: (contractId: number) => void;
 }
 
 type StatusActionConfig = {
@@ -41,7 +44,7 @@ const STATUS_ACTIONS: Record<string, Array<StatusActionConfig>> = {
 
 const STATUS_ORDER = ["unsigned", "signed", "active", "terminated"] as const;
 
-export function ContractCard({ contract, onContractUpdate, onSelect, isSelected }: ContractCardProps) {
+export function ContractCard({ contract, onContractUpdate, onSelect, isSelected, isMultiSelected, onToggleSelect }: ContractCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const t = useTranslations("Contracts");
@@ -115,7 +118,7 @@ export function ContractCard({ contract, onContractUpdate, onSelect, isSelected 
   };
 
   return (
-    <div className={`bg-card border rounded-lg overflow-hidden hover:shadow-md transition-shadow ${isSelected ? "ring-2 ring-primary/40" : ""}`}>
+    <div className={`bg-card border rounded-lg overflow-hidden hover:shadow-md transition-shadow ${isSelected || isMultiSelected ? "ring-2 ring-primary/40" : ""}`}>
       {/* Collapsed header */}
       <div
         className="p-4 cursor-pointer"
@@ -129,6 +132,19 @@ export function ContractCard({ contract, onContractUpdate, onSelect, isSelected 
       >
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1 min-w-0">
+            {onToggleSelect && (
+              <div
+                className="mt-1.5 shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                <Checkbox
+                  checked={!!isMultiSelected}
+                  onCheckedChange={() => onToggleSelect(contract.id)}
+                />
+              </div>
+            )}
             <button
               className="mt-1 text-muted-foreground hover:text-foreground transition-colors"
             >

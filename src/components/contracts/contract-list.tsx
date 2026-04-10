@@ -1,55 +1,46 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import type { Contract } from "@/lib/types";
 import { ContractCard } from "./contract-card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ContractListProps {
-  /** Increment to trigger a re-fetch of the contract list */
-  refreshTrigger?: number;
+  /** All contracts (fetched by parent) */
+  contracts: Contract[];
+  /** Whether contracts are currently loading */
+  loading: boolean;
   searchQuery: string;
   selectedStatuses: string[];
   selectedContractId?: number | null;
   onSelectContract?: (contractId: number | null, contractName: string | null) => void;
+  /** Signal parent to re-fetch contracts */
+  onRefresh?: () => void;
+  /** Multi-select: set of selected contract IDs */
+  selectedIds?: Set<number>;
+  /** Multi-select: toggle a single contract's selection */
+  onToggleSelect?: (contractId: number) => void;
+  /** Multi-select: select all currently visible (filtered) contracts */
+  onSelectAllVisible?: (ids: number[]) => void;
+  /** Multi-select: clear all selections */
+  onClearSelection?: () => void;
 }
 
 export function ContractList({
-  refreshTrigger,
+  contracts,
+  loading,
   searchQuery,
   selectedStatuses,
   selectedContractId,
   onSelectContract,
+  onRefresh,
+  selectedIds,
+  onToggleSelect,
+  onSelectAllVisible,
+  onClearSelection,
 }: ContractListProps) {
-  const [contracts, setContracts] = useState<Contract[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [cardRefresh, setCardRefresh] = useState(0);
   const t = useTranslations("Contracts");
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    setLoading(true);
-    fetch("/api/contracts", { signal: controller.signal })
-      .then((res) => {
-        if (!res.ok) throw new Error(t("loadError"));
-        return res.json();
-      })
-      .then((data) => {
-        setContracts(data.contracts || []);
-      })
-      .catch((err) => {
-        if (err.name === "AbortError") return;
-        toast.error(err instanceof Error ? err.message : t("errorLoading"));
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-
-    return () => controller.abort();
-  }, [refreshTrigger, cardRefresh, t]);
 
   const q = searchQuery.trim().toLowerCase();
   const filteredContracts = contracts
@@ -89,15 +80,42 @@ export function ContractList({
     );
   }
 
+  const allVisibleSelected = selectedIds != null && filteredContracts.length > 0 && filteredContracts.every((c) => selectedIds.has(c.id));
+  const someVisibleSelected = selectedIds != null && filteredContracts.some((c) => selectedIds.has(c.id));
+
   return (
     <div className="space-y-4">
+      {onToggleSelect && filteredContracts.length > 0 && (
+        <div className="flex items-center gap-2">
+          <Checkbox
+            checked={allVisibleSelected ? true : someVisibleSelected ? "indeterminate" : false}
+            onCheckedChange={(checked) => {
+              if (checked) {
+                onSelectAllVisible?.(filteredContracts.map((c) => c.id));
+              } else {
+                onClearSelection?.();
+              }
+            }}
+          />
+          <span className="text-sm text-muted-foreground">
+            {allVisibleSelected
+              ? t("deselectAll")
+              : t("selectAll", { count: filteredContracts.length })}
+          </span>
+        </div>
+      )}
       {filteredContracts.map((contract) => (
         <ContractCard
           key={contract.id}
           contract={contract}
-          onContractUpdate={() => setCardRefresh((n) => n + 1)}
+          onContractUpdate={() => {
+            onRefresh?.();
+            onClearSelection?.();
+          }}
           isSelected={selectedContractId === contract.id}
           onSelect={onSelectContract}
+          isMultiSelected={selectedIds?.has(contract.id)}
+          onToggleSelect={onToggleSelect}
         />
       ))}
     </div>

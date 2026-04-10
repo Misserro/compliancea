@@ -1,0 +1,14 @@
+{
+  "name": "057-agreements-bulk-actions-processing-progress",
+  "description": "Agreements bulk actions (multi-select + bulk status change) and batch processing with live progress bar",
+  "plan_file": "documentation/plans/057-agreements-bulk-actions-processing-progress/README.md",
+  "status": "completed",
+  "started_at": "2026-04-10T06:56:44.000Z",
+  "ended_at": "2026-04-10T07:19:29.000Z",
+  "elapsed_seconds": 1365,
+  "concurrency_limit": 2,
+  "total_tasks": 4,
+  "completed_tasks": 4,
+  "active_tasks": 0,
+  "pending_tasks": 0
+}

@@ -695,6 +695,24 @@
     "historical": "Historyczna",
     "historicalNote": "Historyczna — brak śledzonych zobowiązań",
 
+    "selectAll": "Zaznacz wszystkie ({count})",
+    "deselectAll": "Odznacz wszystkie",
+    "selected": "Zaznaczono: {count}",
+
+    "changeStatus": "Zmie\u0144 status",
+    "processSelected": "Przetwarzaj zaznaczone",
+    "clearSelection": "Wyczy\u015b\u0107",
+    "processingProgress": "Przetwarzanie {current}/{total} \u2014 {name}",
+    "bulkSelectedCount": "Zaznaczono: {count}",
+
+    "bulkStatusUpdated": "Zaktualizowano {updated} umow.",
+    "bulkStatusSkipped": "Zaktualizowano {updated} umow. {skipped} pominieto (brak prawidlowego przejscia).",
+    "bulkStatusAlreadyTarget": "0 zaktualizowano, {count} juz w docelowym statusie.",
+    "bulkStatusFailed": "{failed} nie udalo sie zaktualizowac.",
+
+    "bulkProcessed": "Przetworzono {succeeded}/{total} umow.",
+    "bulkProcessedWithFailures": "Przetworzono {succeeded}/{total} umow. {failed} nie powiodlo sie.",
+
     "annexes": "Aneksy",
     "linkedInvoices": "Powiązane faktury",
     "due": "Termin",

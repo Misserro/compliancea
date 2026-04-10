@@ -735,6 +735,24 @@
     "historical": "Historical",
     "historicalNote": "Historical — no obligations tracked",
 
+    "selectAll": "Select all {count}",
+    "deselectAll": "Deselect all",
+    "selected": "{count} selected",
+
+    "changeStatus": "Change Status",
+    "processSelected": "Process Selected",
+    "clearSelection": "Clear",
+    "processingProgress": "Processing {current}/{total} \u2014 {name}",
+    "bulkSelectedCount": "{count} selected",
+
+    "bulkStatusUpdated": "Updated {updated} contracts.",
+    "bulkStatusSkipped": "Updated {updated} contracts. {skipped} skipped (no valid transition).",
+    "bulkStatusAlreadyTarget": "0 updated, {count} already at target status.",
+    "bulkStatusFailed": "{failed} failed to update.",
+
+    "bulkProcessed": "Processed {succeeded}/{total} contracts.",
+    "bulkProcessedWithFailures": "Processed {succeeded}/{total} contracts. {failed} failed.",
+
     "annexes": "Annexes",
     "linkedInvoices": "Linked Invoices",
     "due": "Due",
