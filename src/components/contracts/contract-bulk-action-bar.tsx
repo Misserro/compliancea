@@ -5,7 +5,10 @@ import type { Contract } from "@/lib/types";
 import { CONTRACT_STATUSES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import {
+  ProcessingProgressContent,
+  type ProcessingProgress,
+} from "@/components/ui/processing-progress-bar";
 import {
   Select,
   SelectContent,
@@ -13,13 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-interface ProcessingProgress {
-  active: boolean;
-  current: number;
-  total: number;
-  currentName: string;
-}
 
 export interface ContractBulkActionBarProps {
   selectedCount: number;
@@ -45,10 +41,6 @@ export function ContractBulkActionBar({
 
   const isVisible = selectedCount > 0 || processingProgress?.active;
   const isProcessing = processingProgress?.active ?? false;
-  const progressPercent =
-    processingProgress && processingProgress.total > 0
-      ? Math.round((processingProgress.current / processingProgress.total) * 100)
-      : 0;
 
   return (
     <div
@@ -60,19 +52,14 @@ export function ContractBulkActionBar({
         <div className="rounded-lg border bg-background shadow-lg p-4">
           {isProcessing && processingProgress ? (
             /* ── Progress mode ── */
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">
-                  {t("processingProgress", {
-                    current: processingProgress.current,
-                    total: processingProgress.total,
-                    name: processingProgress.currentName,
-                  })}
-                </span>
-                <span className="font-medium">{progressPercent}%</span>
-              </div>
-              <Progress value={progressPercent} />
-            </div>
+            <ProcessingProgressContent
+              processingProgress={processingProgress}
+              label={t("processingProgress", {
+                current: processingProgress.current,
+                total: processingProgress.total,
+                name: processingProgress.currentName,
+              })}
+            />
           ) : (
             /* ── Action mode ── */
             <div className="flex items-center gap-3">

@@ -59,10 +59,10 @@ export const CONTRACT_STATUS_DISPLAY: Record<string, string> = {
 
 /** Maps [currentStatus][targetStatus] to the action name for contract-action API */
 export const CONTRACT_STATUS_ACTION_MAP: Record<string, Record<string, string>> = {
-  unsigned: { signed: "sign" },
-  signed: { unsigned: "unsign", active: "activate" },
-  active: { signed: "deactivate", terminated: "terminate" },
-  terminated: { active: "reactivate" },
+  unsigned: { signed: "sign", active: "activate", terminated: "terminate" },
+  signed: { unsigned: "unsign", active: "activate", terminated: "terminate" },
+  active: { signed: "deactivate", terminated: "terminate", unsigned: "unsign" },
+  terminated: { active: "reactivate", signed: "deactivate", unsigned: "unsign" },
 };
 
 export const CATEGORY_COLORS: Record<string, string> = {

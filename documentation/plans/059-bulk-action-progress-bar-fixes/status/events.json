@@ -1,0 +1,130 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-04-10T10:10:24.000Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution started for 059-bulk-action-progress-bar-fixes"
+    },
+    {
+      "timestamp": "2026-04-10T10:10:24.000Z",
+      "type": "team_spawned",
+      "task_id": null,
+      "agent": "knowledge-059",
+      "message": "Knowledge agent knowledge-059 spawned (pane %0)"
+    },
+    {
+      "timestamp": "2026-04-10T10:12:06.000Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "Team task-1-team spawned: Defensive cleanup for processing progress bar"
+    },
+    {
+      "timestamp": "2026-04-10T10:12:06.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-04-10T10:12:06.000Z",
+      "type": "team_spawned",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "Team task-3-team spawned: Cross-step bulk status transitions"
+    },
+    {
+      "timestamp": "2026-04-10T10:12:06.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "executor-3",
+      "message": "task-3 entered planning stage"
+    },
+    {
+      "timestamp": "2026-04-10T10:13:09.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 entered implementation stage (planning took ~1m)"
+    },
+    {
+      "timestamp": "2026-04-10T10:13:09.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "executor-3",
+      "message": "task-3 entered implementation stage (planning took ~1m)"
+    },
+    {
+      "timestamp": "2026-04-10T10:15:47.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "reviewer-1",
+      "message": "task-1 entered review stage (implementation took ~3m)"
+    },
+    {
+      "timestamp": "2026-04-10T10:15:47.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "reviewer-3",
+      "message": "task-3 entered review stage (implementation took ~3m)"
+    },
+    {
+      "timestamp": "2026-04-10T10:16:49.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "tester-1",
+      "message": "task-1 entered testing stage — reviewer-1 passed (review took ~1m)"
+    },
+    {
+      "timestamp": "2026-04-10T10:16:49.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "tester-3",
+      "message": "task-3 entered testing stage — reviewer-3 passed (review took ~1m)"
+    },
+    {
+      "timestamp": "2026-04-10T10:17:12.000Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "tester-1",
+      "message": "task-1 completed successfully — total ~5m, 0 retries"
+    },
+    {
+      "timestamp": "2026-04-10T10:17:12.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1-team shut down"
+    },
+    {
+      "timestamp": "2026-04-10T10:17:12.000Z",
+      "type": "task_completed",
+      "task_id": "task-3",
+      "agent": "tester-3",
+      "message": "task-3 completed successfully — total ~5m, 0 retries"
+    },
+    {
+      "timestamp": "2026-04-10T10:17:12.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3-team shut down"
+    },
+    {
+      "timestamp": "2026-04-10T10:22:18.000Z",
+      "type": "team_spawned",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "Team task-2-team spawned: Processing progress bar for documents library tab"
+    },
+    {
+      "timestamp": "2026-04-10T10:22:18.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "reviewer-2",
+      "message": "task-2 entered review stage (planning + implementation durations not recorded — spawn message arrived late)"
+    }
+  ]
+}

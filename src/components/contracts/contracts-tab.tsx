@@ -10,14 +10,8 @@ import { ContractChatPanel } from "./contract-chat-panel";
 import { ContractBulkActionBar } from "./contract-bulk-action-bar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { type ProcessingProgress } from "@/components/ui/processing-progress-bar";
 import { CONTRACT_STATUSES, CONTRACT_STATUS_ACTION_MAP } from "@/lib/constants";
-
-export interface ProcessingProgress {
-  active: boolean;
-  current: number;
-  total: number;
-  currentName: string;
-}
 
 export function ContractsTab() {
   const t = useTranslations("Contracts");
@@ -179,33 +173,35 @@ export function ContractsTab() {
     const total = selectedContracts.length;
     setProcessingProgress({ active: true, current: 0, total, currentName: "" });
 
-    let succeeded = 0;
-    let failed = 0;
+    try {
+      let succeeded = 0;
+      let failed = 0;
 
-    for (let i = 0; i < selectedContracts.length; i++) {
-      const contract = selectedContracts[i];
-      setProcessingProgress({ active: true, current: i + 1, total, currentName: contract.name });
+      for (let i = 0; i < selectedContracts.length; i++) {
+        const contract = selectedContracts[i];
+        setProcessingProgress({ active: true, current: i + 1, total, currentName: contract.name });
 
-      try {
-        const res = await fetch(`/api/documents/${contract.id}/process`, { method: "POST" });
-        if (res.ok) {
-          succeeded++;
-        } else {
+        try {
+          const res = await fetch(`/api/documents/${contract.id}/process`, { method: "POST" });
+          if (res.ok) {
+            succeeded++;
+          } else {
+            failed++;
+          }
+        } catch {
           failed++;
         }
-      } catch {
-        failed++;
       }
-    }
 
-    setProcessingProgress(null);
-    clearSelection();
-    refreshContracts();
-
-    if (failed > 0) {
-      toast.warning(t("bulkProcessedWithFailures", { succeeded, total, failed }));
-    } else {
-      toast.success(t("bulkProcessed", { succeeded, total }));
+      if (failed > 0) {
+        toast.warning(t("bulkProcessedWithFailures", { succeeded, total, failed }));
+      } else {
+        toast.success(t("bulkProcessed", { succeeded, total }));
+      }
+    } finally {
+      setProcessingProgress(null);
+      clearSelection();
+      refreshContracts();
     }
   }, [selectedContracts, t, refreshContracts, clearSelection]);
 

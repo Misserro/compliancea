@@ -7,6 +7,10 @@ import { Search, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { ActionBar } from "@/components/documents/action-bar";
 import { DocumentList } from "@/components/documents/document-list";
+import {
+  ProcessingProgressBar,
+  type ProcessingProgress,
+} from "@/components/ui/processing-progress-bar";
 import { MetadataDialog } from "@/components/documents/metadata-dialog";
 import { ContractActionDialog } from "@/components/documents/contract-action-dialog";
 import { Input } from "@/components/ui/input";
@@ -44,6 +48,7 @@ export default function DocumentsLibraryPage() {
   const [allExpanded, setAllExpanded] = useState(false);
   const [processingIds, setProcessingIds] = useState<Set<number>>(new Set());
   const [retaggingIds, setRetaggingIds] = useState<Set<number>>(new Set());
+  const [processingProgress, setProcessingProgress] = useState<ProcessingProgress | null>(null);
 
   // Source tab state
   const [sourceTab, setSourceTab] = useState<"gdrive" | "uploaded">("gdrive");
@@ -133,31 +138,45 @@ export default function DocumentsLibraryPage() {
       return;
     }
 
-    toast.info(t('processingCount', { count: unprocessed.length }));
-    let processed = 0;
-    let failed = 0;
+    const total = unprocessed.length;
+    setProcessingProgress({ active: true, current: 0, total, currentName: "" });
 
-    for (const doc of unprocessed) {
-      setProcessingIds((prev) => new Set(prev).add(doc.id));
-      try {
-        const res = await fetch(`/api/documents/${doc.id}/process`, { method: "POST" });
-        if (res.ok) {
-          processed++;
-        } else {
+    try {
+      let processed = 0;
+      let failed = 0;
+
+      for (let i = 0; i < unprocessed.length; i++) {
+        const doc = unprocessed[i];
+        setProcessingProgress({ active: true, current: i + 1, total, currentName: doc.name });
+        setProcessingIds((prev) => new Set(prev).add(doc.id));
+
+        try {
+          const res = await fetch(`/api/documents/${doc.id}/process`, { method: "POST" });
+          if (res.ok) {
+            processed++;
+          } else {
+            failed++;
+          }
+        } catch {
           failed++;
         }
-      } catch {
-        failed++;
-      }
-      setProcessingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(doc.id);
-        return next;
-      });
-    }
 
-    toast.success(t('processedResult', { processed, failed }));
-    await loadDocuments();
+        setProcessingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(doc.id);
+          return next;
+        });
+      }
+
+      if (failed > 0) {
+        toast.warning(t('processedResult', { processed, failed }));
+      } else {
+        toast.success(t('processedResult', { processed, failed }));
+      }
+    } finally {
+      setProcessingProgress(null);
+      await loadDocuments();
+    }
   }
 
   async function handleRetagAll() {
@@ -335,6 +354,7 @@ export default function DocumentsLibraryPage() {
           onRetagAll={handleRetagAll}
           allExpanded={allExpanded}
           onToggleExpand={() => setAllExpanded(!allExpanded)}
+          processingProgress={processingProgress}
         />
       )}
 
@@ -436,6 +456,19 @@ export default function DocumentsLibraryPage() {
         onOpenChange={setContractOpen}
         onNavigateToObligations={() => router.push("/contracts/obligations")}
         onRefreshDocuments={loadDocuments}
+      />
+
+      <ProcessingProgressBar
+        processingProgress={processingProgress}
+        label={
+          processingProgress
+            ? t('processingProgress', {
+                current: processingProgress.current,
+                total: processingProgress.total,
+                name: processingProgress.currentName,
+              })
+            : ""
+        }
       />
     </div>
   );

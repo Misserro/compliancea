@@ -1,0 +1,23 @@
+{
+  "task_id": "task-2",
+  "task_name": "Processing progress bar for documents library tab",
+  "team_name": "task-2-team",
+  "goal": "Extract shared ProcessingProgressBar component, add progress state + sequential loop to documents library page, update action-bar to accept progress prop",
+  "status": "reviewing",
+  "pipeline_mode": false,
+  "started_at": "2026-04-10T10:22:18.000Z",
+  "ended_at": null,
+  "elapsed_seconds": 0,
+  "stages": {
+    "planning":       { "started_at": "2026-04-10T10:22:18.000Z", "ended_at": "2026-04-10T10:22:18.000Z", "elapsed_seconds": 0 },
+    "implementation": { "started_at": "2026-04-10T10:22:18.000Z", "ended_at": "2026-04-10T10:22:18.000Z", "elapsed_seconds": 0 },
+    "review":         { "started_at": "2026-04-10T10:22:18.000Z", "ended_at": null, "elapsed_seconds": 0 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-2", "role": "executor", "model": "opus",   "status": "idle",   "spawned_at": "2026-04-10T10:22:18.000Z", "ended_at": null },
+    { "name": "reviewer-2", "role": "reviewer", "model": "sonnet", "status": "active", "spawned_at": "2026-04-10T10:22:18.000Z", "ended_at": null },
+    { "name": "tester-2",   "role": "tester",   "model": "sonnet", "status": "idle",   "spawned_at": "2026-04-10T10:22:18.000Z", "ended_at": null }
+  ]
+}

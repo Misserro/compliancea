@@ -1,0 +1,14 @@
+{
+  "name": "059-bulk-action-progress-bar-fixes",
+  "description": "Three bug fixes from Plan 057: progress bar stuck after processing, no progress bar on documents tab, bulk status change silently skips cross-step transitions",
+  "plan_file": "documentation/plans/059-bulk-action-progress-bar-fixes/README.md",
+  "status": "executing",
+  "started_at": "2026-04-10T10:10:24.000Z",
+  "ended_at": null,
+  "elapsed_seconds": 714,
+  "concurrency_limit": 2,
+  "total_tasks": 3,
+  "completed_tasks": 2,
+  "active_tasks": 1,
+  "pending_tasks": 0
+}

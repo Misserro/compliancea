@@ -998,6 +998,7 @@
     "allProcessed": "All documents are already processed.",
     "processingCount": "Processing {count} document(s)...",
     "processedResult": "Processed {processed}, failed {failed}",
+    "processingProgress": "Processing {current}/{total} \u2014 {name}",
     "retagError": "Retag failed",
     "categoryError": "Failed to update category",
     "processError": "Process failed",

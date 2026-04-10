@@ -947,6 +947,7 @@
     "allProcessed": "Wszystkie dokumenty są już przetworzone.",
     "processingCount": "Przetwarzanie {count} dokumentów...",
     "processedResult": "Przetworzono {processed}, nie powiodło się {failed}",
+    "processingProgress": "Przetwarzanie {current}/{total} \u2014 {name}",
     "retagError": "Ponowne tagowanie nie powiodło się",
     "categoryError": "Nie udało się zaktualizować kategorii",
     "processError": "Przetwarzanie nie powiodło się",

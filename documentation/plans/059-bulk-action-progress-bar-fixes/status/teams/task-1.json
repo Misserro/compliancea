@@ -1,0 +1,23 @@
+{
+  "task_id": "task-1",
+  "task_name": "Defensive cleanup for processing progress bar",
+  "team_name": "task-1-team",
+  "goal": "Wrap handleBatchProcess body in try/finally so setProcessingProgress(null), clearSelection(), and refreshContracts() always run even on error",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-04-10T10:12:06.000Z",
+  "ended_at": "2026-04-10T10:17:12.000Z",
+  "elapsed_seconds": 306,
+  "stages": {
+    "planning":       { "started_at": "2026-04-10T10:12:06.000Z", "ended_at": "2026-04-10T10:13:09.000Z", "elapsed_seconds": 63 },
+    "implementation": { "started_at": "2026-04-10T10:13:09.000Z", "ended_at": "2026-04-10T10:15:47.000Z", "elapsed_seconds": 158 },
+    "review":         { "started_at": "2026-04-10T10:15:47.000Z", "ended_at": "2026-04-10T10:16:49.000Z", "elapsed_seconds": 62 },
+    "testing":        { "started_at": "2026-04-10T10:16:49.000Z", "ended_at": "2026-04-10T10:17:12.000Z", "elapsed_seconds": 23 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-1", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-04-10T10:12:06.000Z", "ended_at": "2026-04-10T10:17:12.000Z" },
+    { "name": "reviewer-1", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-04-10T10:12:06.000Z", "ended_at": "2026-04-10T10:17:12.000Z" },
+    { "name": "tester-1",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-04-10T10:12:06.000Z", "ended_at": "2026-04-10T10:17:12.000Z" }
+  ]
+}

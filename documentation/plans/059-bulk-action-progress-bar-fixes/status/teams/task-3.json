@@ -1,0 +1,23 @@
+{
+  "task_id": "task-3",
+  "task_name": "Cross-step bulk status transitions",
+  "team_name": "task-3-team",
+  "goal": "Add missing cross-step entries to CONTRACT_STATUS_ACTION_MAP so bulk status change handles all transitions instead of silently skipping them",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-04-10T10:12:06.000Z",
+  "ended_at": "2026-04-10T10:17:12.000Z",
+  "elapsed_seconds": 306,
+  "stages": {
+    "planning":       { "started_at": "2026-04-10T10:12:06.000Z", "ended_at": "2026-04-10T10:13:09.000Z", "elapsed_seconds": 63 },
+    "implementation": { "started_at": "2026-04-10T10:13:09.000Z", "ended_at": "2026-04-10T10:15:47.000Z", "elapsed_seconds": 158 },
+    "review":         { "started_at": "2026-04-10T10:15:47.000Z", "ended_at": "2026-04-10T10:16:49.000Z", "elapsed_seconds": 62 },
+    "testing":        { "started_at": "2026-04-10T10:16:49.000Z", "ended_at": "2026-04-10T10:17:12.000Z", "elapsed_seconds": 23 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-3", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-04-10T10:12:06.000Z", "ended_at": "2026-04-10T10:17:12.000Z" },
+    { "name": "reviewer-3", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-04-10T10:12:06.000Z", "ended_at": "2026-04-10T10:17:12.000Z" },
+    { "name": "tester-3",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-04-10T10:12:06.000Z", "ended_at": "2026-04-10T10:17:12.000Z" }
+  ]
+}
