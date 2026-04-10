@@ -1,0 +1,81 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-04-10T00:00:00.000Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution started for 058-obligation-extraction-improvements"
+    },
+    {
+      "timestamp": "2026-04-10T08:22:20.000Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1-team spawned: Actionable-only extraction prompt"
+    },
+    {
+      "timestamp": "2026-04-10T08:22:20.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-04-10T08:23:11.000Z",
+      "type": "team_spawned",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3-team spawned: Cascading payment activation"
+    },
+    {
+      "timestamp": "2026-04-10T08:23:11.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 entered planning stage"
+    },
+    {
+      "timestamp": "2026-04-10T08:25:36.000Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 entered review stage (planning ~3m 16s)"
+    },
+    {
+      "timestamp": "2026-04-10T08:25:36.000Z",
+      "type": "pipeline_spawn",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2-team pipeline-spawned: Batch re-extraction with cleanup (depends on task-1)"
+    },
+    {
+      "timestamp": "2026-04-10T08:25:36.000Z",
+      "type": "stage_entered",
+      "task_id": "task-2",
+      "agent": "pm",
+      "message": "task-2 entered planning stage (pipeline mode)"
+    },
+    {
+      "timestamp": "2026-04-10T08:25:36.000Z",
+      "type": "stage_entered",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 entered review stage (planning ~2m 25s)"
+    },
+    {
+      "timestamp": "2026-04-10T08:26:57.000Z",
+      "type": "task_completed",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3 completed: Cascading payment activation (~3m 46s total)"
+    },
+    {
+      "timestamp": "2026-04-10T08:26:57.000Z",
+      "type": "team_shutdown",
+      "task_id": "task-3",
+      "agent": "pm",
+      "message": "task-3-team shut down: all members ended"
+    }
+  ]
+}

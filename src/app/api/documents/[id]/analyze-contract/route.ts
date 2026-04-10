@@ -7,6 +7,7 @@ import {
   insertObligation,
   getObligationById,
   createTaskForObligation,
+  run,
 } from "@/lib/db-imports";
 import { extractContractTerms } from "@/lib/contracts-imports";
 import { logAction } from "@/lib/audit-imports";
@@ -59,6 +60,12 @@ export async function POST(
       }
       fullText = chunks.map((c: { content: string }) => c.content).join("\n\n");
     }
+
+    // Delete all non-system obligations before re-extracting (prevents duplicates on re-analysis)
+    run(
+      `DELETE FROM contract_obligations WHERE document_id = ? AND obligation_type NOT IN ('system_sign', 'system_terminate')`,
+      [docId]
+    );
 
     // Extract contract terms via Claude
     const result = await extractContractTerms(fullText);

@@ -1,0 +1,23 @@
+{
+  "task_id": "task-1",
+  "task_name": "Actionable-only extraction prompt",
+  "team_name": "task-1-team",
+  "goal": "Rewrite extractContractTerms() prompt to enforce actionable-only extraction. Exclude general maintenance, confidentiality, boilerplate. Include payments and dated operational obligations.",
+  "status": "reviewing",
+  "pipeline_mode": false,
+  "started_at": "2026-04-10T08:22:20.000Z",
+  "ended_at": null,
+  "elapsed_seconds": 196,
+  "stages": {
+    "planning":       { "started_at": "2026-04-10T08:22:20.000Z", "ended_at": "2026-04-10T08:25:36.000Z", "elapsed_seconds": 196 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": "2026-04-10T08:25:36.000Z", "ended_at": null, "elapsed_seconds": 0 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-1", "role": "executor", "model": "opus",   "status": "idle",   "spawned_at": "2026-04-10T08:22:20.000Z", "ended_at": null },
+    { "name": "reviewer-1", "role": "reviewer", "model": "sonnet", "status": "active", "spawned_at": "2026-04-10T08:22:20.000Z", "ended_at": null },
+    { "name": "tester-1",   "role": "tester",   "model": "sonnet", "status": "idle",   "spawned_at": "2026-04-10T08:22:20.000Z", "ended_at": null }
+  ]
+}

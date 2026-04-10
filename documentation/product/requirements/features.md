@@ -76,11 +76,13 @@ Two modes for handling external documents:
 
 ### Obligation Tracking
 - **Lifecycle stages** - not_signed -> signed -> active -> terminated
-- **Categories** - Payments, Termination, Legal, Others
+- **Categories** - payment, reporting, compliance, operational (4 canonical categories; legacy names remapped automatically)
+- **Actionable extraction** - AI extracts only obligations that require a specific action at a specific time: all payment obligations (with amounts and dates) and operational/service delivery obligations that have concrete due dates. General maintenance obligations, ongoing compliance without specific dates, and boilerplate language are excluded.
 - **Due dates** - Track deadlines with recurrence support
 - **Ownership** - Assign owners and escalation contacts
 - **Evidence management** - Attach proof documents and notes
 - **Status tracking** - Active, Inactive, Met, Waived, Finalized
+- **Cascading payment reveal** - For contracts with multiple payment obligations, only the next upcoming payment is shown as Active. The following payment is revealed (activated) automatically when the current one is finalized OR when it is within 30 days of its due date, creating a cascading chain.
 
 ### Contract Lifecycle
 - **State transitions** - Sign -> Activate -> Terminate contracts

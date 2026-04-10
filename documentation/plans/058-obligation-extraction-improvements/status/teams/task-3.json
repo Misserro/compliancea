@@ -1,0 +1,23 @@
+{
+  "task_id": "task-3",
+  "task_name": "Cascading payment activation",
+  "team_name": "task-3-team",
+  "goal": "New activateNextPaymentObligation(), extend finalizeObligation() and spawnDueObligations() in lib/db.js so next inactive payment activates after finalize or within 30 days of due date.",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-04-10T08:23:11.000Z",
+  "ended_at": "2026-04-10T08:26:57.000Z",
+  "elapsed_seconds": 226,
+  "stages": {
+    "planning":       { "started_at": "2026-04-10T08:23:11.000Z", "ended_at": "2026-04-10T08:25:36.000Z", "elapsed_seconds": 145 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": "2026-04-10T08:25:36.000Z", "ended_at": "2026-04-10T08:26:57.000Z", "elapsed_seconds": 81 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-3", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-04-10T08:23:11.000Z", "ended_at": "2026-04-10T08:26:57.000Z" },
+    { "name": "reviewer-3", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-04-10T08:23:11.000Z", "ended_at": "2026-04-10T08:26:57.000Z" },
+    { "name": "tester-3",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-04-10T08:23:11.000Z", "ended_at": "2026-04-10T08:26:57.000Z" }
+  ]
+}

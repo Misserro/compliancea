@@ -1,0 +1,14 @@
+{
+  "name": "058-obligation-extraction-improvements",
+  "description": "Actionable-only obligation extraction and cascading payment reveal improvements",
+  "plan_file": "documentation/plans/058-obligation-extraction-improvements/README.md",
+  "status": "executing",
+  "started_at": "2026-04-10T08:22:20.000Z",
+  "ended_at": null,
+  "elapsed_seconds": 277,
+  "concurrency_limit": 2,
+  "total_tasks": 3,
+  "completed_tasks": 1,
+  "active_tasks": 2,
+  "pending_tasks": 0
+}

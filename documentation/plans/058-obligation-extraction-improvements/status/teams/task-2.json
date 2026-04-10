@@ -1,0 +1,23 @@
+{
+  "task_id": "task-2",
+  "task_name": "Batch re-extraction with cleanup",
+  "team_name": "task-2-team",
+  "goal": "Add obligation cleanup before re-extraction in analyze-contract route; new POST /api/admin/reanalyze-all-contracts super-admin batch endpoint.",
+  "status": "planning",
+  "pipeline_mode": true,
+  "started_at": "2026-04-10T08:25:36.000Z",
+  "ended_at": null,
+  "elapsed_seconds": 0,
+  "stages": {
+    "planning":       { "started_at": "2026-04-10T08:25:36.000Z", "ended_at": null, "elapsed_seconds": 0 },
+    "implementation": { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "review":         { "started_at": null, "ended_at": null, "elapsed_seconds": 0 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-2", "role": "executor", "model": "opus",   "status": "active", "spawned_at": "2026-04-10T08:25:36.000Z", "ended_at": null },
+    { "name": "reviewer-2", "role": "reviewer", "model": "sonnet", "status": "idle",   "spawned_at": "2026-04-10T08:25:36.000Z", "ended_at": null },
+    { "name": "tester-2",   "role": "tester",   "model": "sonnet", "status": "idle",   "spawned_at": "2026-04-10T08:25:36.000Z", "ended_at": null }
+  ]
+}
