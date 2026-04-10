@@ -1,0 +1,46 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-04-10T13:30:18Z",
+      "type": "execution_started",
+      "task_id": null,
+      "agent": "pm",
+      "message": "Plan execution started — 1 task, conditional payment gate prompt-only fix"
+    },
+    {
+      "timestamp": "2026-04-10T13:31:10Z",
+      "type": "team_spawned",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1-team spawned: executor-1, reviewer-1, tester-1 — Add conditional payment exclusion to system prompt"
+    },
+    {
+      "timestamp": "2026-04-10T13:31:10Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "executor-1",
+      "message": "task-1 entered planning stage"
+    },
+    {
+      "timestamp": "2026-04-10T13:32:39Z",
+      "type": "stage_entered",
+      "task_id": "task-1",
+      "agent": "reviewer-1",
+      "message": "task-1 entered review stage — planning+implementation completed in ~89s"
+    },
+    {
+      "timestamp": "2026-04-10T13:34:58Z",
+      "type": "task_completed",
+      "task_id": "task-1",
+      "agent": "pm",
+      "message": "task-1 completed — total ~228s, 0 retries, passed review on first attempt"
+    },
+    {
+      "timestamp": "2026-04-10T13:34:58Z",
+      "type": "execution_completed",
+      "task_id": null,
+      "agent": "pm",
+      "message": "All 1 tasks completed — plan 061-conditional-obligation-filter finished in ~280s total wall-clock"
+    }
+  ]
+}

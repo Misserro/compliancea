@@ -1,0 +1,23 @@
+{
+  "task_id": "task-1",
+  "task_name": "Add conditional payment exclusion to system prompt",
+  "team_name": "task-1-team",
+  "goal": "Three targeted edits to the system prompt in lib/contracts.js: narrow payments category definition, add CONDITIONAL PAYMENT GATE block, reinforce at payment extraction heading",
+  "status": "completed",
+  "pipeline_mode": false,
+  "started_at": "2026-04-10T13:31:10Z",
+  "ended_at": "2026-04-10T13:34:58Z",
+  "elapsed_seconds": 228,
+  "stages": {
+    "planning":       { "started_at": "2026-04-10T13:31:10Z", "ended_at": "2026-04-10T13:32:39Z", "elapsed_seconds": 89 },
+    "implementation": { "started_at": "2026-04-10T13:31:10Z", "ended_at": "2026-04-10T13:32:39Z", "elapsed_seconds": 89 },
+    "review":         { "started_at": "2026-04-10T13:32:39Z", "ended_at": "2026-04-10T13:34:58Z", "elapsed_seconds": 139 },
+    "testing":        { "started_at": null, "ended_at": null, "elapsed_seconds": 0 }
+  },
+  "retry_count": 0,
+  "members": [
+    { "name": "executor-1", "role": "executor", "model": "opus",   "status": "completed", "spawned_at": "2026-04-10T13:31:10Z", "ended_at": "2026-04-10T13:34:58Z" },
+    { "name": "reviewer-1", "role": "reviewer", "model": "sonnet", "status": "completed", "spawned_at": "2026-04-10T13:31:10Z", "ended_at": "2026-04-10T13:34:58Z" },
+    { "name": "tester-1",   "role": "tester",   "model": "sonnet", "status": "completed", "spawned_at": "2026-04-10T13:31:10Z", "ended_at": "2026-04-10T13:34:58Z" }
+  ]
+}
